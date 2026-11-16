@@ -29,8 +29,9 @@ import { messageChars, reqHash, schemaProblems } from './schema';
 import { emptyStats } from './checks/counters';
 import { mulberry32 } from './checks/seed';
 import { numberPages } from '../materials/pages';
+import { runLabel } from './label';
+export { runLabel };
 import type {
-  Answers,
   AnswerSet,
   CallRecord,
   LlmClient,
@@ -434,7 +435,7 @@ class Run {
         const problems = (spec.validate ?? ((j) => schemaProblems(j, spec.schema)))(cached.json);
         if (!problems.length) {
           const response = { json: cached.json, provider: cached.provider, model: cached.model, ms: cached.ms,
-            ...(cached.planted ? { planted: cached.planted } : {}), ...(cached.seeded ? { seeded: cached.seeded } : {}) };
+            ...(cached.planted ? { planted: cached.planted, plantedNotes: cached.plantedNotes ?? [] } : {}), ...(cached.seeded ? { seeded: cached.seeded } : {}) };
           return { json: cached.json, response, attempt, cached: true };
         }
       }
@@ -494,7 +495,7 @@ class Run {
       const problems = (spec.validate ?? ((j) => schemaProblems(j, spec.schema)))(response.json);
       if (!problems.length && spec.transform) {
         const changed = spec.transform(response.json);
-        response = { ...response, json: changed.json, ...(changed.planted?.length ? { planted: changed.planted } : {}) };
+        response = { ...response, json: changed.json, ...(changed.planted?.length ? { planted: changed.planted, plantedNotes: changed.notes ?? [] } : {}) };
       }
       const record: CallRecord = {
         callId,
@@ -508,6 +509,7 @@ class Run {
         provider: response.provider,
         model: response.model,
         ...(response.planted ? { planted: response.planted } : {}),
+        ...(response.plantedNotes ? { plantedNotes: response.plantedNotes } : {}),
         ...(response.seeded ? { seeded: response.seeded } : {}),
         ...(spec.redo ? { redo: spec.redo } : {}),
       };
@@ -712,13 +714,7 @@ const ROLE_NAMES: Record<string, string> = {
   reviewer: 'Reviewer',
 };
 
-/** The caption of a run: what answered and what ran now. */
-export function runLabel(answers: Answers, set: AnswerSet | null): string {
-  if (answers === 'recorded') return 'Recorded answers from a live run, checks run now';
-  if (answers === 'scripted') return 'Sample run with written answers, checks run now';
-  void set;
-  return 'Live run: the model answers now, code checks every answer';
-}
+
 const roleName = (role: string) => ROLE_NAMES[role] ?? role;
 
 /** Length of the first list in an answer: events, fixes, verdicts. */

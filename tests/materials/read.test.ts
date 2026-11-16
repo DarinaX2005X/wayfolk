@@ -2,13 +2,11 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { describe, expect, it } from 'vitest';
 import { batchPages } from '../../src/materials/batches';
 import { detectBlocks } from '../../src/materials/blocks';
-import { parseCsv, readGuestRows, readPastedList } from '../../src/materials/csv';
+import { parseCsv, readTableRows } from '../../src/materials/csv';
 import { MaterialError } from '../../src/materials/errors';
-import { splitEssays, splitSentences, toEssays } from '../../src/materials/essays';
-import { matchExample } from '../../src/materials/example';
 import { hash6, materialHash, tokens } from '../../src/materials/normalize';
 import { readFile, txtSections } from '../../src/materials/read';
-import type { ExampleMeta } from '../../src/agents/types';
+import { splitSentences } from '../../src/materials/sentences';
 
 /** A line printed on a PDF page: plain text, a table row of cells, or a gap before it. */
 type Line = string | { cells: string[] } | { gap: string };
@@ -86,33 +84,20 @@ describe('readFile: TXT and CSV', () => {
     expect(txtSections('a\n\nb')).toEqual([[{ text: 'a' }, { text: 'b', gapBefore: true }]]);
   });
 
-  it('reads a guest list with semicolons and a byte-order mark', async () => {
-    const csv = '﻿name;party;side;group;age\nRosa Delgado;Delgado;bride;family;adult\n"Novak, Peter";Novak;groom;"friends; school";senior\n';
-    expect(readGuestRows(csv)).toEqual([
-      { name: 'Rosa Delgado', party: 'Delgado', side: 'bride', group: 'family', relation: '', age: 'adult', needs: '', diet: '', notes: '' },
-      { name: 'Novak, Peter', party: 'Novak', side: 'groom', group: 'friends; school', relation: '', age: 'senior', needs: '', diet: '', notes: '' },
-    ]);
-    const doc = await readFile(new Blob([csv], { type: 'text/csv' }), 'guests.csv');
+  it('reads a table with semicolons and a byte-order mark as one row block per row', async () => {
+    const csv = '﻿item;price;notes\nSourdough loaf;$7.00;"daily; until sold out"\nCroissant;$3.50;\n';
+    expect(readTableRows(csv)).toEqual(['item: Sourdough loaf; price: $7.00; notes: daily; until sold out', 'item: Croissant; price: $3.50']);
+    const doc = await readFile(new Blob([csv], { type: 'text/csv' }), 'menu.csv');
+    expect(doc.meta.kind).toBe('table');
     expect(doc.pages[0].blocks).toHaveLength(2);
-    expect(doc.pages[0].text).toBe('Rosa Delgado; Delgado; bride; family; adult\nNovak, Peter; Novak; groom; friends; school; senior');
+    expect(doc.pages[0].text).toBe('item: Sourdough loaf; price: $7.00; notes: daily; until sold out\nitem: Croissant; price: $3.50');
     expect(parseCsv('a,b\n1,2')).toEqual([['a', 'b'], ['1', '2']]);
-    expect(readPastedList('Rosa Delgado\nPeter Novak\n\n').map((g) => g.name)).toEqual(['Rosa Delgado', 'Peter Novak']);
   });
 
-  it('splits one TXT into essays at separators and Name lines', async () => {
-    const text = [
-      'Name: Alice Brown', 'The war changed the town. People left.', '---',
-      'Name: Ben Carter', 'Dr. Lee says e.g. the mills closed. Then the river rose!', '',
-      'Name: Chloe Diaz', 'Short one.',
-    ].join('\n');
-    const doc = await readFile(new Blob([text]), 'class.txt');
-    const essays = splitEssays(doc);
-    expect(essays.map((e) => e.student)).toEqual(['Alice Brown', 'Ben Carter', 'Chloe Diaz']);
-    const shaped = toEssays(essays);
-    expect(shaped[1]).toMatchObject({ id: 'e02', alias: 'Student 02', tooShort: true });
-    expect(shaped[1].sentences.map((s) => s.id + ' ' + s.text)).toEqual(['e02.s01 Dr. Lee says e.g. the mills closed.', 'e02.s02 Then the river rose!']);
-    const single = splitEssays(await readFile(new Blob(['My essay about rivers.']), 'Dana_Whitlock.txt'));
-    expect(single).toEqual([{ student: 'Dana Whitlock', text: 'My essay about rivers.', source: 'Dana_Whitlock' }]);
+  it('reads Markdown notes as text, and names notes by their file', async () => {
+    const doc = await readFile(new Blob(['# Bakery notes\n\nOpen 7am to 3pm.']), 'bakery-notes.md');
+    expect(doc.meta.kind).toBe('notes');
+    expect(doc.pages[0].text).toContain('Open 7am to 3pm.');
   });
 });
 
@@ -148,20 +133,5 @@ describe('batches', () => {
     expect(b400).toHaveLength(14);
     expect(b400[0].numbers).toHaveLength(29);
     expect(batchPages([65, 66], 12)).toEqual([{ index: 12, pages: [65, 66], numbers: [65, 66] }]);
-  });
-});
-
-describe('matchExample', () => {
-  it('knows the example PDF by the text read from it, and not after one word changes', async () => {
-    const footer = (n: number) => `Willow Lane, Flat 2, p. ${n}`;
-    const original = await readFile(await makePdf(letter, footer), 'willow.pdf');
-    const meta: ExampleMeta = {
-      id: 'harbor-street', kind: 'case', title: 'Example', goal: 'g', label: ['a', 'b'], materialHash: '', pdfTextHash: await materialHash(original.pages),
-    };
-    const again = await readFile(await makePdf(letter, footer), 'downloaded.pdf');
-    expect(await matchExample(again.pages, [meta])).toBe(meta);
-    const changed = letter.map((p) => p.map((l) => (l === 'now. It drips into the bath most nights.' ? 'now. It drips into the sink most nights.' : l)));
-    const edited = await readFile(await makePdf(changed, footer), 'edited.pdf');
-    expect(await matchExample(edited.pages, [meta])).toBeNull();
   });
 });

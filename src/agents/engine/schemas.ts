@@ -56,6 +56,14 @@ export const PLAN_SCHEMA: JsonSchema = obj({
   ),
 });
 
+/** The plan's shape as code reads it: a step kind outside the library is left out with a line, not refused. */
+export const PLAN_SHAPE: JsonSchema = (() => {
+  const copy = structuredClone(PLAN_SCHEMA);
+  const step = copy.properties!.steps.items!;
+  step.properties!.kind = { type: 'string' };
+  return copy;
+})();
+
 export const FACTS_SCHEMA: JsonSchema = obj({
   facts: arr(
     obj({

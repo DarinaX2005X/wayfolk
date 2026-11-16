@@ -62,7 +62,7 @@ export type CallSpec = {
    * Changes a fresh answer before it is saved (never a cached one): a recording of a
    * sample plants its mistakes here, so the saved call carries them and their indices.
    */
-  transform?(json: unknown): { json: unknown; planted?: number[] };
+  transform?(json: unknown): { json: unknown; planted?: number[]; notes?: string[] };
 };
 
 export type CallResult = { json: unknown; response: LlmResponse; attempt: number; cached: boolean };

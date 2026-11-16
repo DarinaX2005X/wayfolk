@@ -7,7 +7,7 @@ import type { ChatMessage, JsonSchema, LlmCallBody, LlmTask } from '../contracts
 import { isRecord } from '../http';
 import { schemaProblem } from './schema';
 
-export const TASKS: readonly LlmTask[] = ['plan', 'extract', 'recheck', 'reconcile', 'wishes', 'mark', 'intent'];
+export const TASKS: readonly LlmTask[] = ['plan', 'step', 'recheck', 'intent', 'dictate', 'extract', 'reconcile', 'wishes', 'mark'];
 
 /** `harbor-street/full/extract/3/1`: example, set, task, index, attempt. */
 export const FIXTURE_KEY = /^([a-z0-9-]{1,40})\/(full|late)\/([a-z]+)\/(\d{1,4})\/(\d{1,3})$/;

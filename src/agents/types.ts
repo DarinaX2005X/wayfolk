@@ -416,8 +416,10 @@ export type CallRecord = {
   json: unknown;
   provider: Provider | 'script';
   model: string;
-  /** Indices (into the answer's list) of mistakes code planted into this answer. */
+  /** Indices (into the answer's list) of units with mistakes code planted when recording. */
   planted?: number[];
+  /** What was planted, one line each, ending with the reason code expected: '… (missing-asset)'. */
+  plantedNotes?: string[];
   seeded?: number[];
   redo?: string;
   /** USD of this call as the provider billed it (recordings only). */
@@ -509,6 +511,7 @@ export type LlmResponse = {
   model: string;
   ms: number;
   planted?: number[];
+  plantedNotes?: string[];
   seeded?: number[];
   missing?: boolean;
 };
@@ -588,6 +591,8 @@ export type Unit = {
   cells?: Record<string, string>;
   status: 'checked' | 'corrected' | 'fixed' | 'agent' | 'restored' | 'edited';
   checks: CheckName[];
+  /** Lines code found after a person's edit: '"$8" isn't in your notes. Kept because you wrote it.' */
+  warnings?: string[];
   version: number;
 };
 
@@ -649,7 +654,16 @@ export type Deliverable =
     };
 export type OpenAsk = { askId: string; question: string; options: { id: string; label: string }[]; defaultId?: string; pair?: [string, string] };
 /** What a finished step handed on: kept so a redo can tell what changed downstream. */
-export type StepResult = { stepId: string; hash: string; units: string[]; text: string; files?: SiteFile[] };
+export type StepResult = {
+  stepId: string;
+  /** Hash of what the step handed on: a redo re-runs a later step only when this changed. */
+  hash: string;
+  units: string[];
+  /** The step's output as later agents read it. */
+  text: string;
+  /** The step's typed output (facts, rows, sections, files, items), for assembly and redo. */
+  data?: unknown;
+};
 export type TaskResult = {
   plan: Plan;
   cards: StepCard[];

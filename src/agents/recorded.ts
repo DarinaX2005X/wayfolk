@@ -93,7 +93,7 @@ export function recordedLlm(set: AnswerSet, opts: { pace?: number; timers?: Time
         provider: record?.provider ?? 'script',
         model: record?.model ?? model,
         ms,
-        ...(record?.planted ? { planted: [...record.planted] } : {}),
+        ...(record?.planted ? { planted: [...record.planted], plantedNotes: [...(record.plantedNotes ?? [])] } : {}),
         ...(record?.seeded ? { seeded: [...record.seeded] } : {}),
         ...(missing ? { missing } : {}),
       };
