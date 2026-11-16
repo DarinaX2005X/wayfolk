@@ -1,0 +1,71 @@
+{
+  "name": "groundwork",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "iwsdk dev up --allow-browser-automation",
+    "dev:headless": "iwsdk dev up --headless --allow-browser-automation",
+    "dev:runtime": "vite",
+    "dev:down": "iwsdk dev down",
+    "dev:status": "iwsdk dev status",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "typecheck:mine": "node scripts/typecheck-mine.mjs",
+    "pretest": "node tools/dev-api/bundle.mjs",
+    "test": "vitest run",
+    "build": "node tools/dev-api/bundle.mjs && vite build",
+    "preview": "vite preview",
+    "check": "npm run typecheck && npm run test && npm run build",
+    "xr": "node scripts/xr.mjs",
+    "xr:all": "node scripts/xr.mjs --all",
+    "xr:prod": "node scripts/xr-prod.mjs",
+    "web": "node scripts/web.mjs",
+    "tokens": "node scripts/build-tokens.mjs",
+    "font": "node scripts/font.mjs",
+    "answers": "tsx scripts/run-example.ts",
+    "fixtures": "tsx scripts/build-fixtures.ts",
+    "record": "tsx scripts/record-live.ts",
+    "capture": "node tools/capture/record.mjs",
+    "reference:status": "iwsdk reference status",
+    "reference:warmup": "iwsdk reference warmup"
+  },
+  "dependencies": {
+    "@fontsource-variable/atkinson-hyperlegible-next": "^5.3.0",
+    "@fontsource/atkinson-hyperlegible-next": "^5.3.0",
+    "@iwsdk/core": "1.1.0-rc.2",
+    "@pmndrs/uikit": "^1.0.74",
+    "@pmndrs/uikit-horizon": "^1.0.74",
+    "@pmndrs/uikit-lucide": "^1.0.74",
+    "@preact/signals-core": "^1.14.5",
+    "@vercel/blob": "^2.9.0",
+    "docx": "^9.15.4",
+    "earcut": "^3.2.4",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.5.438",
+    "peerjs": "^1.5.5",
+    "three": "npm:super-three@0.185.0"
+  },
+  "devDependencies": {
+    "@iwsdk/cli": "1.1.0-rc.2",
+    "@iwsdk/reference": "1.1.0-rc.2",
+    "@iwsdk/vite-plugin-dev": "1.1.0-rc.2",
+    "@meta-quest/metavr": "^1.8.1",
+    "@types/earcut": "^3.0.0",
+    "@types/three": "^0.185.0",
+    "fake-indexeddb": "^6.2.8",
+    "mammoth": "^1.13.0",
+    "msdf-bmfont-xml": "^2.8.0",
+    "playwright": "^1.65.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.5.0",
+    "vite": "^7.1.4",
+    "vitest": "^5.1.0"
+  },
+  "overrides": {
+    "sharp": "0.35.4",
+    "three": "npm:super-three@0.185.0"
+  },
+  "engines": {
+    "node": ">=20.19.0 <21.0.0-0 || >=22.12.0 <23.0.0-0 || >=24.0.0"
+  }
+}

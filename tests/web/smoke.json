@@ -1,0 +1,31 @@
+{
+  "name": "smoke: every route opens, /app before entry, the scene by pointer",
+  "steps": [
+    { "goto": "/go" },
+    { "label": "the phone page opens", "expectText": "Type the code from your headset" },
+    { "goto": "/go/X4KM7" },
+    { "expectText": "X4KM7" },
+    { "goto": "/x/X4KM7" },
+    { "expectText": "Result for code X4KM7" },
+    { "goto": "/w/quiet-meadow-27/harbor-street" },
+    { "expectText": "harbor-street in quiet-meadow-27" },
+    { "goto": "/j/J3MPX" },
+    { "expectText": "J3MPX" },
+    { "goto": "/drop/D7KQ2" },
+    { "expectText": "D7KQ2" },
+    { "goto": "/gallery" },
+    { "expectText": "State gallery" },
+    { "goto": "/nowhere" },
+    { "label": "an unknown address says so", "expectText": "There is no page at this address" },
+    { "goto": "/" },
+    { "expectText": "Agents do the groundwork" },
+    { "goto": "/app" },
+    { "label": "the plate with the main button", "expectText": "Enter Groundwork" },
+    { "label": "the microphone button", "expectText": "Allow microphone for voice" },
+    { "label": "nothing asks the model before entry", "expectNoRequest": "/api/llm" },
+    { "shot": "app-before.png" },
+    { "goto": "/app?testscene=1&debug=1" },
+    { "include": "parts/core/scene.json" },
+    { "shot": "app-desk.png" }
+  ]
+}

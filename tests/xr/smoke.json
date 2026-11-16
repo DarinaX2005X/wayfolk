@@ -1,0 +1,25 @@
+{
+  "name": "smoke: boot, session, modes, clock, draw budget, input steps",
+  "route": "/app?testscene=1",
+  "pace": 0.25,
+  "xr": true,
+  "environment": "home_office",
+  "mode": "hand-ray",
+  "steps": [
+    { "label": "the page took the pace", "eval": "store.pace.value", "equals": 0.25 },
+    { "include": "parts/core/modes.json" },
+    { "label": "the seated frame comes from the head", "eval": "seat().at > 0 && seat().origin[1] > 0.5", "equals": true },
+    { "label": "renderer.info counts each draw per view", "eval": "perf.info().raw.calls / perf.info().counted", "near": 2, "tol": 0.01 },
+    { "label": "zones agree with renderer.info", "eval": "perf.info().mismatch", "equals": null },
+    { "label": "inside the frame budget", "eval": "perf.info().calls", "atMost": 90 },
+    { "label": "triangles inside the budget", "eval": "perf.info().triangles", "atMost": 150000 },
+    { "label": "the wall date can be set", "clock": "2027-03-01T09:00:00Z" },
+    { "eval": "clock.wall().toISOString().slice(0, 10)", "equals": "2027-03-01" },
+    { "label": "application time runs", "eval": "clock.now()", "atLeast": 1 },
+    { "label": "aim at the panel with the hand ray", "run": { "device": "hand-right", "steps": [{ "target": "test:panel" }, { "target": "test:sphere" }] } },
+    { "label": "a pull moves the wrist toward the seat", "pull": { "target": "test:sphere", "by": 0.12, "seconds": 0.5 }, "mouse": { "target": "test:sphere", "action": "drag", "to": [0, 1.0, -0.6] } },
+    { "label": "reach the bench by hand, seated", "mode": "hand", "run": { "device": "hand-right", "steps": [{ "position": { "relativeTo": "head", "x": 0.1, "y": -0.3, "z": -0.45 }, "anchor": "index-tip", "orientation": "auto", "duration": 0.6 }] } },
+    { "label": "back to the ray", "mode": "hand-ray", "run": { "device": "hand-right", "steps": [{ "target": "test:panel" }] } },
+    { "shot": "smoke.png" }
+  ]
+}

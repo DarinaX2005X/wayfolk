@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowJs": false,
+    "types": ["node", "vite/client", "@iwsdk/vite-plugin-dev/client"]
+  },
+  "include": ["api/**/*.ts", "scripts/**/*.ts", "content/**/*.ts", "tests/**/*.ts", "tools/**/*.ts"],
+  "exclude": ["tests/xr/out/**", "tests/web/out/**"]
+}

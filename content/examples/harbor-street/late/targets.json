@@ -1,0 +1,29 @@
+{
+  "claims": 4,
+  "events": 3,
+  "dropped": 1,
+  "resolved": 1,
+  "newContradictions": 1,
+  "pairs": 3,
+  "explained": 2,
+  "resolvedBy": {
+    "contradiction": "keys-returned",
+    "event": "lt-keys",
+    "page": 65,
+    "label": "Resolved by page 65"
+  },
+  "noPairWith": [
+    {
+      "event": "lt-keys",
+      "other": "ts-keys",
+      "why": "Both say 27 February 2026."
+    }
+  ],
+  "calls": {
+    "total": 2,
+    "ids": [
+      "extract/12",
+      "reconcile/3"
+    ]
+  }
+}

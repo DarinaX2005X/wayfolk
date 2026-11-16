@@ -1,0 +1,13 @@
+{
+  "name": "core modes",
+  "steps": [
+    { "label": "starts in the Void", "eval": "store.mode.value", "equals": "void" },
+    { "label": "Room without leaving the session", "eval": "(session.setMode('room'), store.mode.value)", "equals": "room" },
+    { "label": "still the same session", "eval": "app.world.session !== undefined && app.world.renderer.xr.isPresenting", "equals": true },
+    { "label": "back to the Void", "eval": "(session.setMode('void'), store.mode.value)", "equals": "void" },
+    { "label": "hidden pauses", "visibility": "hidden" },
+    { "eval": "app.session.visible.value", "equals": false },
+    { "visibility": "visible" },
+    { "eval": "app.session.visible.value", "equals": true }
+  ]
+}

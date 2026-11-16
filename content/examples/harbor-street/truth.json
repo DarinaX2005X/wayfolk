@@ -1,0 +1,374 @@
+{
+  "example": "harbor-street",
+  "pages": 64,
+  "documents": 12,
+  "contradictions": [
+    {
+      "id": "keys-returned",
+      "topic": "keys",
+      "field": "keys.returned_on",
+      "kind": "direct",
+      "a": {
+        "tag": "ts-keys",
+        "page": 55,
+        "quote": "I returned the keys on Friday 27 February 2026, when I moved out",
+        "value": "2026-02-27",
+        "basis": "literal"
+      },
+      "b": {
+        "tag": "co-keys",
+        "page": 48,
+        "quote": "Keys: both sets of unit keys returned to the agent's office on 6 March 2026",
+        "value": "2026-03-06",
+        "basis": "literal"
+      },
+      "explanation": "Mr Ellison says he returned the keys on 27 February 2026; the check-out report says both sets of unit keys came back to the agent's office on 6 March 2026."
+    },
+    {
+      "id": "deposit-amount",
+      "topic": "deposit",
+      "field": "deposit.amount",
+      "kind": "direct",
+      "a": {
+        "tag": "lease-deposit",
+        "page": 3,
+        "quote": "On signing this lease the Tenant shall pay a security deposit of $2,400",
+        "value": "2400",
+        "basis": "literal"
+      },
+      "b": {
+        "tag": "dl-deposit",
+        "page": 52,
+        "quote": "From the deposit of $2,800 that we hold for Unit 4B, we have made the deductions listed below",
+        "value": "2800",
+        "basis": "literal"
+      },
+      "explanation": "The signed lease sets the deposit at $2,400; the deduction letter works from a deposit of $2,800."
+    },
+    {
+      "id": "incident-time",
+      "topic": "incident",
+      "field": "incident.time",
+      "kind": "direct",
+      "a": {
+        "tag": "ns-time",
+        "page": 61,
+        "quote": "On Saturday 14 February 2026, at around 10:40 pm, I heard a loud crash from Unit 4B, and a few minutes later water came under my front door",
+        "value": "22:40",
+        "basis": "literal"
+      },
+      "b": {
+        "tag": "log-incident",
+        "page": 45,
+        "quote": "14 February 2026, 23:55: Call from the resident of 4C. The bathroom ceiling of 4B has come down. Time of the incident 23:55, as she reported it.",
+        "value": "23:55",
+        "basis": "literal"
+      },
+      "explanation": "Ms Raman puts the crash at around 10:40 pm; the incident report gives 23:55 and says that is the time she reported."
+    },
+    {
+      "id": "leak-start",
+      "topic": "leak",
+      "field": "leak.started_on",
+      "kind": "judgment",
+      "a": {
+        "tag": "em-leak",
+        "page": 17,
+        "quote": "The bathroom ceiling has been leaking for two weeks now",
+        "value": "2025-12-29",
+        "basis": "derived"
+      },
+      "b": {
+        "tag": "log-leak-reported",
+        "page": 41,
+        "quote": "3 February 2026, 08:10: Leak in the bathroom ceiling of 4B, first reported 3 Feb by the tenant by phone. Bucket in the bath. Ticket 26-019 opened. To agency.",
+        "value": "2026-02-03",
+        "basis": "literal"
+      },
+      "explanation": "On 12 January Mr Ellison wrote that the ceiling had been leaking for two weeks, which puts the start at about 29 December 2025; the log treats 3 February 2026 as the first report of the leak.",
+      "decide": "Decide which date to treat as the start of the leak: about 29 December 2025, from the tenant's email of 12 January, or 3 February 2026, when the superintendent's log first records it."
+    },
+    {
+      "id": "tenant-at-inspection",
+      "topic": "inspection",
+      "field": "inspection.tenant",
+      "kind": "judgment",
+      "a": {
+        "tag": "co-present",
+        "page": 47,
+        "quote": "Inspection carried out on Friday 6 March 2026 at 10:00, tenant present",
+        "value": "here",
+        "basis": "literal"
+      },
+      "b": {
+        "tag": "ts-abroad",
+        "page": 56,
+        "quote": "I was abroad from 4 March 2026 and only flew home five days later",
+        "value": "away",
+        "basis": "derived"
+      },
+      "explanation": "The report says the tenant was present at the inspection on 6 March 2026; Mr Ellison says he was abroad from 4 March and flew home five days later.",
+      "decide": "Decide whether the report's \"tenant present\" can stand against the tenant's account and the boarding pass on page 31.",
+      "supports": [
+        {
+          "tag": "rc-boarding",
+          "page": 31,
+          "quote": "Passenger: Ellison, Mark. Flight 214 from Port Maren to Calder Bay on Wednesday 4 March 2026, departing at 08:35",
+          "side": "b"
+        }
+      ]
+    },
+    {
+      "id": "plumber-authorised",
+      "topic": "repairs",
+      "field": "repairs.authorised",
+      "kind": "judgment",
+      "a": {
+        "tag": "ls-never",
+        "page": 59,
+        "quote": "I never authorised any plumber to work on Unit 4B, and I will not pay Mr Okafor's invoice",
+        "value": "no",
+        "basis": "literal"
+      },
+      "b": {
+        "tag": "msg-go-ahead",
+        "page": 37,
+        "quote": "Lena Ortiz, 22 January 2026, 19:06: ok go ahead with the plumber, I'll cover it. send me the invoice",
+        "value": "yes",
+        "basis": "derived"
+      },
+      "explanation": "Ms Ortiz says she never authorised any plumber; her text of 22 January 2026 tells Mr Ellison to go ahead with the plumber and says she will cover it.",
+      "decide": "Decide whether Ms Ortiz's text of 22 January was consent to book the plumber, as the tenant says, or only to get a price, as she says."
+    }
+  ],
+  "ask": {
+    "a": {
+      "tag": "ts-keys",
+      "page": 55,
+      "quote": "I returned the keys on Friday 27 February 2026, when I moved out"
+    },
+    "b": {
+      "tag": "co-mailbox",
+      "page": 50,
+      "quote": "Mailbox key: one, handed in at the office by the tenant on 9 March 2026"
+    },
+    "field": "keys.returned_on",
+    "question": "Mark says he returned \"the keys\" on 27 February. The check-out report logs a \"mailbox key\" handed in on 9 March. Are these the same keys?",
+    "options": [
+      "Same keys",
+      "Different keys"
+    ]
+  },
+  "pairs": [
+    {
+      "a": "ts-keys",
+      "b": "co-keys",
+      "field": "keys.returned_on",
+      "values": [
+        "2026-02-27",
+        "2026-03-06"
+      ],
+      "verdict": "contradiction",
+      "reason": "Listed in contradictions."
+    },
+    {
+      "a": "lease-deposit",
+      "b": "dl-deposit",
+      "field": "deposit.amount",
+      "values": [
+        "2400",
+        "2800"
+      ],
+      "verdict": "contradiction",
+      "reason": "Listed in contradictions."
+    },
+    {
+      "a": "ns-time",
+      "b": "log-incident",
+      "field": "incident.time",
+      "values": [
+        "22:40",
+        "23:55"
+      ],
+      "verdict": "contradiction",
+      "reason": "Listed in contradictions."
+    },
+    {
+      "a": "em-leak",
+      "b": "log-leak-reported",
+      "field": "leak.started_on",
+      "values": [
+        "2025-12-29",
+        "2026-02-03"
+      ],
+      "verdict": "contradiction",
+      "reason": "Listed in contradictions."
+    },
+    {
+      "a": "co-present",
+      "b": "ts-abroad",
+      "field": "inspection.tenant",
+      "values": [
+        "here",
+        "away"
+      ],
+      "verdict": "contradiction",
+      "reason": "Listed in contradictions."
+    },
+    {
+      "a": "ls-never",
+      "b": "msg-go-ahead",
+      "field": "repairs.authorised",
+      "values": [
+        "no",
+        "yes"
+      ],
+      "verdict": "contradiction",
+      "reason": "Listed in contradictions."
+    },
+    {
+      "a": "ts-keys",
+      "b": "co-mailbox",
+      "field": "keys.returned_on",
+      "values": [
+        "2026-02-27",
+        "2026-03-09"
+      ],
+      "verdict": "unsure",
+      "reason": "Ask the person: the statement does not say which keys."
+    },
+    {
+      "a": "co-keys",
+      "b": "co-mailbox",
+      "field": "keys.returned_on",
+      "values": [
+        "2026-03-06",
+        "2026-03-09"
+      ],
+      "verdict": "explained",
+      "reason": "The mailbox key is a different key from the unit keys; the report lists them separately."
+    },
+    {
+      "a": "em-advert",
+      "b": "lease-deposit",
+      "field": "deposit.amount",
+      "values": [
+        "2800",
+        "2400"
+      ],
+      "verdict": "explained",
+      "reason": "The $2,800 was the listing figure before the lease was agreed; the lease signed on 20 August 2025 says $2,400."
+    },
+    {
+      "a": "rc-rent",
+      "b": "ls-rent",
+      "field": "rent.paid_on",
+      "values": [
+        "2026-02-02",
+        "2026-02-04"
+      ],
+      "verdict": "explained",
+      "reason": "The bank statement shows the day the transfer left Mr Ellison's account; Ms Ortiz gives the day it reached hers, two days later."
+    },
+    {
+      "a": "em-sent-rent",
+      "b": "ls-rent",
+      "field": "rent.paid_on",
+      "values": [
+        "2026-02-02",
+        "2026-02-04"
+      ],
+      "verdict": "explained",
+      "reason": "Mr Ellison gives the day he sent the transfer; Ms Ortiz gives the day it reached her account."
+    },
+    {
+      "a": "em-draft-rent",
+      "b": "rc-rent",
+      "field": "rent.paid_on",
+      "values": [
+        "2026-02-01",
+        "2026-02-02"
+      ],
+      "verdict": "explained",
+      "reason": "The draft was never sent; the bank statement shows the transfer on 2 February."
+    },
+    {
+      "a": "em-draft-rent",
+      "b": "ls-rent",
+      "field": "rent.paid_on",
+      "values": [
+        "2026-02-01",
+        "2026-02-04"
+      ],
+      "verdict": "explained",
+      "reason": "The draft was never sent; Ms Ortiz gives the day the money arrived."
+    },
+    {
+      "a": "em-draft-rent",
+      "b": "em-sent-rent",
+      "field": "rent.paid_on",
+      "values": [
+        "2026-02-01",
+        "2026-02-02"
+      ],
+      "verdict": "explained",
+      "reason": "The draft was never sent; the version Mr Ellison sent says 2 February."
+    }
+  ],
+  "deadlines": [
+    {
+      "id": "evidence-due",
+      "kind": "document",
+      "date": "2027-03-04",
+      "label": "Evidence due",
+      "source": {
+        "docId": "notice",
+        "page": 64
+      },
+      "quote": "Each party must send any further documents they rely on to the tribunal no later than Thursday 4 March 2027"
+    },
+    {
+      "id": "hearing",
+      "kind": "document",
+      "date": "2027-03-18",
+      "label": "Hearing",
+      "source": {
+        "docId": "notice",
+        "page": 64
+      },
+      "quote": "The hearing will take place on Thursday 18 March 2027 at 10:00 in Room 3, Port Maren Civic Centre"
+    }
+  ],
+  "noticeDates": [
+    {
+      "text": "Monday 2 November 2026",
+      "date": "2026-11-02",
+      "weekday": "Monday",
+      "page": 63
+    },
+    {
+      "text": "Thursday 4 March 2027",
+      "date": "2027-03-04",
+      "weekday": "Thursday",
+      "page": 64
+    },
+    {
+      "text": "Thursday 18 March 2027",
+      "date": "2027-03-18",
+      "weekday": "Thursday",
+      "page": 64
+    }
+  ],
+  "window": {
+    "earliest": "2025-08-04",
+    "latest": "2027-03-18",
+    "noDateBefore": "2025-08-01",
+    "plantedOutside": "2025-01-12"
+  },
+  "live": {
+    "note": "Soft invariant for the recorded live run: at least five of the six contradictions are found, and every fake seeded by code is caught.",
+    "minContradictions": 5,
+    "of": 6,
+    "allSeededCaught": true
+  }
+}

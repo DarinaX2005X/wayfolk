@@ -1,0 +1,293 @@
+{
+  "ms": {
+    "plan": 3000,
+    "extract": {
+      "1": 5200,
+      "2": 5600,
+      "3": 6400,
+      "4": 6000,
+      "5": 7100,
+      "6": 5800,
+      "7": 6600,
+      "8": 7400,
+      "9": 6200,
+      "10": 7800,
+      "11": 5000
+    },
+    "recheck": {
+      "4": 3400,
+      "6": 4600,
+      "8": 3100,
+      "9": 4200
+    },
+    "reconcile": {
+      "1": 6000,
+      "2": 6000
+    }
+  },
+  "planted": [
+    {
+      "id": "pl-01",
+      "batch": 4,
+      "page": 23,
+      "reason": "quote-not-found",
+      "note": "Invented quote: the page asks the tenant to leave both sets of keys in the drop box.",
+      "claim": {
+        "kind": "record",
+        "date": "2026-03-02",
+        "time": "",
+        "actors": [
+          "Mark Ellison",
+          "Dana Whitlock"
+        ],
+        "label": "Keys given",
+        "summary": "The tenant says he handed both sets of keys to Dana on 2 March.",
+        "quote": "I handed both sets of keys to Dana on 2 March",
+        "page": 23,
+        "topic": "keys",
+        "facts": [
+          {
+            "field": "keys.returned_on",
+            "type": "date",
+            "value": "2026-03-02",
+            "basis": "literal"
+          }
+        ]
+      },
+      "recheck": {
+        "action": "withdraw"
+      },
+      "outcome": "dropped",
+      "dropCause": "withdrawn"
+    },
+    {
+      "id": "pl-02",
+      "batch": 4,
+      "page": 20,
+      "target": "em-sent-leak",
+      "reason": "date-out-of-range",
+      "note": "Wrong year on a yearless date: the page says 12 January, which the heading puts in 2026.",
+      "claim": {
+        "kind": "record",
+        "date": "2025-01-12",
+        "time": "",
+        "actors": [
+          "Mark Ellison",
+          "Dana Whitlock"
+        ],
+        "label": "Leak told",
+        "summary": "The tenant reminded the agent that he first told her about the leak in his email of 12 January.",
+        "quote": "I first told you about the leak in my email of 12 January",
+        "page": 20,
+        "topic": "leak",
+        "facts": []
+      },
+      "recheck": {
+        "action": "fix",
+        "date": "2025-01-12"
+      },
+      "outcome": "dropped",
+      "dropCause": "failed-again"
+    },
+    {
+      "id": "pl-03",
+      "batch": 6,
+      "page": 33,
+      "target": "msg-away",
+      "reason": "date-mismatch",
+      "note": "Misread 4 March as 14 March.",
+      "claim": {
+        "kind": "record",
+        "date": "2026-03-14",
+        "time": "",
+        "actors": [
+          "Mark Ellison",
+          "Priya Raman"
+        ],
+        "label": "Trip plan",
+        "summary": "The tenant texted that he would fly out on 4 March, be back on 9 March and keep the mailbox key until then.",
+        "quote": "Mark Ellison, 20 February 2026, 19:40: Thank you. I fly out on 4 March for my sister's wedding and I'm back on 9 March. I'm keeping the mailbox key till then so I can pick up my post.",
+        "page": 33,
+        "topic": "keys",
+        "facts": []
+      },
+      "recheck": {
+        "action": "fix",
+        "date": "2026-03-04"
+      },
+      "outcome": "fixed"
+    },
+    {
+      "id": "pl-04",
+      "batch": 6,
+      "page": 35,
+      "target": "msg-saw-inspection",
+      "reason": "weekday-mismatch",
+      "note": "Took the first date of the page heading; the quote says Friday, and 4 March 2026 is a Wednesday.",
+      "claim": {
+        "kind": "record",
+        "date": "2026-03-04",
+        "time": "",
+        "actors": [
+          "Priya Raman",
+          "Tom Kessler",
+          "Dana Whitlock",
+          "Mark Ellison"
+        ],
+        "label": "Not there",
+        "summary": "The neighbour wrote that Tom let Dana and one other man into the flat on Friday 6 March at about ten and that the tenant was not with them.",
+        "quote": "Priya Raman, 7 March 2026, 09:58: To put it in writing, as you asked: Tom let Dana and one other man into your flat on Friday 6 March at about ten, and they left before eleven. You were not with them.",
+        "page": 35,
+        "topic": "inspection",
+        "facts": []
+      },
+      "recheck": {
+        "action": "fix",
+        "date": "2026-03-06"
+      },
+      "outcome": "fixed"
+    },
+    {
+      "id": "pl-05",
+      "batch": 8,
+      "page": 44,
+      "target": "log-dana-visit",
+      "reason": "unknown-actor",
+      "note": "Misread Ms Whitlock as Ms Whitmore.",
+      "claim": {
+        "kind": "record",
+        "date": "2026-02-16",
+        "time": "10:00",
+        "actors": [
+          "Ms Whitmore",
+          "Tom Kessler",
+          "Mark Ellison"
+        ],
+        "label": "Agent visit",
+        "summary": "Ms Whitlock came to 4B with a contractor to look at the ceiling and the corridor, with the tenant present.",
+        "quote": "16 February 2026, 10:00: Ms Whitlock attended 4B with a contractor to look at the ceiling and the corridor. Tenant present. Temporary sheet to be fixed over the hole, and a new board to be ordered once the 5B pipe is repaired.",
+        "page": 44,
+        "topic": "repairs",
+        "facts": []
+      },
+      "recheck": {
+        "action": "fix",
+        "actors": [
+          "Dana Whitlock",
+          "Tom Kessler",
+          "Mark Ellison"
+        ]
+      },
+      "outcome": "fixed"
+    },
+    {
+      "id": "pl-06",
+      "batch": 9,
+      "page": 49,
+      "reason": "quote-not-found",
+      "note": "Invented quote about a phone call from the tenant; nothing like it is in the report.",
+      "claim": {
+        "kind": "record",
+        "date": "2026-03-06",
+        "time": "",
+        "actors": [
+          "Mark Ellison",
+          "Dana Whitlock"
+        ],
+        "label": "Tenant call",
+        "summary": "The report says the tenant phoned on the morning of the inspection to say he could not attend.",
+        "quote": "The tenant phoned on the morning of the inspection to say that he could not attend",
+        "page": 49,
+        "topic": "inspection",
+        "facts": []
+      },
+      "recheck": {
+        "action": "withdraw"
+      },
+      "outcome": "dropped",
+      "dropCause": "withdrawn"
+    },
+    {
+      "id": "pl-07",
+      "batch": 9,
+      "page": 52,
+      "target": "dl-total",
+      "reason": "fact-not-in-quote",
+      "note": "A deposit of $2,600 is attached to a sentence that only gives the $1,240.00 deducted.",
+      "claim": {
+        "kind": "record",
+        "date": "2026-03-13",
+        "time": "",
+        "actors": [
+          "Dana Whitlock",
+          "Mark Ellison"
+        ],
+        "label": "Deducted",
+        "summary": "The letter says $1,240.00 was deducted and the balance would be paid within ten working days.",
+        "quote": "The total deducted is $1,240.00, and the balance will be paid to your account within ten working days",
+        "page": 52,
+        "topic": "deposit",
+        "facts": [
+          {
+            "field": "deposit.amount",
+            "type": "amount",
+            "value": "2600",
+            "basis": "literal"
+          }
+        ]
+      },
+      "recheck": null,
+      "outcome": "fact-removed"
+    },
+    {
+      "id": "pl-08",
+      "batch": 7,
+      "page": 41,
+      "target": "log-spoke-dana",
+      "reason": "quote-wrong-page",
+      "note": "Right quote, page 40 instead of 41. Code finds it on page 41.",
+      "claim": {
+        "kind": "record",
+        "date": "2026-02-03",
+        "time": "08:40",
+        "actors": [
+          "Tom Kessler",
+          "Dana Whitlock"
+        ],
+        "label": "Agent told",
+        "summary": "The superintendent spoke to Ms Whitlock about 4B and she said she would book a contractor.",
+        "quote": "3 February 2026, 08:40: Spoke to Ms Whitlock about 4B. She will book a contractor to look at the ceiling.",
+        "page": 40,
+        "topic": "leak",
+        "facts": []
+      },
+      "recheck": null,
+      "outcome": "corrected"
+    },
+    {
+      "id": "pl-09",
+      "batch": 10,
+      "page": 57,
+      "target": "ts-decided",
+      "reason": "quote-reworded",
+      "note": "Two small words changed (\"had\" to \"has\", the second \"the\" to \"that\"); no number, date, name or negation changed.",
+      "claim": {
+        "kind": "account",
+        "date": "2026-03-09",
+        "time": "",
+        "actors": [
+          "Mark Ellison",
+          "Dana Whitlock"
+        ],
+        "label": "Decided",
+        "summary": "The tenant says that when he got back on 9 March the agent had already decided what was wrong with the bathroom without asking him about the leak.",
+        "quote": "When I got back on 9 March I found that the agent has already decided what was wrong with that bathroom without asking me a single question about the leak",
+        "page": 57,
+        "topic": "inspection",
+        "facts": []
+      },
+      "recheck": null,
+      "outcome": "corrected"
+    }
+  ]
+}

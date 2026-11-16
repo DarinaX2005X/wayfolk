@@ -1,0 +1,9 @@
+{
+  "name": "core scene by pointer",
+  "steps": [
+    { "label": "the world fades in at the desk", "eval": "store.mode.value", "equals": "desk" },
+    { "label": "the scene is drawn", "eval": "perf.info().calls", "atLeast": 3 },
+    { "label": "a hand step on a named target becomes a click", "run": { "device": "hand-right", "steps": [{ "target": "test:panel", "press": {} }] } },
+    { "label": "a pull needs its own pointer block", "pull": { "target": "test:sphere", "by": 0.12 }, "mouse": { "target": "test:sphere", "action": "drag", "to": "test:panel", "seconds": 0.3 } }
+  ]
+}

@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+.pnpm-debug.log*
+
+# Build outputs
+dist/
+*.tsbuildinfo
+.tsconfig.mine.*.json
+
+# Deployment link and secrets: only the example of the variables is tracked
+.vercel/
+.env*
+!.env.example
+
+# Agent and IWSDK template files: they stay on disk for the agents, the public
+# repository holds only the product
+AGENTS.md
+**/AGENTS.md
+CLAUDE.md
+**/CLAUDE.md
+.claude/
+.mcp.json
+.iwsdk/
+.cursor/
+.codex/
+.vscode/mcp.json
+
+# IDE and OS files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs and coverage
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/
+*.lcov
+
+# Runtime and temporary data
+pids/
+*.pid
+*.seed
+*.pid.lock
+.tmp/
+.temp/
+__pycache__/
+
+# Frames and logs written by scenarios and the spend of live tests
+tests/xr/out/
+tests/web/out/
+tests/live/spend.json

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/llm.ts": { "maxDuration": 60 }
+  },
+  "rewrites": [
+    { "source": "/api/code/:path*", "destination": "/api/code" },
+    { "source": "/api/worlds/:path*", "destination": "/api/worlds" },
+    { "source": "/((?!api/)(?!.*\.[^/]+$).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/fonts/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ]
+}
