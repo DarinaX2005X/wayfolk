@@ -1,0 +1,418 @@
+{
+ "example": "habit-tracker",
+ "scope": "full",
+ "answers": "recorded",
+ "recordedAt": "2026-11-16",
+ "model": "deepseek/deepseek-v4.1-flash",
+ "seeded": 0,
+ "materialHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+ "calls": [
+  {
+   "callId": "plan/1/1",
+   "task": "plan",
+   "index": 1,
+   "attempt": 1,
+   "reqHash": "b084f000",
+   "ms": 9773,
+   "ok": true,
+   "json": {
+    "deliverable": "site",
+    "fit": "yes",
+    "instead": "",
+    "notDoable": "",
+    "object": "toolbox",
+    "objectWhy": "A small tool you use every day: add, tick off, and watch a streak grow.",
+    "options": [],
+    "question": "",
+    "steps": [
+     {
+      "columns": [],
+      "criteria": [],
+      "does": "Write index.html: the shell of the habit app in plain HTML. A header with the app name, a form with a text input and a button to add a habit, an empty unordered list where habits will be shown, a section where the streak summary appears, and a footer. Each habit row will later carry a tick control for today and a delete control; leave empty list items to be filled by app.js. Load styles.css in the head and app.js at the end of the body. No frameworks, no build step, no files other than the three written here.",
+      "done": [
+       "index.html parses as HTML",
+       "styles.css and app.js are the only files it loads"
+      ],
+      "files": [
+       {
+        "path": "index.html",
+        "purpose": "page shell: add-habit form, habit list, streak summary, footer"
+       }
+      ],
+      "focus": "One page, three files, nothing else.",
+      "id": "step-1",
+      "kind": "write-code",
+      "options": [],
+      "required": [],
+      "sections": [],
+      "title": "Build page",
+      "uses": []
+     },
+     {
+      "columns": [],
+      "criteria": [],
+      "does": "Write styles.css for the page made in step 1. Use only the selectors already present in index.html. Plain CSS with CSS variables for colours, a readable layout that works on a narrow phone screen and a desktop, a clear ticked versus unticked state for a habit, and buttons that look pressable. Any icon or decorative graphic must be drawn with CSS or inline SVG, since no image files are allowed.",
+      "done": [
+       "styles.css parses",
+       "every selector used matches an element written in index.html"
+      ],
+      "files": [
+       {
+        "path": "styles.css",
+        "purpose": "layout and styling for the habit page"
+       }
+      ],
+      "focus": "Readable, phone-friendly, no image files.",
+      "id": "step-2",
+      "kind": "write-code",
+      "options": [],
+      "required": [],
+      "sections": [],
+      "title": "Style the app",
+      "uses": [
+       "step-1"
+      ]
+     },
+     {
+      "columns": [],
+      "criteria": [],
+      "does": "Write app.js against the elements in index.html. Keep the list of habits in localStorage under one key, with each habit holding a name, a created date, and the dates it was ticked. Render the list from that stored data on load. Wire the add-habit form to create a habit, the tick control to toggle today's date on a habit, and a delete control to remove it. Compute the current streak for each habit from the stored dates and show it next to the habit and in the summary section. Handle the empty case with a short message and guard against malformed stored data.",
+      "done": [
+       "app.js parses",
+       "no framework or library is used",
+       "adding, ticking, deleting and reloading all work from stored data"
+      ],
+      "files": [
+       {
+        "path": "app.js",
+        "purpose": "habit state, localStorage, ticking and streak maths"
+       }
+      ],
+      "focus": "The state lives in localStorage; the page is only a view of it.",
+      "id": "step-3",
+      "kind": "write-code",
+      "options": [],
+      "required": [],
+      "sections": [],
+      "title": "Add app logic",
+      "uses": [
+       "step-1"
+      ]
+     },
+     {
+      "columns": [],
+      "criteria": [],
+      "does": "Read index.html, styles.css and app.js as a critical colleague. List what is weak or missing: unclear streak behaviour, habits that could be lost, a control that is hard to reach on a phone, missing empty state, anything a first-time user would find confusing. Write the list as short points naming the file and the element involved. Do not rewrite the files here.",
+      "done": [
+       "each point names a file and the element or function it concerns"
+      ],
+      "files": [],
+      "focus": "Find the weak spots before the code check does.",
+      "id": "step-4",
+      "kind": "review",
+      "options": [],
+      "required": [],
+      "sections": [],
+      "title": "Second reader",
+      "uses": [
+       "step-2",
+       "step-3"
+      ]
+     },
+     {
+      "columns": [],
+      "criteria": [],
+      "does": "Check the finished app by code: index.html and styles.css parse, app.js loads without a syntax error, the page loads only styles.css and app.js, every CSS selector used matches an element written in index.html, and each required part of the page is present. Report anything that fails with the file and line it came from.",
+      "done": [
+       "pages parse and links resolve",
+       "all required parts are present",
+       "any failure is reported with its file"
+      ],
+      "files": [],
+      "focus": "Only what can be checked by machine.",
+      "id": "step-5",
+      "kind": "check",
+      "options": [],
+      "required": [
+       {
+        "selector": "form#add-habit",
+        "what": "text input for a new habit name and a button to add it"
+       },
+       {
+        "selector": "ul#habit-list",
+        "what": "the list of habits, each row with a tick control and a delete control"
+       },
+       {
+        "selector": "section#streaks",
+        "what": "the per-habit streak counts and an overall summary"
+       },
+       {
+        "selector": "header",
+        "what": "the app name and a one-line description of what it does"
+       },
+       {
+        "selector": "footer",
+        "what": "a short note that habits are kept in this browser's local storage"
+       }
+      ],
+      "sections": [],
+      "title": "Run the check",
+      "uses": [
+       "step-4"
+      ]
+     }
+    ],
+    "team": [],
+    "title": "Habit tracker app",
+    "understood": "A single-page browser app in plain HTML, CSS and JavaScript, with no backend: habits, daily ticks and streaks are stored in the browser's local storage.",
+    "windowFrom": "",
+    "windowTo": ""
+   },
+   "provider": "openrouter",
+   "model": "deepseek/deepseek-v4.1-flash"
+  },
+  {
+   "callId": "step/101/1",
+   "task": "step",
+   "index": 101,
+   "attempt": 1,
+   "reqHash": "c09ea485",
+   "ms": 28160,
+   "ok": true,
+   "json": {
+    "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>Habit Tracker</title>\n  <meta name=\"description\" content=\"Add habits, tick them off each day and watch your streaks grow. Everything stays in this browser.\">\n  <link rel=\"stylesheet\" href=\"styles.css\">\n  <script src=\"storage.js\" defer></script>\n</head>\n<body>\n  <a class=\"skip-link\" href=\"#main-content-section\">Skip to the habit list</a>\n\n  <header class=\"site-header\">\n    <div class=\"wrap\">\n      <h1 class=\"app-name\">Habit Tracker</h1>\n      <p class=\"tagline\">One tick a day. Your habits and your streaks stay in this browser.</p>\n    </div>\n  </header>\n\n  <main class=\"wrap\" id=\"main-content\">\n    <section class=\"panel\" aria-labelledby=\"add-heading\">\n      <h2 id=\"add-heading\">Add a habit</h2>\n      <form class=\"habit-form\" id=\"habit-form\" autocomplete=\"off\">\n        <label class=\"field-label\" for=\"habit-name\">Habit name</label>\n        <div class=\"field-row\">\n          <input class=\"field-input\" id=\"habit-name\" name=\"habit-name\" type=\"text\" maxlength=\"60\" required aria-describedby=\"habit-hint\">\n          <button class=\"btn\" type=\"submit\">\n            <svg class=\"icon\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" aria-hidden=\"true\" focusable=\"false\">\n              <path d=\"M8 3.25v9.5M3.25 8h9.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\"></path>\n            </svg>\n            Add habit\n          </button>\n        </div>\n        <p class=\"field-hint\" id=\"habit-hint\">Give the habit a short name. You can tick it once each day.</p>\n      </form>\n    </section>\n\n    <section class=\"panel\" aria-labelledby=\"habits-heading\">\n      <h2 id=\"habits-heading\">Today</h2>\n      <ul class=\"habit-list\" id=\"habit-list\"></ul>\n      <p class=\"empty-note\" id=\"habit-empty\">No habits yet. Add your first one above.</p>\n    </section>\n\n    <section class=\"panel\" aria-labelledby=\"summary-heading\">\n      <h2 id=\"summary-heading\">Streaks</h2>\n      <dl class=\"summary\" id=\"streak-summary\" aria-live=\"polite\">\n        <div class=\"summary-item\">\n          <dt>Habits</dt>\n          <dd id=\"summary-count\">0</dd>\n        </div>\n        <div class=\"summary-item\">\n          <dt>Ticked today</dt>\n          <dd id=\"summary-today\">0</dd>\n        </div>\n        <div class=\"summary-item\">\n          <dt>Best current streak</dt>\n          <dd id=\"summary-streak\">0 days</dd>\n        </div>\n      </dl>\n    </section>\n  </main>\n\n  <footer class=\"site-footer\">\n    <div class=\"wrap\">\n      <p>Everything is saved in this browser's local storage. Clearing site data deletes your habits.</p>\n    </div>\n  </footer>\n\n  <script src=\"app.js\" defer></script>\n</body>\n</html>\n",
+    "summary": "Page shell for the habit tracker: header with the app name, add-habit form (labelled text input plus submit button), an empty habit list, a streaks summary list, and a footer. Loads styles.css in the head and app.js with defer at the end of the body; no other assets, no inline styles or scripts."
+   },
+   "provider": "openrouter",
+   "model": "deepseek/deepseek-v4.1-flash",
+   "planted": [
+    0,
+    0
+   ],
+   "plantedNotes": [
+    "A script storage.js that the project doesn't have was linked (missing-file)",
+    "The link to #main-content was changed to #main-content-section, which the page doesn't have (broken-link)"
+   ]
+  },
+  {
+   "callId": "recheck/150/1",
+   "task": "recheck",
+   "index": 150,
+   "attempt": 1,
+   "reqHash": "9d07e278",
+   "ms": 2595,
+   "ok": true,
+   "json": {
+    "fixes": [
+     {
+      "action": "fix",
+      "id": "index.html",
+      "unit": {
+       "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>Habit Tracker</title>\n  <meta name=\"description\" content=\"Add habits, tick them off each day and watch your streaks grow. Everything stays in this browser.\">\n  <link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n  <a class=\"skip-link\" href=\"#main-content\">Skip to the habit list</a>\n\n  <header class=\"site-header\">\n    <div class=\"wrap\">\n      <h1 class=\"app-name\">Habit Tracker</h1>\n      <p class=\"tagline\">One tick a day. Your habits and your streaks stay in this browser.</p>\n    </div>\n  </header>\n\n  <main class=\"wrap\" id=\"main-content\">\n    <section class=\"panel\" aria-labelledby=\"add-heading\">\n      <h2 id=\"add-heading\">Add a habit</h2>\n      <form class=\"habit-form\" id=\"habit-form\" autocomplete=\"off\">\n        <label class=\"field-label\" for=\"habit-name\">Habit name</label>\n        <div class=\"field-row\">\n          <input class=\"field-input\" id=\"habit-name\" name=\"habit-name\" type=\"text\" maxlength=\"60\" required aria-describedby=\"habit-hint\">\n          <button class=\"btn\" type=\"submit\">\n            <svg class=\"icon\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" aria-hidden=\"true\" focusable=\"false\">\n              <path d=\"M8 3.25v9.5M3.25 8h9.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\"></path>\n            </svg>\n            Add habit\n          </button>\n        </div>\n        <p class=\"field-hint\" id=\"habit-hint\">Give the habit a short name. You can tick it once each day.</p>\n      </form>\n    </section>\n\n    <section class=\"panel\" aria-labelledby=\"habits-heading\">\n      <h2 id=\"habits-heading\">Today</h2>\n      <ul class=\"habit-list\" id=\"habit-list\"></ul>\n      <p class=\"empty-note\" id=\"habit-empty\">No habits yet. Add your first one above.</p>\n    </section>\n\n    <section class=\"panel\" aria-labelledby=\"summary-heading\">\n      <h2 id=\"summary-heading\">Streaks</h2>\n      <dl class=\"summary\" id=\"streak-summary\" aria-live=\"polite\">\n        <div class=\"summary-item\">\n          <dt>Habits</dt>\n          <dd id=\"summary-count\">0</dd>\n        </div>\n        <div class=\"summary-item\">\n          <dt>Ticked today</dt>\n          <dd id=\"summary-today\">0</dd>\n        </div>\n        <div class=\"summary-item\">\n          <dt>Best current streak</dt>\n          <dd id=\"summary-streak\">0 days</dd>\n        </div>\n      </dl>\n    </section>\n  </main>\n\n  <footer class=\"site-footer\">\n    <div class=\"wrap\">\n      <p>Everything is saved in this browser's local storage. Clearing site data deletes your habits.</p>\n    </div>\n  </footer>\n\n  <script src=\"app.js\" defer></script>\n</body>\n</html>\n"
+      }
+     }
+    ]
+   },
+   "provider": "openrouter",
+   "model": "deepseek/deepseek-v4.1-flash"
+  },
+  {
+   "callId": "step/201/1",
+   "task": "step",
+   "index": 201,
+   "attempt": 1,
+   "reqHash": "9831561d",
+   "ms": 13924,
+   "ok": true,
+   "json": {
+    "content": "/* Habit Tracker — app logic.\n   The list of habits lives in one localStorage key; the page is only a view of it. */\n\n(function () {\n  \"use strict\";\n\n  var STORAGE_KEY = \"habit-tracker.habits.v1\";\n  var MAX_NAME_LENGTH = 60;\n  var DATE_KEY = /^\\d{4}-\\d{2}-\\d{2}$/;\n  var SVG_NS = \"http://www.w3.org/2000/svg\";\n\n  var els = {};\n  var habits = [];\n\n  /* ---------- date helpers ---------- */\n\n  function pad(value) {\n    return value < 10 ? \"0\" + value : String(value);\n  \n\n  function dateKey(date) {\n    return date.getFullYear() + \"-\" + pad(date.getMonth() + 1) + \"-\" + pad(date.getDate());\n  }\n\n  function todayKey() {\n    return dateKey(new Date());\n  }\n\n  function keyToDate(key) {\n    var parts = key.split(\"-\");\n    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));\n  }\n\n  function isDateKey(value) {\n    if (typeof value !== \"string\" || !DATE_KEY.test(value)) return false;\n    var date = keyToDate(value);\n    return !isNaN(date.getTime()) && dateKey(date) === value;\n  }\n\n  function formatDate(key) {\n    var date = keyToDate(key);\n    if (isNaN(date.getTime())) return \"\";\n    return date.toLocaleDateString(undefined, { day: \"numeric\", month: \"short\", year: \"numeric\" });\n  }\n\n  function lastTickedLabel(days) {\n    if (days === 0) return \"No streak yet\";\n    if (days === 1) return \"1 day streak\";\n    return days + \" day streak\";\n  }\n\n  function totalLabel(count) {\n    if (count === 1) return \"1 day ticked\";\n    return count + \" days ticked\";\n  }\n\n  function bestStreakLabel(days) {\n    if (days === 0) return \"0 days\";\n    if (days === 1) return \"1 day\";\n    return days + \" days\";\n  }\n\n  /* ---------- storage ---------- */\n\n  function makeId() {\n    if (window.crypto && typeof window.crypto.randomUUID === \"function\") {\n      return window.crypto.randomUUID();\n    }\n    return \"h\" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);\n  }\n\n  function cleanHabit(entry) {\n    if (!entry || typeof entry !== \"object\") return null;\n\n    var name = typeof entry.name === \"string\" ? entry.name.trim().slice(0, MAX_NAME_LENGTH) : \"\";\n    if (!name) return null;\n\n    var id = typeof entry.id === \"string\" && entry.id ? entry.id : makeId();\n    var created = isDateKey(entry.created) ? entry.created : todayKey();\n    var ticks = [];\n\n    if (Array.isArray(entry.ticks)) {\n      entry.ticks.forEach(function (tick) {\n        if (isDateKey(tick) && ticks.indexOf(tick) === -1) ticks.push(tick);\n      });\n    }\n\n    ticks.sort();\n\n    return { id: id, name: name, created: created, ticks: ticks };\n  }\n\n  function loadHabits() {\n    var raw;\n    try {\n      raw = window.localStorage.getItem(STORAGE_KEY);\n    } catch (err) {\n      return [];\n    }\n    if (!raw) return [];\n\n    var parsed;\n    try {\n      parsed = JSON.parse(raw);\n    } catch (err) {\n      return [];\n    }\n    if (!Array.isArray(parsed)) return [];\n\n    var cleaned = [];\n    parsed.forEach(function (entry) {\n      var habit = cleanHabit(entry);\n      if (habit) cleaned.push(habit);\n    });\n    return cleaned;\n  }\n\n  function saveHabits() {\n    try {\n      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));\n    } catch (err) {\n      // Storage may be full or blocked; the page keeps working for this session.\n    }\n  }\n\n  /* ---------- streak maths ---------- */\n\n  function currentStreak(ticks) {\n    if (!ticks || ticks.length === 0) return 0;\n\n    var ticked = {};\n    ticks.forEach(function (tick) {\n      ticked[tick] = true;\n    });\n\n    var cursor = new Date();\n    if (!ticked[dateKey(cursor)]) {\n      // A streak survives until the end of today, so a tick yesterday still counts.\n      cursor.setDate(cursor.getDate() - 1);\n      if (!ticked[dateKey(cursor)]) return 0;\n    }\n\n    var streak = 0;\n    while (ticked[dateKey(cursor)]) {\n      streak += 1;\n      cursor.setDate(cursor.getDate() - 1);\n    }\n    return streak;\n  }\n\n  /* ---------- elements ---------- */\n\n  function makeIcon(pathData) {\n    var svg = document.createElementNS(SVG_NS, \"svg\");\n    svg.setAttribute(\"class\", \"icon\");\n    svg.setAttribute(\"width\", \"16\");\n    svg.setAttribute(\"height\", \"16\");\n    svg.setAttribute(\"viewBox\", \"0 0 16 16\");\n    svg.setAttribute(\"aria-hidden\", \"true\");\n    svg.setAttribute(\"focusable\", \"false\");\n\n    var path = document.createElementNS(SVG_NS, \"path\");\n    path.setAttribute(\"d\", pathData);\n    path.setAttribute(\"fill\", \"none\");\n    path.setAttribute(\"stroke\", \"currentColor\");\n    path.setAttribute(\"stroke-width\", \"1.75\");\n    path.setAttribute(\"stroke-linecap\", \"round\");\n    path.setAttribute(\"stroke-linejoin\", \"round\");\n\n    svg.appendChild(path);\n    return svg;\n  }\n\n  function buildHabitItem(habit, today) {\n    var tickedToday = habit.ticks.indexOf(today) !== -1;\n    var streak = currentStreak(habit.ticks);\n\n    var item = document.createElement(\"li\");\n    item.className = \"habit-item\" + (tickedToday ? \" is-ticked\" : \"\");\n    item.dataset.id = habit.id;\n\n    var info = document.createElement(\"div\");\n    info.className = \"habit-info\";\n\n    var name = document.createElement(\"p\");\n    name.className = \"habit-name\";\n    name.textContent = habit.name;\n    info.appendChild(name);\n\n    var meta = document.createElement(\"p\");\n    meta.className = \"habit-meta\";\n    meta.textContent = totalLabel(habit.ticks.length) + \" \\u00b7 Added \" + formatDate(habit.created);\n    info.appendChild(meta);\n\n    var side = document.createElement(\"div\");\n    side.className = \"habit-side\";\n\n    var streakNote = document.createElement(\"p\");\n    streakNote.className = \"habit-streak\";\n    streakNote.textContent = lastTickedLabel(streak);\n    side.appendChild(streakNote);\n\n    var actions = document.createElement(\"div\");\n    actions.className = \"habit-actions\";\n\n    var tickButton = document.createElement(\"button\");\n    tickButton.type = \"button\";\n    tickButton.className = \"btn tick-btn\";\n    tickButton.dataset.action = \"tick\";\n    tickButton.setAttribute(\"aria-pressed\", tickedToday ? \"true\" : \"false\");\n    tickButton.setAttribute(\n      \"aria-label\",\n      (tickedToday ? \"Untick \" : \"Tick \") + habit.name + \" for today\"\n    );\n    tickButton.appendChild(makeIcon(\"M3.25 8.25l3.25 3.25 6.25-7\"));\n    var tickText = document.createElement(\"span\");\n    tickText.textContent = tickedToday ? \"Ticked\" : \"Tick today\";\n    tickButton.appendChild(tickText);\n    actions.appendChild(tickButton);\n\n    var deleteButton = document.createElement(\"button\");\n    deleteButton.type = \"button\";\n    deleteButton.className = \"btn btn-quiet delete-btn\";\n    deleteButton.dataset.action = \"delete\";\n    deleteButton.setAttribute(\"aria-label\", \"Delete \" + habit.name);\n    deleteButton.appendChild(makeIcon(\"M3.5 4.75h9M6.5 4.75V3.5h3v1.25M4.75 4.75l.5 8h5.5l.5-8\"));\n    actions.appendChild(deleteButton);\n\n    side.appendChild(actions);\n    item.appendChild(info);\n    item.appendChild(side);\n\n    return item;\n  }\n\n  function render() {\n    var today = todayKey();\n\n    els.list.textContent = \"\";\n    habits.forEach(function (habit) {\n      els.list.appendChild(buildHabitItem(habit, today));\n    });\n\n    els.empty.hidden = habits.length > 0;\n\n    var tickedToday = habits.filter(function (habit) {\n      return habit.ticks.indexOf(today) !== -1;\n    }).length;\n\n    var best = habits.reduce(function (max, habit) {\n      return Math.max(max, currentStreak(habit.ticks));\n    }, 0);\n\n    els.summaryCount.textContent = String(habits.length);\n    els.summaryToday.textContent = String(tickedToday);\n    els.summaryStreak.textContent = bestStreakLabel(best);\n  }\n\n  /* ---------- actions ---------- */\n\n  function addHabit(rawName) {\n    var name = typeof rawName === \"string\" ? rawName.trim().slice(0, MAX_NAME_LENGTH) : \"\";\n    if (!name) return false;\n\n    habits.push({ id: makeId(), name: name, created: todayKey(), ticks: [] });\n    saveHabits();\n    render();\n    return true;\n  }\n\n  function toggleTick(id) {\n    var today = todayKey();\n    var changed = false;\n\n    habits = habits.map(function (habit) {\n      if (habit.id !== id) return habit;\n\n      changed = true;\n      var ticks = habit.ticks.slice();\n      var at = ticks.indexOf(today);\n\n      if (at === -1) {\n        ticks.push(today);\n        ticks.sort();\n      } else {\n        ticks.splice(at, 1);\n      }\n\n      return { id: habit.id, name: habit.name, created: habit.created, ticks: ticks };\n    });\n\n    if (changed) {\n      saveHabits();\n      render();\n    }\n  }\n\n  function deleteHabit(id) {\n    var before = habits.length;\n    habits = habits.filter(function (habit) {\n      return habit.id !== id;\n    });\n\n    if (habits.length !== before) {\n      saveHabits();\n      render();\n    }\n  }\n\n  /* ---------- wiring ---------- */\n\n  function onListClick(event) {\n    var button = event.target.closest(\"button[data-action]\");\n    if (!button) return;\n\n    var item = button.closest(\".habit-item\");\n    if (!item || !item.dataset.id) return;\n\n    if (button.dataset.action === \"tick\") {\n      toggleTick(item.dataset.id);\n      // Keep the keyboard where the person was working.\n      focusTickButton(item.dataset.id);\n    } else if (button.dataset.action === \"delete\") {\n      deleteHabit(item.dataset.id);\n    }\n  }\n\n  function focusTickButton(id) {\n    var item = els.list.querySelector('.habit-item[data-id=\"' + id + '\"]');\n    if (!item) return;\n    var button = item.querySelector(\"button[data-action='tick']\");\n    if (button) button.focus();\n  }\n\n  function onSubmit(event) {\n    event.preventDefault();\n\n    var added = addHabit(els.input.value);\n    if (added) {\n      els.input.value = \"\";\n      els.input.focus();\n    }\n  }\n\n  function onStorage(event) {\n    if (event.key !== null && event.key !== STORAGE_KEY) return;\n    habits = loadHabits();\n    render();\n  }\n\n  function start() {\n    els.form = document.getElementById(\"habit-form-box\");\n    els.input = document.getElementById(\"habit-name\");\n    els.list = document.getElementById(\"habit-list\");\n    els.empty = document.getElementById(\"habit-empty\");\n    els.summaryCount = document.getElementById(\"summary-count\");\n    els.summaryToday = document.getElementById(\"summary-today\");\n    els.summaryStreak = document.getElementById(\"summary-streak\");\n\n    if (!els.form || !els.input || !els.list || !els.empty) return;\n\n    habits = loadHabits();\n    render();\n\n    els.form.addEventListener(\"submit\", onSubmit);\n    els.list.addEventListener(\"click\", onListClick);\n    window.addEventListener(\"storage\", onStorage);\n  }\n\n  if (document.readyState === \"loading\") {\n    document.addEventListener(\"DOMContentLoaded\", start);\n  } else {\n    start();\n  }\n})();\n",
+    "summary": "app.js written with localStorage state, add/tick/delete actions, streak maths and summary rendering"
+   },
+   "provider": "openrouter",
+   "model": "deepseek/deepseek-v4.1-flash",
+   "planted": [
+    0,
+    0
+   ],
+   "plantedNotes": [
+    "getElementById('habit-form') was changed to look for \"habit-form-box\" (element-missing)",
+    "A closing brace was removed from the script (parse-error)"
+   ]
+  },
+  {
+   "callId": "recheck/250/1",
+   "task": "recheck",
+   "index": 250,
+   "attempt": 1,
+   "reqHash": "f17bd9c4",
+   "ms": 11423,
+   "ok": true,
+   "json": {
+    "fixes": [
+     {
+      "action": "fix",
+      "id": "app.js",
+      "unit": {
+       "content": "/* Habit Tracker — app logic.\n   The list of habits lives in one localStorage key; the page is only a view of it. */\n\n(function () {\n  \"use strict\";\n\n  var STORAGE_KEY = \"habit-tracker.habits.v1\";\n  var MAX_NAME_LENGTH = 60;\n  var DATE_KEY = /^\\d{4}-\\d{2}-\\d{2}$/;\n  var SVG_NS = \"http://www.w3.org/2000/svg\";\n\n  var els = {};\n  var habits = [];\n\n  /* ---------- date helpers ---------- */\n\n  function pad(value) {\n    return value < 10 ? \"0\" + value : String(value);\n  }\n\n  function dateKey(date) {\n    return date.getFullYear() + \"-\" + pad(date.getMonth() + 1) + \"-\" + pad(date.getDate());\n  }\n\n  function todayKey() {\n    return dateKey(new Date());\n  }\n\n  function keyToDate(key) {\n    var parts = key.split(\"-\");\n    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));\n  }\n\n  function isDateKey(value) {\n    if (typeof value !== \"string\" || !DATE_KEY.test(value)) return false;\n    var date = keyToDate(value);\n    return !isNaN(date.getTime()) && dateKey(date) === value;\n  }\n\n  function formatDate(key) {\n    if (!isDateKey(key)) return \"\";\n    return keyToDate(key).toLocaleDateString(undefined, {\n      day: \"numeric\",\n      month: \"short\",\n      year: \"numeric\"\n    });\n  }\n\n  /* ---------- small labels ---------- */\n\n  function streakLabel(days) {\n    if (days === 0) return \"No streak yet\";\n    if (days === 1) return \"1 day streak\";\n    return days + \" day streak\";\n  }\n\n  function tickedLabel(count) {\n    if (count === 0) return \"Not ticked yet\";\n    if (count === 1) return \"1 day ticked\";\n    return count + \" days ticked\";\n  }\n\n  function bestStreakLabel(days) {\n    if (days === 1) return \"1 day\";\n    return days + \" days\";\n  }\n\n  /* ---------- storage ---------- */\n\n  function makeId() {\n    if (window.crypto && typeof window.crypto.randomUUID === \"function\") {\n      return window.crypto.randomUUID();\n    }\n    return \"h\" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);\n  }\n\n  function cleanHabit(entry) {\n    if (!entry || typeof entry !== \"object\") return null;\n\n    var name = typeof entry.name === \"string\" ? entry.name.trim().slice(0, MAX_NAME_LENGTH) : \"\";\n    if (!name) return null;\n\n    var id = typeof entry.id === \"string\" && entry.id ? entry.id : makeId();\n    var created = isDateKey(entry.created) ? entry.created : todayKey();\n    var ticks = [];\n\n    if (Array.isArray(entry.ticks)) {\n      entry.ticks.forEach(function (tick) {\n        if (isDateKey(tick) && ticks.indexOf(tick) === -1) ticks.push(tick);\n      });\n    }\n\n    ticks.sort();\n\n    return { id: id, name: name, created: created, ticks: ticks };\n  }\n\n  function loadHabits() {\n    var raw;\n    try {\n      raw = window.localStorage.getItem(STORAGE_KEY);\n    } catch (err) {\n      return [];\n    }\n    if (!raw) return [];\n\n    var parsed;\n    try {\n      parsed = JSON.parse(raw);\n    } catch (err) {\n      return [];\n    }\n    if (!Array.isArray(parsed)) return [];\n\n    var cleaned = [];\n    parsed.forEach(function (entry) {\n      var habit = cleanHabit(entry);\n      if (habit) cleaned.push(habit);\n    });\n    return cleaned;\n  }\n\n  function saveHabits() {\n    try {\n      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));\n    } catch (err) {\n      /* Storage can be full or blocked; the page keeps working for this session. */\n    }\n  }\n\n  /* ---------- streak maths ---------- */\n\n  function currentStreak(ticks, today) {\n    if (!ticks || ticks.length === 0) return 0;\n\n    var ticked = {};\n    ticks.forEach(function (tick) {\n      ticked[tick] = true;\n    });\n\n    var cursor = keyToDate(today);\n\n    // A streak is not broken until today ends, so a tick yesterday still counts.\n    if (!ticked[today]) {\n      cursor.setDate(cursor.getDate() - 1);\n      if (!ticked[dateKey(cursor)]) return 0;\n    }\n\n    var streak = 0;\n    while (ticked[dateKey(cursor)]) {\n      streak += 1;\n      cursor.setDate(cursor.getDate() - 1);\n    }\n    return streak;\n  }\n\n  /* ---------- building the view ---------- */\n\n  function makeIcon(pathData) {\n    var svg = document.createElementNS(SVG_NS, \"svg\");\n    svg.setAttribute(\"class\", \"icon\");\n    svg.setAttribute(\"width\", \"16\");\n    svg.setAttribute(\"height\", \"16\");\n    svg.setAttribute(\"viewBox\", \"0 0 16 16\");\n    svg.setAttribute(\"aria-hidden\", \"true\");\n    svg.setAttribute(\"focusable\", \"false\");\n\n    var path = document.createElementNS(SVG_NS, \"path\");\n    path.setAttribute(\"d\", pathData);\n    path.setAttribute(\"fill\", \"none\");\n    path.setAttribute(\"stroke\", \"currentColor\");\n    path.setAttribute(\"stroke-width\", \"1.75\");\n    path.setAttribute(\"stroke-linecap\", \"round\");\n    path.setAttribute(\"stroke-linejoin\", \"round\");\n\n    svg.appendChild(path);\n    return svg;\n  }\n\n  function buildHabitItem(habit, today) {\n    var tickedToday = habit.ticks.indexOf(today) !== -1;\n    var streak = currentStreak(habit.ticks, today);\n\n    var item = document.createElement(\"li\");\n    item.className = \"habit-item\" + (tickedToday ? \" is-ticked\" : \"\");\n    item.dataset.id = habit.id;\n\n    var info = document.createElement(\"div\");\n    info.className = \"habit-info\";\n\n    var name = document.createElement(\"p\");\n    name.className = \"habit-name\";\n    name.textContent = habit.name;\n    info.appendChild(name);\n\n    var meta = document.createElement(\"p\");\n    meta.className = \"habit-meta\";\n    meta.textContent = tickedLabel(habit.ticks.length) + \" \\u00b7 added \" + formatDate(habit.created);\n    info.appendChild(meta);\n\n    var side = document.createElement(\"div\");\n    side.className = \"habit-side\";\n\n    var streakNote = document.createElement(\"p\");\n    streakNote.className = \"habit-streak\";\n    streakNote.textContent = streakLabel(streak);\n    side.appendChild(streakNote);\n\n    var actions = document.createElement(\"div\");\n    actions.className = \"habit-actions\";\n\n    var tickButton = document.createElement(\"button\");\n    tickButton.type = \"button\";\n    tickButton.className = \"btn tick-btn\";\n    tickButton.dataset.action = \"tick\";\n    tickButton.setAttribute(\"aria-pressed\", tickedToday ? \"true\" : \"false\");\n    tickButton.setAttribute(\n      \"aria-label\",\n      (tickedToday ? \"Untick \" : \"Tick \") + habit.name + \" for today\"\n    );\n    tickButton.appendChild(makeIcon(\"M3.25 8.25l3.25 3.25 6.25-7\"));\n\n    var tickText = document.createElement(\"span\");\n    tickText.textContent = tickedToday ? \"Ticked\" : \"Tick today\";\n    tickButton.appendChild(tickText);\n    actions.appendChild(tickButton);\n\n    var deleteButton = document.createElement(\"button\");\n    deleteButton.type = \"button\";\n    deleteButton.className = \"btn btn-quiet delete-btn\";\n    deleteButton.dataset.action = \"delete\";\n    deleteButton.setAttribute(\"aria-label\", \"Delete \" + habit.name);\n    deleteButton.appendChild(\n      makeIcon(\"M3.5 4.75h9M6.5 4.75V3.5h3v1.25M4.75 4.75l.5 8h5.5l.5-8\")\n    );\n    actions.appendChild(deleteButton);\n\n    side.appendChild(actions);\n    item.appendChild(info);\n    item.appendChild(side);\n\n    return item;\n  }\n\n  function render() {\n    var today = todayKey();\n\n    els.list.textContent = \"\";\n    habits.forEach(function (habit) {\n      els.list.appendChild(buildHabitItem(habit, today));\n    });\n\n    els.empty.hidden = habits.length > 0;\n\n    var tickedToday = habits.filter(function (habit) {\n      return habit.ticks.indexOf(today) !== -1;\n    }).length;\n\n    var best = habits.reduce(function (max, habit) {\n      return Math.max(max, currentStreak(habit.ticks, today));\n    }, 0);\n\n    if (els.summaryCount) els.summaryCount.textContent = String(habits.length);\n    if (els.summaryToday) els.summaryToday.textContent = String(tickedToday);\n    if (els.summaryStreak) els.summaryStreak.textContent = bestStreakLabel(best);\n  }\n\n  /* ---------- actions ---------- */\n\n  function addHabit(rawName) {\n    var name = typeof rawName === \"string\" ? rawName.trim().slice(0, MAX_NAME_LENGTH) : \"\";\n    if (!name) return false;\n\n    habits.push({ id: makeId(), name: name, created: todayKey(), ticks: [] });\n    saveHabits();\n    render();\n    return true;\n  }\n\n  function toggleTick(id) {\n    var today = todayKey();\n    var changed = false;\n\n    habits = habits.map(function (habit) {\n      if (habit.id !== id) return habit;\n\n      changed = true;\n      var ticks = habit.ticks.slice();\n      var at = ticks.indexOf(today);\n\n      if (at === -1) {\n        ticks.push(today);\n        ticks.sort();\n      } else {\n        ticks.splice(at, 1);\n      }\n\n      return { id: habit.id, name: habit.name, created: habit.created, ticks: ticks };\n    });\n\n    if (changed) {\n      saveHabits();\n      render();\n    }\n  }\n\n  function deleteHabit(id) {\n    var before = habits.length;\n    habits = habits.filter(function (habit) {\n      return habit.id !== id;\n    });\n\n    if (habits.length !== before) {\n      saveHabits();\n      render();\n    }\n  }\n\n  /* ---------- wiring ---------- */\n\n  function focusTickButton(id) {\n    var item = els.list.querySelector('.habit-item[data-id=\"' + id + '\"]');\n    if (!item) return;\n    var button = item.querySelector('button[data-action=\"tick\"]');\n    if (button) button.focus();\n  }\n\n  function onListClick(event) {\n    var target = event.target;\n    if (!target || typeof target.closest !== \"function\") return;\n\n    var button = target.closest(\"button[data-action]\");\n    if (!button) return;\n\n    var item = button.closest(\".habit-item\");\n    if (!item || !item.dataset.id) return;\n\n    if (button.dataset.action === \"tick\") {\n      var id = item.dataset.id;\n      toggleTick(id);\n      // Keep the keyboard where the person was working.\n      focusTickButton(id);\n    } else if (button.dataset.action === \"delete\") {\n      deleteHabit(item.dataset.id);\n    }\n  }\n\n  function onSubmit(event) {\n    event.preventDefault();\n\n    if (addHabit(els.input.value)) {\n      els.input.value = \"\";\n    }\n    els.input.focus();\n  }\n\n  function onStorage(event) {\n    if (event.key !== null && event.key !== STORAGE_KEY) return;\n    habits = loadHabits();\n    render();\n  }\n\n  function start() {\n    els.form = document.getElementById(\"habit-form\");\n    els.input = document.getElementById(\"habit-name\");\n    els.list = document.getElementById(\"habit-list\");\n    els.empty = document.getElementById(\"habit-empty\");\n    els.summaryCount = document.getElementById(\"summary-count\");\n    els.summaryToday = document.getElementById(\"summary-today\");\n    els.summaryStreak = document.getElementById(\"summary-streak\");\n\n    if (!els.form || !els.input || !els.list || !els.empty) return;\n\n    habits = loadHabits();\n    render();\n\n    els.form.addEventListener(\"submit\", onSubmit);\n    els.list.addEventListener(\"click\", onListClick);\n    window.addEventListener(\"storage\", onStorage);\n  }\n\n  if (document.readyState === \"loading\") {\n    document.addEventListener(\"DOMContentLoaded\", start);\n  } else {\n    start();\n  }\n})();\n"
+      }
+     }
+    ]
+   },
+   "provider": "openrouter",
+   "model": "deepseek/deepseek-v4.1-flash"
+  },
+  {
+   "callId": "step/301/1",
+   "task": "step",
+   "index": 301,
+   "attempt": 1,
+   "reqHash": "0b8ddbbd",
+   "ms": 22615,
+   "ok": true,
+   "json": {
+    "content": "/* Habit Tracker — styles.\n   One calm palette, one accent colour, everything drawn with CSS. */\n\n/* ---------- tokens ---------- */\n\n:root {\n  --bg: #f5f6f3;\n  --surface: #ffffff;\n  --surface-alt: #f1f3ef;\n  --item-bg: #fafbf9;\n  --ink: #1b211e;\n  --ink-soft: #5d675f;\n  --line: #e3e7e0;\n  --accent: #2f7d5c;\n  --accent-strong: #24634a;\n  --accent-soft: #e7f3ec;\n  --accent-border: #cfe6da;\n  --accent-ring: rgba(47, 125, 92, 0.35);\n  --on-accent: #ffffff;\n  --shadow: 0 1px 2px rgba(20, 30, 25, 0.05), 0 6px 20px -12px rgba(20, 30, 25, 0.25);\n  --radius: 0.85rem;\n  --font: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif;\n}\n\n@media (prefers-color-scheme: dark) {\n  :root {\n    --bg: #141816;\n    --surface: #1b211e;\n    --surface-alt: #232b27;\n    --item-bg: #202824;\n    --ink: #eef2ee;\n    --ink-soft: #a3ada6;\n    --line: #2d362f;\n    --accent: #4fb98a;\n    --accent-strong: #7fd3ab;\n    --accent-soft: #1f3a2e;\n    --accent-border: #2f5c48;\n    --accent-ring: rgba(79, 185, 138, 0.4);\n    --on-accent: #0d1512;\n    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px -12px rgba(0, 0, 0, 0.7);\n  }\n}\n\n/* ---------- base ---------- */\n\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\nhtml {\n  -webkit-text-size-adjust: 100%;\n}\n\nbody {\n  margin: 0;\n  min-height: 100vh;\n  display: flex;\n  flex-direction: column;\n  background: var(--bg);\n  color: var(--ink);\n  font-family: var(--font);\n  font-size: 1rem;\n  line-height: 1.55;\n  -webkit-font-smoothing: antialiased;\n}\n\nh1,\nh2,\np,\nul,\ndl,\ndt,\ndd {\n  margin: 0;\n}\n\nsvg.icon {\n  display: block;\n  width: 1rem;\n  height: 1rem;\n  flex: none;\n}\n\n/* ---------- layout ---------- */\n\n.wrap {\n  width: 100%;\n  max-width: 60rem;\n  margin-inline: auto;\n  padding-inline: clamp(1rem, 4vw, 2rem);\n}\n\n.site-header {\n  background: var(--surface);\n  border-bottom: 1px solid var(--line);\n}\n\n.site-header .wrap {\n  padding-block: clamp(1.4rem, 4vw, 2.4rem);\n}\n\nmain.wrap {\n  flex: 1 0 auto;\n  display: grid;\n  gap: clamp(1rem, 2.5vw, 1.5rem);\n  padding-block: clamp(1.25rem, 3vw, 2rem);\n  align-content: start;\n}\n\n.panel {\n  background: var(--surface);\n  border: 1px solid var(--line);\n  border-radius: 1rem;\n  padding: clamp(1rem, 2.5vw, 1.5rem);\n  box-shadow: var(--shadow);\n}\n\n.site-footer {\n  border-top: 1px solid var(--line);\n  color: var(--ink-soft);\n  font-size: 0.85rem;\n}\n\n.site-footer .wrap {\n  padding-block: clamp(1rem, 3vw, 1.6rem);\n}\n\n.site-footer p {\n  max-width: 60ch;\n}\n\n/* ---------- skip link ---------- */\n\n.skip-link {\n  position: absolute;\n  left: 1rem;\n  top: -4rem;\n  z-index: 20;\n  padding: 0.65rem 1rem;\n  border-radius: 0.6rem;\n  background: var(--ink);\n  color: var(--surface);\n  text-decoration: none;\n  font-size: 0.9rem;\n  font-weight: 600;\n  transition: top 0.15s ease;\n}\n\n.skip-link:focus {\n  top: 1rem;\n  outline: 3px solid var(--accent-ring);\n  outline-offset: 2px;\n}\n\n/* ---------- headings ---------- */\n\n.app-name {\n  font-size: clamp(1.6rem, 1.25rem + 1.8vw, 2.15rem);\n  font-weight: 680;\n  letter-spacing: -0.015em;\n  line-height: 1.15;\n}\n\n.tagline {\n  margin-top: 0.4rem;\n  max-width: 46ch;\n  color: var(--ink-soft);\n  font-size: clamp(0.9rem, 0.86rem + 0.25vw, 1rem);\n}\n\n.panel h2 {\n  font-size: 1.05rem;\n  font-weight: 650;\n  letter-spacing: 0.005em;\n  margin-bottom: 0.9rem;\n}\n\n/* ---------- add-habit form ---------- */\n\n.field-label {\n  display: block;\n  margin-bottom: 0.4rem;\n  font-size: 0.9rem;\n  font-weight: 600;\n}\n\n.field-row {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 0.6rem;\n}\n\n.field-input {\n  flex: 1 1 14rem;\n  min-width: 0;\n  min-height: 2.75rem;\n  padding: 0.7rem 0.85rem;\n  font: inherit;\n  color: var(--ink);\n  background: var(--surface);\n  border: 1px solid var(--line);\n  border-radius: 0.65rem;\n  transition: border-color 0.15s ease, box-shadow 0.15s ease;\n}\n\n.field-input:hover {\n  border-color: var(--ink-soft);\n}\n\n.field-input:focus-visible {\n  outline: 3px solid var(--accent-ring);\n  outline-offset: 1px;\n  border-color: var(--accent);\n}\n\n.field-hint {\n  margin-top: 0.6rem;\n  font-size: 0.82rem;\n  color: var(--ink-soft);\n}\n\n/* ---------- buttons ---------- */\n\n.btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 0.45rem;\n  min-height: 2.75rem;\n  padding: 0.55rem 0.95rem;\n  font: inherit;\n  font-size: 0.95rem;\n  font-weight: 600;\n  line-height: 1.2;\n  border: 1px solid transparent;\n  border-radius: 0.65rem;\n  background: var(--accent);\n  color: var(--on-accent);\n  cursor: pointer;\n  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;\n}\n\n.btn:hover {\n  background: var(--accent-strong);\n}\n\n.btn:active {\n  transform: translateY(1px);\n}\n\n.btn:focus-visible {\n  outline: 3px solid var(--accent-ring);\n  outline-offset: 2px;\n}\n\n/* tick button: outlined until the day is ticked, then filled */\n\n.tick-btn {\n  background: var(--surface);\n  color: var(--accent-strong);\n  border-color: var(--accent);\n}\n\n.tick-btn:hover {\n  background: var(--accent-soft);\n}\n\n.tick-btn[aria-pressed=\"true\"] {\n  background: var(--accent);\n  border-color: var(--accent);\n  color: var(--on-accent);\n}\n\n.tick-btn[aria-pressed=\"true\"]:hover {\n  background: var(--accent-strong);\n  border-color: var(--accent-strong);\n}\n\n/* quiet icon-only button used for delete */\n\n.btn-quiet {\n  width: 2.75rem;\n  padding: 0.5rem;\n  background: transparent;\n  border-color: transparent;\n  color: var(--ink-soft);\n}\n\n.btn-quiet:hover {\n  background: var(--surface-alt);\n  color: var(--ink);\n}\n\n/* ---------- habit list ---------- */\n\n.habit-list {\n  list-style: none;\n  padding: 0;\n  display: grid;\n  gap: 0.7rem;\n}\n\n.habit-item {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 0.9rem;\n  padding: 0.85rem 1rem;\n  background: var(--item-bg);\n  border: 1px solid var(--line);\n  border-radius: var(--radius);\n  transition: background-color 0.18s ease, border-color 0.18s ease;\n}\n\n.habit-item.is-ticked {\n  background: var(--accent-soft);\n  border-color: var(--accent-border);\n}\n\n.habit-info {\n  flex: 1 1 auto;\n  min-width: 0;\n}\n\n.habit-name {\n  font-size: 1rem;\n  font-weight: 600;\n  line-height: 1.35;\n  overflow-wrap: anywhere;\n}\n\n.habit-meta {\n  margin-top: 0.2rem;\n  font-size: 0.8rem;\n  color: var(--ink-soft);\n}\n\n.habit-side {\n  flex: none;\n  display: flex;\n  flex-direction: column;\n  align-items: flex-end;\n  gap: 0.5rem;\n}\n\n.habit-streak {\n  font-size: 0.82rem;\n  font-weight: 600;\n  color: var(--ink-soft);\n  white-space: nowrap;\n}\n\n.habit-item.is-ticked .habit-streak {\n  color: var(--accent-strong);\n}\n\n.habit-actions {\n  display: flex;\n  align-items: center;\n  gap: 0.4rem;\n}\n\n/* ---------- empty note ---------- */\n\n.empty-note {\n  margin-top: 0.2rem;\n  padding: 1.1rem 1rem;\n  text-align: center;\n  color: var(--ink-soft);\n  font-size: 0.9rem;\n  background: var(--surface-alt);\n  border: 1px dashed var(--line);\n  border-radius: var(--radius);\n}\n\n.empty-note[hidden] {\n  display: none;\n}\n\n/* ---------- streak summary ---------- */\n\n.summary {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));\n  gap: 0.7rem;\n}\n\n.summary-item {\n  padding: 0.8rem 0.9rem;\n  background: var(--surface-alt);\n  border-radius: 0.75rem;\n}\n\n.summary-item dt {\n  font-size: 0.8rem;\n  font-weight: 600;\n  color: var(--ink-soft);\n}\n\n.summary-item dd {\n  margin-top: 0.15rem;\n  font-size: 1.35rem;\n  font-weight: 650;\n  letter-spacing: -0.01em;\n  font-variant-numeric: tabular-nums;\n  color: var(--ink);\n}\n\n/* ---------- narrow phones ---------- */\n\n@media (max-width: 34rem) {\n  .habit-item {\n    flex-direction: column;\n    align-items: stretch;\n  }\n\n  .habit-side {\n    width: 100%;\n    align-items: stretch;\n  }\n\n  .habit-streak {\n    text-align: left;\n    white-space: normal;\n  }\n\n  .tick-btn {\n    flex: 1 1 auto;\n  }\n\n  .field-row .btn {\n    width: 100%;\n  }\n}\n\n@media (max-width: 26rem) {\n  .summary {\n    grid-template-columns: 1fr 1fr;\n  }\n\n  .summary-item:last-child {\n    grid-column: 1 / -1;\n  }\n}\n\n/* ---------- motion preferences ---------- */\n\n@media (prefers-reduced-motion: reduce) {\n  *,\n  *::before,\n  *::after {\n    transition-duration: 0.01ms !important;\n    animation-duration: 0.01ms !important;\n  }\n\n  .btn:active {\n    transform: none;\n  }\n}\n",
+    "summary": "Wrote styles.css for the habit tracker."
+   },
+   "provider": "openrouter",
+   "model": "deepseek/deepseek-v4.1-flash"
+  },
+  {
+   "callId": "step/501/1",
+   "task": "step",
+   "index": 501,
+   "attempt": 1,
+   "reqHash": "c738eb03",
+   "ms": 31577,
+   "ok": true,
+   "json": {
+    "issues": [
+     {
+      "about": "app.js",
+      "severity": "major",
+      "text": "storage.go"
+     }
+    ],
+    "verdict": "needs work"
+   },
+   "provider": "openrouter",
+   "model": "deepseek/deepseek-v4.1-flash"
+  },
+  {
+   "callId": "step/101/1/s1:dark",
+   "task": "step",
+   "index": 101,
+   "attempt": 1,
+   "reqHash": "022125d5",
+   "ms": 74015,
+   "ok": true,
+   "json": {
+    "content": "<!DOCTYPE html>\n<html lang=\"en\" data-theme=\"light\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>Habit Tracker</title>\n  <meta name=\"description\" content=\"Add habits, tick them off each day and watch your streaks grow. Everything stays in this browser.\">\n  <link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n  <a class=\"skip-link\" href=\"#main-content\">Skip to the habit list</a>\n\n  <header class=\"site-header\">\n    <div class=\"wrap header-inner\">\n      <div class=\"header-text\">\n        <h1 class=\"app-name\">Habit Tracker</h1>\n        <p class=\"tagline\">One tick a day. Your habits and your streaks stay in this browser.</p>\n      </div>\n\n      <button class=\"theme-toggle\" id=\"theme-toggle\" type=\"button\" aria-pressed=\"false\">\n        <svg class=\"icon icon-sun\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" aria-hidden=\"true\" focusable=\"false\">\n          <circle cx=\"8\" cy=\"8\" r=\"3.1\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"></circle>\n          <path d=\"M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3.05 3.05l1.13 1.13M11.82 11.82l1.13 1.13M12.95 3.05l-1.13 1.13M4.18 11.82l-1.13 1.13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"></path>\n        </svg>\n        <svg class=\"icon icon-moon\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" aria-hidden=\"true\" focusable=\"false\">\n          <path d=\"M14 8.53A6 6 0 1 1 7.47 2A4.67 4.67 0 0 0 14 8.53Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linejoin=\"round\"></path>\n        </svg>\n        <span class=\"theme-toggle-text\">Dark mode</span>\n      </button>\n    </div>\n  </header>\n\n  <main class=\"wrap\" id=\"main-content\">\n    <section class=\"panel\" aria-labelledby=\"add-heading\">\n      <h2 id=\"add-heading\">Add a habit</h2>\n      <form class=\"habit-form\" id=\"habit-form\" autocomplete=\"off\">\n        <label class=\"field-label\" for=\"habit-name\">Habit name</label>\n        <div class=\"field-row\">\n          <input class=\"field-input\" id=\"habit-name\" name=\"habit-name\" type=\"text\" maxlength=\"60\" required aria-describedby=\"habit-hint\">\n          <button class=\"btn\" type=\"submit\">\n            <svg class=\"icon\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" aria-hidden=\"true\" focusable=\"false\">\n              <path d=\"M8 3.25v9.5M3.25 8h9.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\"></path>\n            </svg>\n            Add habit\n          </button>\n        </div>\n        <p class=\"field-hint\" id=\"habit-hint\">Give the habit a short name. You can tick it once each day.</p>\n      </form>\n    </section>\n\n    <section class=\"panel\" aria-labelledby=\"habits-heading\">\n      <h2 id=\"habits-heading\">Today</h2>\n      <ul class=\"habit-list\" id=\"habit-list\"></ul>\n      <p class=\"empty-note\" id=\"habit-empty\">No habits yet. Add your first one above.</p>\n    </section>\n\n    <section class=\"panel\" aria-labelledby=\"summary-heading\">\n      <h2 id=\"summary-heading\">Streaks</h2>\n      <dl class=\"summary\" id=\"streak-summary\" aria-live=\"polite\">\n        <div class=\"summary-item\">\n          <dt>Habits</dt>\n          <dd id=\"summary-count\">0</dd>\n        </div>\n        <div class=\"summary-item\">\n          <dt>Ticked today</dt>\n          <dd id=\"summary-today\">0</dd>\n        </div>\n        <div class=\"summary-item\">\n          <dt>Best current streak</dt>\n          <dd id=\"summary-streak\">0 days</dd>\n        </div>\n      </dl>\n    </section>\n  </main>\n\n  <footer class=\"site-footer\">\n    <div class=\"wrap\">\n      <p>Everything is saved in this browser's local storage. Clearing site data deletes your habits.</p>\n    </div>\n  </footer>\n\n  <script src=\"app.js\" defer></script>\n</body>\n</html>\n",
+    "summary": "Page shell for the habit tracker: header with the app name and a light/dark theme switch, add-habit form (labelled text input plus submit button), an empty habit list, a streaks summary, and a footer. Loads styles.css in the head and app.js with defer at the end of the body; no other assets, no inline styles or scripts, no inline event handlers. The theme switch is a button (#theme-toggle) with aria-pressed for the dark state and two inline icons (sun and moon) that the CSS shows one at a time from the data-theme attribute on <html>; the shell ships with data-theme=\"light\" as the default, and every class and id from the previous version is kept exactly as it was so app.js and styles.css keep working. index.html alone cannot switch the theme or remember it, because the rules for this page allow no inline script and no extra files: app.js as it stands has no handler for #theme-toggle, so it needs a small addition that reads the saved value at start-up, sets document.documentElement.dataset.theme to \"light\" or \"dark\", keeps aria-pressed and the button's accessible name in step, and writes the choice back to local storage under its own key; styles.css then needs the dark palette under html[data-theme=\"dark\"] plus a matching color-scheme declaration so form controls and scrollbars follow the theme. Until those two additions land, the button is present and reachable but does nothing when pressed, and the page stays light. Nothing else about the page changed."
+   },
+   "provider": "openrouter",
+   "model": "deepseek/deepseek-v4.1-flash",
+   "redo": "s1:dark"
+  },
+  {
+   "callId": "step/201/1/s1:dark",
+   "task": "step",
+   "index": 201,
+   "attempt": 1,
+   "reqHash": "5ba17557",
+   "ms": 97431,
+   "ok": true,
+   "json": {
+    "content": "/* Habit Tracker — app logic.\n   The habits live in one localStorage key; the page is only a view of that state.\n   The light/dark choice lives in a second key of its own. */\n\n(function () {\n  \"use strict\";\n\n  var STORAGE_KEY = \"habit-tracker.habits.v1\";\n  var THEME_KEY = \"habit-tracker.theme.v1\";\n  var MAX_NAME_LENGTH = 60;\n  var DATE_KEY = /^\\d{4}-\\d{2}-\\d{2}$/;\n  var SVG_NS = \"http://www.w3.org/2000/svg\";\n\n  var els = {};\n  var habits = [];\n\n  /* ---------- date helpers ---------- */\n\n  function pad(value) {\n    return value < 10 ? \"0\" + value : String(value);\n  }\n\n  function dateKey(date) {\n    return date.getFullYear() + \"-\" + pad(date.getMonth() + 1) + \"-\" + pad(date.getDate());\n  }\n\n  function todayKey() {\n    return dateKey(new Date());\n  }\n\n  function keyToDate(key) {\n    var parts = key.split(\"-\");\n    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));\n  }\n\n  function isDateKey(value) {\n    if (typeof value !== \"string\" || !DATE_KEY.test(value)) return false;\n    var date = keyToDate(value);\n    return !isNaN(date.getTime()) && dateKey(date) === value;\n  }\n\n  function formatDate(key) {\n    if (!isDateKey(key)) return \"\";\n    return keyToDate(key).toLocaleDateString(undefined, {\n      day: \"numeric\",\n      month: \"short\",\n      year: \"numeric\"\n    });\n  }\n\n  /* ---------- small labels ---------- */\n\n  function streakLabel(days) {\n    if (days === 0) return \"No streak yet\";\n    if (days === 1) return \"1 day streak\";\n    return days + \" day streak\";\n  }\n\n  function tickedLabel(count) {\n    if (count === 0) return \"Not ticked yet\";\n    if (count === 1) return \"1 day ticked\";\n    return count + \" days ticked\";\n  }\n\n  function bestStreakLabel(days) {\n    if (days === 1) return \"1 day\";\n    return days + \" days\";\n  }\n\n  /* ---------- storage ---------- */\n\n  function makeId() {\n    if (window.crypto && typeof window.crypto.randomUUID === \"function\") {\n      return window.crypto.randomUUID();\n    }\n    return \"h\" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);\n  }\n\n  function cleanHabit(entry) {\n    if (!entry || typeof entry !== \"object\") return null;\n\n    var name = typeof entry.name === \"string\" ? entry.name.trim().slice(0, MAX_NAME_LENGTH) : \"\";\n    if (!name) return null;\n\n    var id = typeof entry.id === \"string\" && entry.id ? entry.id : makeId();\n    var created = isDateKey(entry.created) ? entry.created : todayKey();\n    var ticks = [];\n\n    if (Array.isArray(entry.ticks)) {\n      entry.ticks.forEach(function (tick) {\n        if (isDateKey(tick) && ticks.indexOf(tick) === -1) ticks.push(tick);\n      });\n    }\n\n    ticks.sort();\n\n    return { id: id, name: name, created: created, ticks: ticks };\n  }\n\n  function loadHabits() {\n    var raw;\n    try {\n      raw = window.localStorage.getItem(STORAGE_KEY);\n    } catch (err) {\n      return [];\n    }\n    if (!raw) return [];\n\n    var parsed;\n    try {\n      parsed = JSON.parse(raw);\n    } catch (err) {\n      return [];\n    }\n    if (!Array.isArray(parsed)) return [];\n\n    var cleaned = [];\n    parsed.forEach(function (entry) {\n      var habit = cleanHabit(entry);\n      if (habit) cleaned.push(habit);\n    });\n    return cleaned;\n  }\n\n  function saveHabits() {\n    try {\n      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));\n    } catch (err) {\n      /* Storage can be full or blocked; the page keeps working for this session. */\n    }\n  }\n\n  /* ---------- streak maths ---------- */\n\n  function currentStreak(ticks, today) {\n    if (!ticks || ticks.length === 0) return 0;\n\n    var ticked = {};\n    ticks.forEach(function (tick) {\n      ticked[tick] = true;\n    });\n\n    var cursor = keyToDate(today);\n\n    // A streak is not broken until today ends, so a tick yesterday still counts.\n    if (!ticked[today]) {\n      cursor.setDate(cursor.getDate() - 1);\n      if (!ticked[dateKey(cursor)]) return 0;\n    }\n\n    var streak = 0;\n    while (ticked[dateKey(cursor)]) {\n      streak += 1;\n      cursor.setDate(cursor.getDate() - 1);\n    }\n    return streak;\n  }\n\n  /* ---------- theme ---------- */\n\n  function validTheme(value) {\n    return value === \"dark\" ? \"dark\" : \"light\";\n  }\n\n  function loadTheme() {\n    var stored = null;\n    try {\n      stored = window.localStorage.getItem(THEME_KEY);\n    } catch (err) {\n      stored = null;\n    }\n    if (stored === \"light\" || stored === \"dark\") return stored;\n\n    // Nothing saved yet: stay with the theme the page shipped with.\n    return validTheme(document.documentElement.dataset.theme);\n  }\n\n  function saveTheme(theme) {\n    try {\n      window.localStorage.setItem(THEME_KEY, theme);\n    } catch (err) {\n      /* Same as above: the choice holds for this session even if it cannot be stored. */\n    }\n  }\n\n  function applyTheme(theme) {\n    var next = validTheme(theme);\n    document.documentElement.dataset.theme = next;\n\n    if (!els.themeToggle) return;\n\n    // The label names the setting (\"Dark mode\"); aria-pressed reports whether it is on.\n    els.themeToggle.setAttribute(\"aria-pressed\", next === \"dark\" ? \"true\" : \"false\");\n  }\n\n  function toggleTheme() {\n    var next = document.documentElement.dataset.theme === \"dark\" ? \"light\" : \"dark\";\n    applyTheme(next);\n    saveTheme(next);\n  }\n\n  /* ---------- building the view ---------- */\n\n  function makeIcon(pathData) {\n    var svg = document.createElementNS(SVG_NS, \"svg\");\n    svg.setAttribute(\"class\", \"icon\");\n    svg.setAttribute(\"width\", \"16\");\n    svg.setAttribute(\"height\", \"16\");\n    svg.setAttribute(\"viewBox\", \"0 0 16 16\");\n    svg.setAttribute(\"aria-hidden\", \"true\");\n    svg.setAttribute(\"focusable\", \"false\");\n\n    var path = document.createElementNS(SVG_NS, \"path\");\n    path.setAttribute(\"d\", pathData);\n    path.setAttribute(\"fill\", \"none\");\n    path.setAttribute(\"stroke\", \"currentColor\");\n    path.setAttribute(\"stroke-width\", \"1.75\");\n    path.setAttribute(\"stroke-linecap\", \"round\");\n    path.setAttribute(\"stroke-linejoin\", \"round\");\n\n    svg.appendChild(path);\n    return svg;\n  }\n\n  function buildHabitItem(habit, today) {\n    var tickedToday = habit.ticks.indexOf(today) !== -1;\n    var streak = currentStreak(habit.ticks, today);\n\n    var item = document.createElement(\"li\");\n    item.className = \"habit-item\" + (tickedToday ? \" is-ticked\" : \"\");\n    item.dataset.id = habit.id;\n\n    var info = document.createElement(\"div\");\n    info.className = \"habit-info\";\n\n    var name = document.createElement(\"p\");\n    name.className = \"habit-name\";\n    name.textContent = habit.name;\n    info.appendChild(name);\n\n    var meta = document.createElement(\"p\");\n    meta.className = \"habit-meta\";\n    meta.textContent = tickedLabel(habit.ticks.length) + \" \\u00b7 added \" + formatDate(habit.created);\n    info.appendChild(meta);\n\n    var side = document.createElement(\"div\");\n    side.className = \"habit-side\";\n\n    var streakNote = document.createElement(\"p\");\n    streakNote.className = \"habit-streak\";\n    streakNote.textContent = streakLabel(streak);\n    side.appendChild(streakNote);\n\n    var actions = document.createElement(\"div\");\n    actions.className = \"habit-actions\";\n\n    var tickButton = document.createElement(\"button\");\n    tickButton.type = \"button\";\n    tickButton.className = \"btn tick-btn\";\n    tickButton.dataset.action = \"tick\";\n    tickButton.setAttribute(\"aria-pressed\", tickedToday ? \"true\" : \"false\");\n    tickButton.setAttribute(\n      \"aria-label\",\n      (tickedToday ? \"Untick \" : \"Tick \") + habit.name + \" for today\"\n    );\n    tickButton.appendChild(makeIcon(\"M3.25 8.25l3.25 3.25 6.25-7\"));\n\n    var tickText = document.createElement(\"span\");\n    tickText.textContent = tickedToday ? \"Ticked\" : \"Tick today\";\n    tickButton.appendChild(tickText);\n    actions.appendChild(tickButton);\n\n    var deleteButton = document.createElement(\"button\");\n    deleteButton.type = \"button\";\n    deleteButton.className = \"btn btn-quiet delete-btn\";\n    deleteButton.dataset.action = \"delete\";\n    deleteButton.setAttribute(\"aria-label\", \"Delete \" + habit.name);\n    deleteButton.appendChild(\n      makeIcon(\"M3.5 4.75h9M6.5 4.75V3.5h3v1.25M4.75 4.75l.5 8h5.5l.5-8\")\n    );\n    actions.appendChild(deleteButton);\n\n    side.appendChild(actions);\n    item.appendChild(info);\n    item.appendChild(side);\n\n    return item;\n  }\n\n  function render() {\n    var today = todayKey();\n\n    els.list.textContent = \"\";\n    habits.forEach(function (habit) {\n      els.list.appendChild(buildHabitItem(habit, today));\n    });\n\n    els.empty.hidden = habits.length > 0;\n\n    var tickedToday = habits.filter(function (habit) {\n      return habit.ticks.indexOf(today) !== -1;\n    }).length;\n\n    var best = habits.reduce(function (max, habit) {\n      return Math.max(max, currentStreak(habit.ticks, today));\n    }, 0);\n\n    if (els.summaryCount) els.summaryCount.textContent = String(habits.length);\n    if (els.summaryToday) els.summaryToday.textContent = String(tickedToday);\n    if (els.summaryStreak) els.summaryStreak.textContent = bestStreakLabel(best);\n  }\n\n  /* ---------- actions ---------- */\n\n  function addHabit(rawName) {\n    var name = typeof rawName === \"string\" ? rawName.trim().slice(0, MAX_NAME_LENGTH) : \"\";\n    if (!name) return false;\n\n    habits.push({ id: makeId(), name: name, created: todayKey(), ticks: [] });\n    saveHabits();\n    render();\n    return true;\n  }\n\n  function toggleTick(id) {\n    var today = todayKey();\n    var changed = false;\n\n    habits = habits.map(function (habit) {\n      if (habit.id !== id) return habit;\n\n      changed = true;\n      var ticks = habit.ticks.slice();\n      var at = ticks.indexOf(today);\n\n      if (at === -1) {\n        ticks.push(today);\n        ticks.sort();\n      } else {\n        ticks.splice(at, 1);\n      }\n\n      return { id: habit.id, name: habit.name, created: habit.created, ticks: ticks };\n    });\n\n    if (changed) {\n      saveHabits();\n      render();\n    }\n  }\n\n  function deleteHabit(id) {\n    var before = habits.length;\n    habits = habits.filter(function (habit) {\n      return habit.id !== id;\n    });\n\n    if (habits.length !== before) {\n      saveHabits();\n      render();\n    }\n  }\n\n  /* ---------- wiring ---------- */\n\n  function focusTickButton(id) {\n    var item = els.list.querySelector('.habit-item[data-id=\"' + id + '\"]');\n    if (!item) return;\n    var button = item.querySelector('button[data-action=\"tick\"]');\n    if (button) button.focus();\n  }\n\n  function onListClick(event) {\n    var target = event.target;\n    if (!target || typeof target.closest !== \"function\") return;\n\n    var button = target.closest(\"button[data-action]\");\n    if (!button) return;\n\n    var item = button.closest(\".habit-item\");\n    if (!item || !item.dataset.id) return;\n\n    if (button.dataset.action === \"tick\") {\n      var id = item.dataset.id;\n      toggleTick(id);\n      // Keep the keyboard where the person was working.\n      focusTickButton(id);\n    } else if (button.dataset.action === \"delete\") {\n      deleteHabit(item.dataset.id);\n    }\n  }\n\n  function onSubmit(event) {\n    event.preventDefault();\n\n    if (addHabit(els.input.value)) {\n      els.input.value = \"\";\n    }\n    els.input.focus();\n  }\n\n  function onStorage(event) {\n    if (event.key === STORAGE_KEY) {\n      habits = loadHabits();\n      render();\n    } else if (event.key === THEME_KEY) {\n      applyTheme(validTheme(event.newValue));\n    }\n  }\n\n  function start() {\n    els.form = document.getElementById(\"habit-form\");\n    els.input = document.getElementById(\"habit-name\");\n    els.list = document.getElementById(\"habit-list\");\n    els.empty = document.getElementById(\"habit-empty\");\n    els.summaryCount = document.getElementById(\"summary-count\");\n    els.summaryToday = document.getElementById(\"summary-today\");\n    els.summaryStreak = document.getElementById(\"summary-streak\");\n    els.themeToggle = document.getElementById(\"theme-toggle\");\n\n    // The saved choice wins; the page stays with its own theme until one is saved.\n    applyTheme(loadTheme());\n\n    if (els.themeToggle) {\n      els.themeToggle.addEventListener(\"click\", toggleTheme);\n    }\n\n    if (!els.form || !els.input || !els.list || !els.empty) return;\n\n    habits = loadHabits();\n    render();\n\n    els.form.addEventListener(\"submit\", onSubmit);\n    els.list.addEventListener(\"click\", onListClick);\n    window.addEventListener(\"storage\", onStorage);\n  }\n\n  // Set the theme before first paint, then wire everything up once the page is ready.\n  applyTheme(loadTheme());\n\n  if (document.readyState === \"loading\") {\n    document.addEventListener(\"DOMContentLoaded\", start);\n  } else {\n    start();\n  }\n})();\n",
+    "summary": "app.js storing habits and theme in localStorage, with add/tick/delete wiring, streak maths, a guarded parser for stored data, and the light/dark switch kept in step"
+   },
+   "provider": "openrouter",
+   "model": "deepseek/deepseek-v4.1-flash",
+   "redo": "s1:dark"
+  },
+  {
+   "callId": "step/301/1/s1:dark",
+   "task": "step",
+   "index": 301,
+   "attempt": 1,
+   "reqHash": "49f0ea81",
+   "ms": 38705,
+   "ok": true,
+   "json": {
+    "content": "/* Habit Tracker — styles.\n   One calm palette, one accent colour, everything drawn with CSS.\n   Light and dark come from data-theme on <html>, which app.js keeps in step. */\n\n/* ---------- tokens ---------- */\n\n:root {\n  color-scheme: light;\n\n  --bg: #f5f6f3;\n  --surface: #ffffff;\n  --surface-alt: #f1f3ef;\n  --item-bg: #fafbf9;\n  --ink: #1b211e;\n  --ink-soft: #5d675f;\n  --line: #e3e7e0;\n  --accent: #2f7d5c;\n  --accent-strong: #24634a;\n  --accent-soft: #e7f3ec;\n  --accent-border: #cfe6da;\n  --accent-ring: rgba(47, 125, 92, 0.35);\n  --on-accent: #ffffff;\n  --danger: #a8412f;\n  --danger-soft: #f7e9e5;\n  --shadow: 0 1px 2px rgba(20, 30, 25, 0.05), 0 6px 20px -12px rgba(20, 30, 25, 0.25);\n  --radius: 0.85rem;\n  --font: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif;\n}\n\n/* The saved choice on <html> is the single source of truth for the theme. */\n\nhtml[data-theme=\"dark\"] {\n  color-scheme: dark;\n\n  --bg: #141816;\n  --surface: #1b211e;\n  --surface-alt: #232b27;\n  --item-bg: #202824;\n  --ink: #eef2ee;\n  --ink-soft: #a3ada6;\n  --line: #2d362f;\n  --accent: #4fb98a;\n  --accent-strong: #7fd3ab;\n  --accent-soft: #1f3a2e;\n  --accent-border: #2f5c48;\n  --accent-ring: rgba(79, 185, 138, 0.45);\n  --on-accent: #0d1512;\n  --danger: #e0897a;\n  --danger-soft: #3a2520;\n  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px -12px rgba(0, 0, 0, 0.7);\n}\n\n/* ---------- base ---------- */\n\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\nhtml {\n  -webkit-text-size-adjust: 100%;\n}\n\nbody {\n  margin: 0;\n  min-height: 100vh;\n  display: flex;\n  flex-direction: column;\n  background: var(--bg);\n  color: var(--ink);\n  font-family: var(--font);\n  font-size: 1rem;\n  line-height: 1.55;\n  -webkit-font-smoothing: antialiased;\n  transition: background-color 0.2s ease, color 0.2s ease;\n}\n\nh1,\nh2,\np,\nul,\ndl,\ndt,\ndd {\n  margin: 0;\n}\n\nsvg.icon {\n  display: block;\n  width: 1rem;\n  height: 1rem;\n  flex: none;\n}\n\n/* ---------- layout ---------- */\n\n.wrap {\n  width: 100%;\n  max-width: 60rem;\n  margin-inline: auto;\n  padding-inline: clamp(1rem, 4vw, 2rem);\n}\n\n.site-header {\n  background: var(--surface);\n  border-bottom: 1px solid var(--line);\n}\n\n.site-header .wrap {\n  padding-block: clamp(1.4rem, 4vw, 2.4rem);\n}\n\n.header-inner {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  flex-wrap: wrap;\n  gap: 1rem 1.5rem;\n}\n\n.header-text {\n  min-width: 0;\n  flex: 1 1 16rem;\n}\n\nmain.wrap {\n  flex: 1 0 auto;\n  display: grid;\n  gap: clamp(1rem, 2.5vw, 1.5rem);\n  padding-block: clamp(1.25rem, 3vw, 2rem);\n  align-content: start;\n}\n\n.panel {\n  background: var(--surface);\n  border: 1px solid var(--line);\n  border-radius: 1rem;\n  padding: clamp(1rem, 2.5vw, 1.5rem);\n  box-shadow: var(--shadow);\n}\n\n.site-footer {\n  border-top: 1px solid var(--line);\n  color: var(--ink-soft);\n  font-size: 0.85rem;\n}\n\n.site-footer .wrap {\n  padding-block: clamp(1rem, 3vw, 1.6rem);\n}\n\n.site-footer p {\n  max-width: 60ch;\n}\n\n#main-content {\n  scroll-margin-top: 1rem;\n}\n\n/* ---------- skip link ---------- */\n\n.skip-link {\n  position: absolute;\n  left: 1rem;\n  top: -4rem;\n  z-index: 20;\n  padding: 0.65rem 1rem;\n  border-radius: 0.6rem;\n  background: var(--ink);\n  color: var(--surface);\n  text-decoration: none;\n  font-size: 0.9rem;\n  font-weight: 600;\n  transition: top 0.15s ease;\n}\n\n.skip-link:focus {\n  top: 1rem;\n  outline: 3px solid var(--accent-ring);\n  outline-offset: 2px;\n}\n\n/* ---------- headings ---------- */\n\n.app-name {\n  font-size: clamp(1.6rem, 1.25rem + 1.8vw, 2.15rem);\n  font-weight: 680;\n  letter-spacing: -0.015em;\n  line-height: 1.15;\n}\n\n.tagline {\n  margin-top: 0.4rem;\n  max-width: 46ch;\n  color: var(--ink-soft);\n  font-size: clamp(0.9rem, 0.86rem + 0.25vw, 1rem);\n}\n\n.panel h2 {\n  font-size: 1.05rem;\n  font-weight: 650;\n  letter-spacing: 0.005em;\n  margin-bottom: 0.9rem;\n}\n\n/* ---------- theme switch ---------- */\n\n.theme-toggle {\n  flex: none;\n  display: inline-flex;\n  align-items: center;\n  gap: 0.45rem;\n  min-height: 2.5rem;\n  padding: 0.45rem 0.85rem;\n  font: inherit;\n  font-size: 0.85rem;\n  font-weight: 600;\n  line-height: 1.2;\n  color: var(--ink-soft);\n  background: var(--surface-alt);\n  border: 1px solid var(--line);\n  border-radius: 999px;\n  cursor: pointer;\n  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;\n}\n\n.theme-toggle:hover {\n  color: var(--accent-strong);\n  border-color: var(--accent-border);\n  background: var(--accent-soft);\n}\n\n.theme-toggle:active {\n  transform: translateY(1px);\n}\n\n.theme-toggle:focus-visible {\n  outline: 3px solid var(--accent-ring);\n  outline-offset: 2px;\n}\n\n/* Dark is on: the pill reads as pressed, not just hovered. */\n.theme-toggle[aria-pressed=\"true\"] {\n  color: var(--accent-strong);\n  background: var(--accent-soft);\n  border-color: var(--accent-border);\n}\n\n/* One icon at a time: the moon offers dark, the sun offers light back. */\n.icon.icon-sun {\n  display: none;\n}\n\n.icon.icon-moon {\n  display: block;\n}\n\nhtml[data-theme=\"dark\"] .icon.icon-sun {\n  display: block;\n}\n\nhtml[data-theme=\"dark\"] .icon.icon-moon {\n  display: none;\n}\n\n.theme-toggle-text {\n  white-space: nowrap;\n}\n\n/* ---------- add-habit form ---------- */\n\n.habit-form {\n  display: grid;\n  gap: 0.55rem;\n}\n\n.field-label {\n  display: block;\n  font-size: 0.9rem;\n  font-weight: 600;\n}\n\n.field-row {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 0.6rem;\n}\n\n.field-input {\n  flex: 1 1 14rem;\n  min-width: 0;\n  min-height: 2.75rem;\n  padding: 0.7rem 0.85rem;\n  font: inherit;\n  color: var(--ink);\n  background: var(--surface);\n  border: 1px solid var(--line);\n  border-radius: 0.65rem;\n  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.2s ease;\n}\n\n.field-input:hover {\n  border-color: var(--ink-soft);\n}\n\n.field-input:focus-visible {\n  outline: 3px solid var(--accent-ring);\n  outline-offset: 1px;\n  border-color: var(--accent);\n}\n\n.field-hint {\n  font-size: 0.82rem;\n  color: var(--ink-soft);\n}\n\n/* ---------- buttons ---------- */\n\n.btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 0.45rem;\n  min-height: 2.75rem;\n  padding: 0.55rem 0.95rem;\n  font: inherit;\n  font-size: 0.95rem;\n  font-weight: 600;\n  line-height: 1.2;\n  border: 1px solid transparent;\n  border-radius: 0.65rem;\n  background: var(--accent);\n  color: var(--on-accent);\n  cursor: pointer;\n  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;\n}\n\n.btn:hover {\n  background: var(--accent-strong);\n}\n\n.btn:active {\n  transform: translateY(1px);\n}\n\n.btn:focus-visible {\n  outline: 3px solid var(--accent-ring);\n  outline-offset: 2px;\n}\n\n/* tick button: outlined until the day is ticked, then filled */\n\n.tick-btn {\n  background: var(--surface);\n  color: var(--accent-strong);\n  border-color: var(--accent);\n}\n\n.tick-btn:hover {\n  background: var(--accent-soft);\n}\n\n.tick-btn[aria-pressed=\"true\"] {\n  background: var(--accent);\n  border-color: var(--accent);\n  color: var(--on-accent);\n}\n\n.tick-btn[aria-pressed=\"true\"]:hover {\n  background: var(--accent-strong);\n  border-color: var(--accent-strong);\n}\n\n/* quiet icon-only button used for delete */\n\n.btn-quiet {\n  width: 2.75rem;\n  padding: 0.5rem;\n  background: transparent;\n  border-color: transparent;\n  color: var(--ink-soft);\n}\n\n.btn-quiet:hover {\n  background: var(--surface-alt);\n  color: var(--ink);\n}\n\n.delete-btn:hover {\n  background: var(--danger-soft);\n  border-color: transparent;\n  color: var(--danger);\n}\n\n/* ---------- habit list ---------- */\n\n.habit-list {\n  list-style: none;\n  padding: 0;\n  display: grid;\n  gap: 0.7rem;\n}\n\n.habit-item {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 0.9rem;\n  padding: 0.85rem 1rem;\n  background: var(--item-bg);\n  border: 1px solid var(--line);\n  border-radius: var(--radius);\n  transition: background-color 0.18s ease, border-color 0.18s ease;\n}\n\n.habit-item.is-ticked {\n  background: var(--accent-soft);\n  border-color: var(--accent-border);\n}\n\n.habit-info {\n  flex: 1 1 auto;\n  min-width: 0;\n}\n\n.habit-name {\n  font-size: 1rem;\n  font-weight: 600;\n  line-height: 1.35;\n  overflow-wrap: anywhere;\n}\n\n.habit-meta {\n  margin-top: 0.2rem;\n  font-size: 0.8rem;\n  color: var(--ink-soft);\n}\n\n.habit-side {\n  flex: none;\n  display: flex;\n  flex-direction: column;\n  align-items: flex-end;\n  gap: 0.5rem;\n}\n\n.habit-streak {\n  font-size: 0.82rem;\n  font-weight: 600;\n  color: var(--ink-soft);\n  white-space: nowrap;\n}\n\n.habit-item.is-ticked .habit-streak {\n  color: var(--accent-strong);\n}\n\n.habit-actions {\n  display: flex;\n  align-items: center;\n  gap: 0.4rem;\n}\n\n/* ---------- empty note ---------- */\n\n.empty-note {\n  padding: 1.1rem 1rem;\n  text-align: center;\n  color: var(--ink-soft);\n  font-size: 0.9rem;\n  background: var(--surface-alt);\n  border: 1px dashed var(--line);\n  border-radius: var(--radius);\n}\n\n.empty-note[hidden] {\n  display: none;\n}\n\n/* ---------- streak summary ---------- */\n\n.summary {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));\n  gap: 0.7rem;\n}\n\n.summary-item {\n  padding: 0.8rem 0.9rem;\n  background: var(--surface-alt);\n  border-radius: 0.75rem;\n}\n\n.summary-item dt {\n  font-size: 0.8rem;\n  font-weight: 600;\n  color: var(--ink-soft);\n}\n\n.summary-item dd {\n  margin-top: 0.15rem;\n  font-size: 1.35rem;\n  font-weight: 650;\n  letter-spacing: -0.01em;\n  font-variant-numeric: tabular-nums;\n  color: var(--ink);\n}\n\n#summary-streak {\n  font-size: 1.15rem;\n}\n\n/* ---------- narrow phones ---------- */\n\n@media (max-width: 34rem) {\n  .header-inner {\n    flex-direction: column;\n    align-items: flex-start;\n    gap: 1rem;\n  }\n\n  .habit-item {\n    flex-direction: column;\n    align-items: stretch;\n  }\n\n  .habit-side {\n    width: 100%;\n    align-items: stretch;\n  }\n\n  .habit-streak {\n    text-align: left;\n    white-space: normal;\n  }\n\n  .tick-btn {\n    flex: 1 1 auto;\n  }\n\n  .field-row .btn {\n    width: 100%;\n  }\n}\n\n@media (max-width: 26rem) {\n  .summary {\n    grid-template-columns: 1fr 1fr;\n  }\n\n  .summary-item:last-child {\n    grid-column: 1 / -1;\n  }\n}\n\n/* ---------- motion preferences ---------- */\n\n@media (prefers-reduced-motion: reduce) {\n  *,\n  *::before,\n  *::after {\n    transition-duration: 0.01ms !important;\n    animation-duration: 0.01ms !important;\n  }\n\n  .btn:active,\n  .theme-toggle:active {\n    transform: none;\n  }\n}\n",
+    "summary": "Rewrote styles.css so the light/dark switch is styled and driven by data-theme on <html>, keeping every earlier rule for the page, the habit items and the summary."
+   },
+   "provider": "openrouter",
+   "model": "deepseek/deepseek-v4.1-flash",
+   "redo": "s1:dark"
+  },
+  {
+   "callId": "step/501/1/s1:dark",
+   "task": "step",
+   "index": 501,
+   "attempt": 1,
+   "reqHash": "27ed3e64",
+   "ms": 26051,
+   "ok": true,
+   "json": {
+    "issues": [
+     {
+      "about": "",
+      "severity": "major",
+      "text": "app.js — loadHabits() and saveHabits(): if the stored value is corrupt, unreadable or blocked, loadHabits() hands back an empty list and the very next save overwrites the old value. The person sees an empty tracker and no message at all, and the lost habits are not kept anywhere as a backup."
+     },
+     {
+      "about": "",
+      "severity": "major",
+      "text": "app.js — saveHabits(): the catch block swallows quota and blocked-storage errors. Habits keep appearing in the list for the rest of the session, so nothing on screen says saving failed; they are simply gone after a reload."
+     },
+     {
+      "about": "",
+      "severity": "major",
+      "text": "app.js — deleteHabit(): deleting is immediate, with no confirmation and no undo. In styles.css the .delete-btn sits in .habit-actions right beside the tick button, so one mis-tap removes a habit and its whole tick history."
+     },
+     {
+      "about": "",
+      "severity": "major",
+      "text": "app.js — toggleTick() only ever uses todayKey(), so a day the person missed can never be ticked in afterwards; one forgotten day caps the streak for good. In the same .habit-item the two labels disagree: .habit-meta reads 'Not ticked yet' while .habit-streak reads '1 day streak', because currentStreak() still counts a tick from yesterday and nothing on the page explains that rule."
+     },
+     {
+      "about": "",
+      "severity": "major",
+      "text": "app.js — render() and #summary-streak: 'best' is the highest current streak, not the best ever, so a habit with a long run that ended last month contributes 0 and the summary reads '0 days'. A first-time user reading that tile will think the app forgot their record."
+     },
+     {
+      "about": "",
+      "severity": "major",
+      "text": "app.js — loadTheme() and applyTheme(): there is no prefers-color-scheme fallback, so someone whose system is dark gets a light page on the first visit and has to find the switch (the .theme-toggle in the header). applyTheme() also only sets data-theme on <html>, so nothing updates a theme-color meta for the browser bar."
+     },
+     {
+      "about": "",
+      "severity": "minor",
+      "text": "app.js — onStorage(): a theme key that is removed in another tab goes through validTheme(null), which returns 'light' and forces light mode rather than falling back to the page default; event.key === null (a localStorage.clear() in another tab) is not handled at all, so the other tab keeps showing stale habits."
+     },
+     {
+      "about": "",
+      "severity": "minor",
+      "text": "app.js — addHabit(): there is no duplicate check, so the same habit typed twice makes two rows with separate streaks. Names longer than MAX_NAME_LENGTH are cut silently with no hint, and a blank or whitespace-only submit is rejected with no message — the field just keeps the text and gets focus."
+     },
+     {
+      "about": "",
+      "severity": "minor",
+      "text": "styles.css — @media (max-width: 34rem) turns .habit-item into a column (flex-direction: column) and stretches .habit-side, roughly doubling the height of every row on a phone, so a list of habits needs a lot of scrolling. The .btn-quiet .delete-btn shows only a trash icon, and on a touch screen there is no hover to reveal what it does."
+     }
+    ],
+    "verdict": "needs work"
+   },
+   "provider": "openrouter",
+   "model": "deepseek/deepseek-v4.1-flash",
+   "redo": "s1:dark"
+  }
+ ],
+ "redos": [
+  {
+   "stepId": "s1",
+   "preset": "dark",
+   "instruction": "Add a light and dark theme switch, and remember the choice."
+  }
+ ]
+}

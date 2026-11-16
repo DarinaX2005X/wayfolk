@@ -186,8 +186,17 @@ export class Engine {
       links: this.links,
       answers: this.answerLines,
       today: this.today,
+      ...this.redoInputs(step),
       ...extra,
     };
+  }
+
+  /** In a redo: the person's instruction and the earlier answer for the step redone; the earlier answer and the instruction for a later step that runs again. */
+  private redoInputs(step: PlanStep): Partial<StepInputs> {
+    const before = this.ctx.spec.previous?.outputs[step.id]?.text;
+    if (!this.redo || !before) return {};
+    if (this.redo.stepId === step.id) return { instruction: this.redo.instruction, before };
+    return { upstream: this.redo.instruction, before };
   }
 
   /** Every kept unit's words, for number checks of later steps. */

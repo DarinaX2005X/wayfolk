@@ -56,7 +56,7 @@ void main() {
   if (el > uEl[0]) c = uStops[0];
   float a = degrees(acos(clamp(dot(d, uSun), -1.0, 1.0)));
   float glow = exp(-(a * a) / (2.0 * pow(uSunRadius * 0.5, 2.0)));
-  c = mix(c, uSunColor, glow * 0.55);
+  c = mix(c, uSunColor, glow * 0.16);
   gl_FragColor = vec4(c, uOpacity);
   #include <colorspace_fragment>
 }`;
@@ -125,7 +125,6 @@ export function createSky(world: World | null): Sky {
     } else level.setValue(IBLGradient, 'intensity', intensity);
   };
   setIbl(1);
-  world?.activeLevel?.subscribe(() => setIbl(sky.opacity()));
 
   let last = -1;
   const sky: Sky = {
@@ -154,6 +153,8 @@ export function createSky(world: World | null): Sky {
       }
     },
   };
+  // Subscribed after `sky` exists: the signal calls back at once.
+  world?.activeLevel?.subscribe(() => setIbl(sky.opacity()));
   animate(sky);
   return sky;
 }

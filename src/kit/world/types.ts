@@ -165,7 +165,8 @@ export type SectorView = Updates & {
   readonly seed: number;
   setOutline(on: boolean): void;
   setGrid(planned: number): void;
-  layTile(i: number): void;
+  /** `lit` (default true): a verified unit; its seams light up once it lies. */
+  layTile(i: number, lit?: boolean): void;
   layRow(from: number, to: number): void;
   close(n: number): void;
   addCourse(n: number): void;

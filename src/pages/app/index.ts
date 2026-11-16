@@ -105,7 +105,8 @@ function microphone(button: HTMLButtonElement, note: HTMLElement): void {
 export async function mount(root: HTMLElement, params: RouteParams): Promise<void> {
   const test = parseAppParams(location.search, debugEnabled());
   void params;
-  const direct = test.run !== null || test.capture || (debugEnabled() && new URLSearchParams(location.search).get('testscene') === '1');
+  const q = new URLSearchParams(location.search);
+  const direct = test.run !== null || test.capture || (debugEnabled() && (q.get('testscene') === '1' || q.get('desk') === '1'));
 
   // ---- the frame from the seat, painted first
 
@@ -196,7 +197,13 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   // Captions of the run in the strip (written only by src/feel/captions.ts).
   effect(() => {
     const lines = store.captions.value.slice(-2);
-    captions.replaceChildren(...lines.map((c) => el('p', c.key ? 'app-caption is-key' : 'app-caption', c.text)));
+    captions.replaceChildren(
+      ...lines.map((c) => {
+        const line = el('p', c.key ? 'app-caption is-key' : 'app-caption');
+        line.append(el('strong', 'app-caption-source', c.source), document.createTextNode(`: ${c.text}`));
+        return line;
+      }),
+    );
   });
   // Whoever starts the session (this page, the headset browser, the emulator), the page follows it.
   effect(() => {

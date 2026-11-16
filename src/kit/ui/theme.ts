@@ -4,7 +4,8 @@
  * settings `highContrast` or `largeText` change; the gallery can override both without
  * touching the person's settings.
  *
- * Normal: a bone face, ink text, a slate body where the panel stands on the sky. High
+ * Normal: dark smoked glass with crisp white type, cobalt for work in progress, a clear
+ * green for passed, vermilion only for sent back. High
  * contrast: the hc pair (18.1:1) with the light cobalt for the accent. All panels are
  * opaque.
  */
@@ -47,23 +48,23 @@ export type UiTheme = {
 };
 
 const NORMAL = {
-  face: COLOR.bone,
-  text: COLOR.ink,
-  soft: COLOR.inkSoft,
-  accent: COLOR.cobalt,
-  onAccent: COLOR.paper,
-  accentText: COLOR.cobaltText,
-  body: COLOR.slate,
-  edge: COLOR.boneShade,
-  quiet: COLOR.paper,
-  danger: COLOR.vermilion,
-  dangerText: COLOR.vermilionText,
-  ok: COLOR.moss,
-  okText: COLOR.mossText,
+  face: COLOR.glass.face,
+  text: COLOR.glass.text,
+  soft: COLOR.glass.soft,
+  accent: COLOR.action,
+  onAccent: '#FFFFFF',
+  accentText: COLOR.glass.accentText,
+  body: COLOR.glass.inset,
+  edge: COLOR.glass.edge,
+  quiet: COLOR.glass.quiet,
+  danger: COLOR.glass.dangerFill,
+  dangerText: COLOR.glass.dangerText,
+  ok: COLOR.glass.okFill,
+  okText: COLOR.glass.okText,
   wait: COLOR.amber,
-  waitText: COLOR.amberText,
+  waitText: COLOR.glass.waitText,
   highlight: COLOR.highlight,
-  paper: COLOR.paper,
+  paper: COLOR.glass.inset,
 };
 
 const HIGH = {

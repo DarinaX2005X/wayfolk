@@ -53,6 +53,12 @@ export type GateSpec<T> = {
   unit(c: Candidate<T>, status: Unit['status'], checks: CheckName[]): Unit;
   /** False for kinds whose units do not lay tiles. */
   tiles?: boolean;
+  /**
+   * Reasons that never drop a unit on their own (the house rules of wording and look): a
+   * unit whose only problems are these is still sent back once, and kept with a note when
+   * the second look does not clear them.
+   */
+  soft?: readonly RejectReason[];
 };
 
 export type GateOut<T> = { kept: { c: Candidate<T>; unit: Unit; final: 'accepted' | 'corrected' | 'fixed' }[]; sentBack: number; fixed: number; dropped: number; merged: number };
@@ -126,6 +132,22 @@ export async function runGate<T>(engine: Engine, spec: GateSpec<T>, candidates: 
     for (const s of sent) {
       const f = fixes.get(s.c.id);
       const at = order.findIndex((o) => o.c.id === s.c.id);
+      const allSoft = (ps: readonly Problem[]) => ps.length > 0 && ps.every((p) => spec.soft?.includes(p.reason));
+      const keepWithNote = (c: Candidate<T>, problems: readonly Problem[], status: 'corrected' | 'fixed') => {
+        const cc = c;
+        accepted.push(cc);
+        // Counted with the fixed so the equalities hold (sentBack = fixed + dropped); the
+        // item says plainly that a house-rule note stays.
+        out.fixed++;
+        engine.retrack(s.c.id, 'fixed');
+        const notes = problems.map((p) => `Kept with a house-rule note: ${p.text}`);
+        engine.emitItem(spec.station, item(spec, cc, { status: 'rejected', problems: [...problems], checks: s.verdict.checks }, status, { reason: 'house-rule', problems: status === 'fixed' ? [...s.verdict.problems.map((p) => p.text), ...notes] : notes }));
+        if (at >= 0) order[at] = { c: cc, unit: spec.unit(cc, status, s.verdict.checks), final: status };
+      };
+      if ((f === undefined || f === 'withdraw' || f === 'missing' || f === 'budget') && allSoft(s.verdict.problems)) {
+        keepWithNote(s.c, s.verdict.problems, 'corrected');
+        continue;
+      }
       if (f === undefined || f === 'withdraw' || f === 'missing' || f === 'budget') {
         const cause = f === 'withdraw' ? 'withdrawn' : f === 'missing' ? 'not-recorded' : f === 'budget' ? 'budget' : 'withdrawn';
         out.dropped++;
@@ -136,6 +158,10 @@ export async function runGate<T>(engine: Engine, spec: GateSpec<T>, candidates: 
       }
       const c2: Candidate<T> = { ...s.c, data: f, planted: [] };
       const v2 = spec.check(c2, accepted);
+      if (v2.status === 'rejected' && allSoft(v2.problems)) {
+        keepWithNote(v2.data !== undefined ? { ...c2, data: v2.data } : c2, v2.problems, 'fixed');
+        continue;
+      }
       if (v2.status === 'rejected' || v2.status === 'merged') {
         out.dropped++;
         const dropped = item(spec, c2, v2.status === 'merged' ? { ...v2, problems: [{ reason: 'duplicate', text: 'The fixed unit repeats one already kept' }] } : v2, 'dropped', { dropCause: 'failed-again', planted: s.c.planted.length > 0 || undefined });

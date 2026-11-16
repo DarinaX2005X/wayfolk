@@ -28,8 +28,8 @@ export const SIZE = {
     gap: 2.5,
     progress: 6,
     /** The plan board holds six lines and no counter: it grows 2 cm (2.8 cm in large text). */
-    planGrow: 20,
-    planGrowLarge: 28,
+    planGrow: mm(PANEL.stationPlan.size.h - PANEL.stationBoard.size.h),
+    planGrowLarge: mm(PANEL.stationPlan.large.h - PANEL.stationBoard.large.h),
   },
   chip: { eye: PANEL.stationChip.eyeDist, w: mm(PANEL.stationChip.size.w), h: mm(PANEL.stationChip.size.h), pad: 6 },
   rail: { eye: PANEL.captionRail.eyeDist, w: mm(PANEL.captionRail.size.w), h: mm(PANEL.captionRail.size.h), hLarge: mm(PANEL.captionRail.large.h), padX: 10, padY: 5 },
@@ -43,8 +43,8 @@ export const SIZE = {
      * under "Run it live" adds a row, so the card is 15.6 cm (17.6 in large text).
      * The buttons are set in `read`, which keeps both in one row in large text too.
      */
-    h: 156,
-    hLarge: 176,
+    h: mm(PANEL.runCard.size.h),
+    hLarge: mm(PANEL.runCard.large.h),
   },
   callCard: { eye: HAND_EYE, w: 260, h: 90, pad: 8 },
   askCard: { eye: PANEL.askCard.eyeDist, w: mm(PANEL.askCard.size.w), h: mm(PANEL.askCard.size.h), hLarge: mm(PANEL.askCard.large.h), pad: 10, strip: 6, bar: 4 },

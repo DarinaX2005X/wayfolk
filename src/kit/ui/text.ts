@@ -102,7 +102,7 @@ export function richText(
       borderBottomWidth: w.mark === 'diff' ? Math.max(0.8, fontSize * 0.09) : 0,
       borderColor: theme.danger,
     } as never);
-    const color = quote ? (theme.hc ? '#111513' : theme.text) : (opts.color ?? theme.text);
+    const color = quote ? (theme.hc ? '#111513' : '#1E2421') : (opts.color ?? theme.text);
     cell.add(new Text({ text: w.text, fontSize, lineHeight: LEADING, fontWeight: w.mark === 'bold' ? 700 : 400, color } as never));
     box.add(cell);
   });

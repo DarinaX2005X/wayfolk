@@ -4,7 +4,8 @@
  * the browser, the tests and Node scripts read them alike (scripts/build-fixtures.ts
  * writes it; tests/content checks it is current).
  */
-import type { Doc, SampleId, SampleMeta } from '../../src/agents/types';
+import type { Doc, Project, SampleId, SampleMeta } from '../../src/agents/types';
+import { newTaskProject } from '../../src/agents/engine/start';
 import { readFile } from '../../src/materials/read';
 import { numberPages } from '../../src/materials/pages';
 import { SAMPLE_TEXTS } from './texts.generated';
@@ -50,6 +51,15 @@ export function sampleMeta(id: SampleId): Sample {
   const s = SAMPLES.find((x) => x.id === id);
   if (!s) throw new Error(`samples: no sample ${id}`);
   return s;
+}
+
+/** The day the samples were recorded: their plans are dated from it. */
+export const SAMPLE_TODAY = '2026-11-16';
+
+/** The sample's project, the same on every device (its id is fixed). */
+export function sampleProject(id: SampleId, now?: Date): Project {
+  const meta = sampleMeta(id);
+  return newTaskProject({ text: meta.task, by: 'sample', links: meta.links }, { sample: id, id: `p_sample${id.replace(/-/g, '').slice(0, 6)}`, title: meta.title, ...(now ? { now } : {}) });
 }
 
 /** The sample's materials, read by the same code as a person's files. */

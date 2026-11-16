@@ -6,7 +6,9 @@
  *
  *   setOutline(on)  the cobalt dashed outline of the plan, drawn in 1.2 s
  *   setGrid(n)      rows = clamp(ceil(sqrt(n / 2.6)), 4, 14), cols = ceil(n / rows), at most 392 cells
- *   layTile(u)      the tile of unit u falls 4 cm in 200 ms into its cell (row by row from the inner edge, left to right)
+ *   layTile(u, lit) the tile of unit u falls 4 cm in 200 ms into its cell (row by row from the inner edge, left to right);
+ *                   a verified tile (lit, the default) then lights its seams: a thin unlit line of the seam colour
+ *                   draws out under its edges in 180 ms, so the island becomes a map of verified work
  *   layRow(a, b)    units a..b fall in one wave of 200 ms (the display queue catching up)
  *   close(n)        in 500 ms the n units move into an even grid for the real count, the seam narrows to
  *                   2.5 mm, the cut and keel show along the inner edge, the plot sinks 2 cm and becomes one
@@ -29,6 +31,7 @@ import {
   InstancedMesh,
   Matrix4,
   Mesh,
+  MeshBasicMaterial,
   Object3D,
   Quaternion,
   Shape,
@@ -54,6 +57,16 @@ const COURSE_W = 0.05;
 const OUTLINE_MS = MOTION.stake.outlineMs;
 const REGRID_MS = 300;
 const CLEAR_TILE_MS = 160;
+const SEAM_MS = 180;
+/** The lit seam: a plate under the tile, wider by the seam, its top below the tile's top. */
+const SEAM_LIFT = 0.0012;
+const SEAM_H = 0.0045;
+let seamMaterial: MeshBasicMaterial | null = null;
+function seamMat(): MeshBasicMaterial {
+  seamMaterial ??= new MeshBasicMaterial({ color: COLOR.seam, toneMapped: false });
+  seamMaterial.name = 'kit:seam';
+  return seamMaterial;
+}
 
 const TILT = Math.atan2(RING.outerY - RING.innerY, RING.outer - RING.inner);
 
@@ -212,6 +225,7 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
   const CAP = MAX_CELLS + 64;
   const layAt = new Float64Array(CAP).fill(NaN);
   const dropMs = new Float32Array(CAP).fill(MOTION.tile.flipDropMs);
+  const lit = new Uint8Array(CAP).fill(1);
   let laidMax = -1;
   let closeAt = -Infinity;
   let final: Grid | null = null;
@@ -229,6 +243,14 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
   tilesMesh.frustumCulled = false;
   tilesMesh.instanceColor = new InstancedBufferAttribute(new Float32Array(CAP * 3), 3);
   body.add(tilesMesh);
+  const seamGeo = prep(box(1, SEAM_H, 1));
+  seamGeo.translate(0, SEAM_H / 2 + SEAM_LIFT, 0);
+  const seamsMesh = new InstancedMesh(seamGeo, seamMat(), CAP);
+  seamsMesh.name = `sector:${spec.slot}:seams`;
+  seamsMesh.count = 0;
+  seamsMesh.frustumCulled = false;
+  body.add(seamsMesh);
+  let mergedSeams: Mesh | null = null;
 
   // ---- the outline of the plan: dashes around the sector
   const dashPoses: Matrix4[] = [];
@@ -319,6 +341,8 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
     const tiles = Math.ceil(n / g.perTile);
     // One trapezoid per row (narrower at the inner edge), so the tiles follow the wedge.
     const rowTiles = new Map<number, BufferGeometry>();
+    const rowSeams = new Map<number, BufferGeometry>();
+    const seamPieces: BufferGeometry[] = [];
     let tile: BufferGeometry | null = null;
     for (let j = 0; j < tiles + withCourse; j++) {
       const isCourse = j >= tiles;
@@ -336,6 +360,21 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
       const c = tile.clone();
       m4.compose(pose.pos, pose.q, s3.set(1, 1, 1));
       c.applyMatrix4(m4);
+      if (isCourse || lit[Math.min(CAP - 1, j)]) {
+        let plate = rowSeams.get(row) ?? null;
+        if (!plate) {
+          const dr = isCourse ? COURSE_W : (RING.outer - RING.inner) / g.rows;
+          const r0 = isCourse ? RING.outer + 0.004 : RING.inner + row * dr;
+          const da = isCourse ? SPAN / withCourse : SPAN / g.cols;
+          plate = trapezoidTile(r0 * da, (r0 + dr) * da, pose.sz + seam);
+          plate.scale(1, SEAM_H / TILE_H, 1);
+          plate.translate(0, SEAM_LIFT, 0);
+          rowSeams.set(row, plate);
+        }
+        const sp = plate.clone();
+        sp.applyMatrix4(m4);
+        seamPieces.push(sp);
+      }
       tint(c, toneOf(j < tiles ? j : 100000 + j - tiles));
       pieces.push(c);
     }
@@ -347,6 +386,17 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
     merged.userData.sector = spec.slot;
     mergedKey = key;
     body.add(merged);
+    if (mergedSeams) {
+      mergedSeams.removeFromParent();
+      mergedSeams.geometry.dispose();
+      mergedSeams = null;
+    }
+    if (seamPieces.length) {
+      mergedSeams = new Mesh(merge(seamPieces), seamMat());
+      mergedSeams.name = `sector:${spec.slot}:seams-closed`;
+      mergedSeams.raycast = () => {};
+      body.add(mergedSeams);
+    }
   };
 
   /** Draws the course tiles into the instanced mesh from index `from`; returns the count used. */
@@ -413,12 +463,13 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
       grid = next;
       if (state === 'outline') state = 'laying';
     },
-    layTile(u) {
+    layTile(u, on = true) {
       const g = ensureGrid(u + 1);
       const i = unitsToTile(u, g);
       if (i >= CAP) return;
       if (!Number.isNaN(layAt[i]) && layAt[i] > clearAt) return;
       layAt[i] = now();
+      lit[i] = on ? 1 : 0;
       dropMs[i] = MOTION.tile.flipDropMs;
       laidMax = Math.max(laidMax, i);
       if (state === 'outline') state = 'laying';
@@ -435,6 +486,7 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
         // One wave in 200 ms: starts spread over 80 ms, each falls in 120 ms.
         layAt[i] = t0 + (n > 1 ? ((i - a) / (n - 1)) * 80 : 0);
         dropMs[i] = 120;
+        lit[i] = 1;
       }
       laidMax = Math.max(laidMax, b);
       if (state === 'outline') state = 'laying';
@@ -518,6 +570,8 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
         const courseDone = course === 0 || reduced || t >= courseAt + (course - 1) * MOTION.tile.staggerMs + MOTION.tile.flipDropMs;
         buildMerged(final, final.tiles * final.perTile, courseDone ? course : 0);
         merged!.visible = true;
+        if (mergedSeams) mergedSeams.visible = true;
+        seamsMesh.visible = false;
         body.position.y = -MOTION.plot.settle;
         border.visible = state === 'bordered';
         tilesMesh.visible = !courseDone;
@@ -535,6 +589,8 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
         return;
       }
       if (merged) merged.visible = false;
+      if (mergedSeams) mergedSeams.visible = false;
+      seamsMesh.visible = true;
       border.visible = false;
       tilesMesh.visible = true;
       body.position.y = -MOTION.plot.settle * kClose;
@@ -574,6 +630,7 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
         if (!shown) {
           m4.makeScale(0, 0, 0);
           tilesMesh.setMatrixAt(i, m4);
+          seamsMesh.setMatrixAt(i, m4);
           continue;
         }
         const kd = reduced ? 1 : progress(t, at, dropMs[i]);
@@ -605,6 +662,13 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
         v3.copy(poseA.pos).addScaledVector(up, lift);
         m4.compose(v3, poseA.q, s3.set((poseA.sx / gx) * shrink, shrink, (poseA.sz / gz) * shrink));
         tilesMesh.setMatrixAt(i, m4);
+        // The seams light once the tile lies: the plate grows out from under it.
+        const ks = lit[i] ? (reduced ? (kd >= 1 ? 1 : 0) : easeOut(progress(t, at + dropMs[i], SEAM_MS))) : 0;
+        if (ks > 0 && lift < 1e-4) {
+          const grow = (MATERIAL.seam.laying + 0.0005) * ks;
+          m4.compose(poseA.pos, poseA.q, s3.set((poseA.sx + grow) * shrink, shrink, (poseA.sz + grow) * shrink));
+        } else m4.makeScale(0, 0, 0);
+        seamsMesh.setMatrixAt(i, m4);
         const c = toneOf(tone);
         colors.setXYZ(i, c.r, c.g, c.b);
         count = i + 1;
@@ -613,6 +677,8 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
       count = Math.max(count, drawCourse(t, n, g, seam, reduced));
       tilesMesh.count = count;
       tilesMesh.instanceMatrix.needsUpdate = true;
+      seamsMesh.count = Math.min(count, n);
+      seamsMesh.instanceMatrix.needsUpdate = true;
       colors.needsUpdate = true;
     },
   };

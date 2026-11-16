@@ -1,0 +1,22 @@
+{
+  "fov": 88,
+  "steps": [
+    { "goto": "/app?debug=1&desk=1&answers=scripted&pace=0.5", "must": true },
+    { "eval": "test.resetIsland()" },
+    { "wait": 1.5 },
+    { "shot": "r1-home.png" },
+    { "eval": "run.start('bakery-site')" },
+    { "wait": 3 },
+    { "eval": "[run.phase(), run.source(), run.stations(), JSON.stringify(store.captions.value)]" },
+    { "until": "run.ask() !== null", "within": 40 },
+    { "wait": 1 },
+    { "shot": "r1-ask.png" },
+    { "eval": "run.answer(0)" },
+    { "until": "run.numbers().working >= 2", "within": 40 },
+    { "wait": 1.2 },
+    { "shot": "r1-mid.png" },
+    { "until": "run.phase() === 'done'", "within": 90 },
+    { "wait": 2.5 },
+    { "shot": "r1-done.png" }
+  ]
+}

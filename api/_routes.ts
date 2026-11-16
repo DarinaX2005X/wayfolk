@@ -16,6 +16,11 @@ import { fail } from './_lib/http';
 import { setFixtureSource } from './_lib/llm/fixtures';
 import { createLlmRoutes } from './_lib/llm/route';
 import { createPreviewRoutes } from './_lib/preview';
+import { fixtureSource } from '../content/answers/sets';
+
+// The deployment answers the `fixtures` provider from the samples' recordings; the dev
+// server replaces this with the files on disk.
+setFixtureSource(fixtureSource);
 
 /** The dev server gives the `fixtures` provider the answer sets on disk (tools/dev-api/plugin.ts). */
 export { setFixtureSource };

@@ -9,6 +9,7 @@
  *             scripts look up by id exists in a page that loads them, or is made by them
  *             (element-missing)
  *   required  the parts the plan asked for are in the entry page (required-missing)
+ *   house     the house rules code can read in a page and its styles (house.ts), when asked
  *   numbers   prices, times, dates, percentages and phone numbers in the visible text
  *             of the pages stand in the materials (number-not-in-source)
  *
@@ -19,6 +20,7 @@ import { checkNumbers, missingLine, type NumberKind } from '../numbers';
 import { checkCss } from './css';
 import { parseHtml, querySelectorAll, type HtmlDoc } from './html';
 import { checkJs } from './js';
+import { houseProblems } from './house';
 
 export type CodeFile = { path: string; text: string };
 export type FileProblem = { reason: RejectReason; text: string; line?: number };
@@ -74,7 +76,7 @@ const isPage = (p: string) => /\.html?$/i.test(p);
 
 export function checkProject(
   files: readonly CodeFile[],
-  opts: { required?: { what: string; selector: string }[]; sources?: string[]; numberKinds?: NumberKind[]; entry?: string } = {},
+  opts: { required?: { what: string; selector: string }[]; sources?: string[]; numberKinds?: NumberKind[]; entry?: string; house?: boolean } = {},
 ): ProjectCheck {
   const byPath = new Map(files.map((f) => [f.path, f]));
   const entry = opts.entry ?? 'index.html';
@@ -174,6 +176,12 @@ export function checkProject(
       const doc = parseHtml(f.text);
       for (const e of doc.errors) add(path, { reason: 'parse-error', text: e.text, line: e.line });
     }
+  }
+
+  // House rules a page can be checked for (house.ts).
+  if (opts.house) {
+    for (const f of files) if (/\.(html?|css)$/i.test(f.path)) mark(f.path, 'house');
+    for (const [path, problems] of houseProblems(files, entry)) for (const p of problems) add(path, p);
   }
 
   // Required parts of the entry page.

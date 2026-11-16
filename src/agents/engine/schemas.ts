@@ -120,6 +120,7 @@ export const ITEMS_SCHEMA: JsonSchema = obj({
       end: str('YYYY-MM-DD'),
       depends: arr(str(), 4, 'Ids of items that must end first'),
       cells: arr(obj({ column: str(), value: str() }), 4, 'Values of the extra columns'),
+      done: str('Done when: one sentence that says how anyone can tell this item is finished'),
     }),
     24,
   ),

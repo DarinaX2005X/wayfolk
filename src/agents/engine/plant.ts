@@ -8,9 +8,10 @@
  *   site, with materials     a price changed in the page (number-not-in-source), a closing
  *                            tag removed (parse-error), a background image that isn't in the
  *                            project (missing-asset)
- *   site, without materials  a script file that doesn't exist (missing-file), a closing brace
+ *   site, without materials  a script file that doesn't exist (missing-file), an in-page link
+ *                            to a section that isn't there (broken-link), a closing brace
  *                            removed (parse-error), an element looked up by a wrong id
- *                            (element-missing)
+ *                            (element-missing); at most 4 in all
  *   plan                     an item that ends before it starts (date-order), an owner who
  *                            isn't on the team (owner-unknown), an end after the window
  *                            (date-out-of-range), a total that doesn't add up (sum-mismatch)
@@ -54,6 +55,21 @@ function addMissingScript(html: string): Planted<string> | null {
   return { value: html.slice(0, at) + '  <script src="storage.js" defer></script>\n' + html.slice(at), notes: ['A script storage.js that the project doesn\'t have was linked (missing-file)'] };
 }
 
+/** An in-page link to a section the page doesn't have. */
+function brokenLink(html: string): Planted<string> | null {
+  const doc = parseHtml(html);
+  for (const m of html.matchAll(/href=(['"])#([\w-]+)\1/g)) {
+    if (!doc.ids.has(m[2])) continue;
+    const wrong = m[2] + '-section';
+    if (doc.ids.has(wrong)) continue;
+    const at = m.index ?? 0;
+    return { value: html.slice(0, at) + m[0].replace('#' + m[2], '#' + wrong) + html.slice(at + m[0].length), notes: [`The link to #${m[2]} was changed to #${wrong}, which the page doesn't have (broken-link)`] };
+  }
+  const end = html.search(/<\/footer>/i) >= 0 ? html.search(/<\/footer>/i) : html.search(/<\/body>/i);
+  if (end < 0) return null;
+  return { value: html.slice(0, end) + '<a href="#help">Help</a>\n' + html.slice(end), notes: ["A link to #help, which the page doesn't have, was added (broken-link)"] };
+}
+
 function addMissingImage(css: string): Planted<string> {
   const m = /(^|\n)\s*body\s*\{/.exec(css);
   const rule = '\n  background-image: url("images/flour-texture.png");';
@@ -66,9 +82,10 @@ function addMissingImage(css: string): Planted<string> {
 
 function breakBrace(js: string): Planted<string> | null {
   // The closing brace of the first function body that ends a line on its own.
-  const m = /\n(\s*)\}\n/.exec(js);
-  if (!m) return null;
-  const at = m.index + 1 + m[1].length;
+  // Otherwise the last closing brace of the file.
+  const m = /\n([ \t]*)\}\r?\n/.exec(js);
+  const at = m ? m.index + 1 + m[1].length : js.lastIndexOf('}');
+  if (at < 0) return null;
   return { value: js.slice(0, at) + js.slice(at + 1), notes: ['A closing brace was removed from the script (parse-error)'] };
 }
 
@@ -102,7 +119,10 @@ export function plantFile(path: string, text: string, ctx: { materials: boolean;
     if (ctx.materials) {
       apply(changePrice(value));
       apply(dropClosingTag(value));
-    } else apply(addMissingScript(value));
+    } else {
+      apply(addMissingScript(value));
+      apply(brokenLink(value));
+    }
   } else if (/\.css$/i.test(path) && ctx.materials) {
     apply(addMissingImage(value));
   } else if (/\.m?js$/i.test(path) && !ctx.materials) {

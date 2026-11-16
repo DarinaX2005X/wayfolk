@@ -126,6 +126,8 @@ export function checkNumbers(text: string, sources: readonly string[], opts: Num
   for (const m of findNumbers(text)) {
     if (!kinds.has(m.kind)) continue;
     if (m.kind === 'number' && Math.abs(Number(m.value)) < freeBelow) continue;
+    // Nothing spent, nothing counted: a zero needs no source.
+    if ((m.kind === 'money' || m.kind === 'number') && Number(m.value) === 0) continue;
     // Years and plain years stand for themselves in a date range: a bare 2027 needs a 2027 somewhere.
     if (pool.some((s) => matches(m, s)) || extra.has(m.value) || (m.kind === 'number' && pool.some((s) => s.kind === 'date' && s.value.startsWith(m.value + '-')))) {
       matched.push(m);

@@ -65,7 +65,7 @@ describe('tokens.css', () => {
     for (const hex of [COLOR.void.zenith, COLOR.ground.tile[2], COLOR.slate, COLOR.cobalt, COLOR.hc.cobalt, COLOR.category.steel]) {
       expect(css).toContain(hex);
     }
-    expect(css).toContain('--role-action: var(--color-cobalt)');
+    expect(css).toContain('--role-action: var(--color-action)');
     expect(css).toMatch(/--font-family: 'Atkinson Hyperlegible Next'/);
   });
 });
@@ -82,12 +82,12 @@ describe('contrast pairs of DESIGN', () => {
   it('keeps the six forbidden pairs forbidden', () => {
     const forbidden = CONTRAST.filter((p) => !p.pass).map((p) => `${p.fg}/${p.bg}`);
     for (const [fg, bg] of [
-      [COLOR.cobalt, COLOR.void.mid],
-      [COLOR.cobalt, COLOR.slate],
-      [COLOR.vermilion, COLOR.slate],
+      [COLOR.cobaltText, COLOR.glass.face],
+      [COLOR.vermilionText, COLOR.glass.face],
+      [COLOR.mossText, COLOR.glass.face],
+      [COLOR.ink, COLOR.glass.face],
+      [COLOR.outline, COLOR.ground.tile[0]],
       [COLOR.amber, COLOR.bone],
-      [COLOR.bone, COLOR.void.horizon],
-      [COLOR.category.steel, COLOR.slate],
     ]) {
       expect(forbidden).toContain(`${fg}/${bg}`);
     }

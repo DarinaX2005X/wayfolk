@@ -141,7 +141,8 @@ export type CheckName =
   | 'required'
   | 'links'
   | 'plan-table'
-  | 'dedupe';
+  | 'dedupe'
+  | 'house';
 export type MechanismKind = 'cutter' | 'gate' | 'assembly';
 
 export type StepSpec = {
@@ -363,6 +364,7 @@ export type RejectReason =
   | 'from-unknown'
   | 'step-unknown'
   | 'agent-redo'
+  | 'house-rule'
   | LegacyReason;
 
 /**
@@ -628,6 +630,8 @@ export type PlanItem = {
   end: string;
   depends: string[];
   cells: Record<string, string>;
+  /** How anyone can tell the item is finished (a house rule of plans). */
+  done?: string;
   units: string[];
 };
 export type Deliverable =

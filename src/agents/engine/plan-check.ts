@@ -107,7 +107,8 @@ export function validatePlan(answer: unknown, ctx: { docs: readonly Doc[]; links
     object,
     objectWhy: a.objectWhy.trim(),
     window,
-    team: [...new Set(a.team.map((t) => t.trim()).filter(Boolean))],
+    // A name, without the role the planner may add ("Maya Lindqvist (product lead)").
+    team: [...new Set(a.team.map((t) => t.split(/\s*[(:]/)[0].trim()).filter(Boolean))],
   };
   if (a.fit === 'no') {
     return { plan: { ...base, steps: [], checkable: [], agentOnly: [], calls: 1, tilesPlanned: 0 }, problems, notes };
@@ -116,12 +117,15 @@ export function validatePlan(answer: unknown, ctx: { docs: readonly Doc[]; links
   // Planner steps, in its order, with its ids kept for mapping `uses`.
   const known = new Set(Object.keys(STEP_LIBRARY));
   const taken: { from: string; step: PlanStep }[] = [];
+  const looseRequired: { what: string; selector: string }[] = [];
   for (const s of a.steps) {
     if (!known.has(s.kind)) {
       notes.push(`Planner asked for a step called "${s.kind}", which isn't in the library. Left out.`);
       continue;
     }
     const kind = s.kind as StepKind;
+    // Parts the page must have count wherever the planner wrote them (often on its check step).
+    if (kind !== 'write-code') for (const r of s.required) if (parseSelector(r.selector)) looseRequired.push({ what: r.what.trim(), selector: r.selector.trim() });
     if (kind === 'read' || kind === 'assemble' || kind === 'check') continue; // code places these itself
     if (kind === 'ask' && taken.some((t) => t.step.kind === 'ask')) continue;
     const args: StepArgs = {};
@@ -144,7 +148,14 @@ export function validatePlan(answer: unknown, ctx: { docs: readonly Doc[]; links
       if (required.length) args.required = required;
     }
     if (kind === 'write-section') args.sections = s.sections.map((x) => x.trim()).filter(Boolean);
-    if (kind === 'make-plan' && s.columns.length) args.columns = s.columns.filter((c) => c.name.trim()).map((c) => ({ name: c.name.trim(), type: c.type }));
+    if (kind === 'make-plan' && taken.some((t) => t.step.kind === 'make-plan')) {
+      problems.push('Two steps write plan items: use one make-plan step for the whole plan, so its items, dates and dependencies stay together');
+    }
+    // Task, owner, dates and dependencies are fields of every item, not extra columns.
+    if (kind === 'make-plan' && s.columns.length) {
+      const columns = s.columns.filter((c) => c.name.trim() && !/^(task|owner|start|end|depend|after|date)/i.test(c.name.trim())).map((c) => ({ name: c.name.trim(), type: c.type }));
+      if (columns.length) args.columns = columns;
+    }
     if ((kind === 'compare' || kind === 'decide') && s.options.length) args.options = s.options;
     if ((kind === 'compare' || kind === 'decide') && s.criteria.length) args.criteria = s.criteria;
     if (kind === 'ask') {
@@ -162,6 +173,11 @@ export function validatePlan(answer: unknown, ctx: { docs: readonly Doc[]; links
   if (a.question.trim() && a.options.filter((o) => o.trim()).length >= 2 && !taken.some((t) => t.step.kind === 'ask')) {
     steps.push({ from: 'ask', step: makeStep('ask', 'Ask you', a.question.trim(), [], { question: { text: a.question.trim(), options: a.options.map((o) => o.trim()).filter(Boolean).slice(0, 4) } }) });
   }
+  // Code steps of a site go page, then scripts, then styles, one after another: a script
+  // sees the ids of the page, and the styles see every class the page and the scripts use.
+  const codeAt = taken.map((t, i) => (t.step.kind === 'write-code' ? i : -1)).filter((i) => i >= 0);
+  const sorted = codeAt.map((i) => taken[i]).sort((x, y) => codeRank(x.step) - codeRank(y.step));
+  codeAt.forEach((at, k) => (taken[at] = sorted[k]));
   // An ask the planner placed goes right after read: everything else may depend on it.
   const askAt = taken.findIndex((t) => t.step.kind === 'ask');
   if (askAt >= 0) steps.push(taken.splice(askAt, 1)[0]);
@@ -197,6 +213,10 @@ export function validatePlan(answer: unknown, ctx: { docs: readonly Doc[]; links
     } else if (STEP_LIBRARY[kind].by === 'model') {
       if (askId && askId !== s.step.id && earlier.has(askId) && !uses.includes(askId)) uses.unshift(askId);
       if (kind === 'research' && (hasMaterials || ctx.links.length) && !uses.includes('materials')) uses.push('materials');
+      if (kind === 'write-code') {
+        const prev = steps.slice(0, i).map((x) => x.step).filter((x) => x.kind === 'write-code').at(-1);
+        if (prev && !uses.includes(prev.id)) uses.push(prev.id);
+      }
       const real = uses.filter((u) => u !== askId);
       if (real.length === 0) {
         if (hasMaterials) uses.push('materials');
@@ -220,6 +240,9 @@ export function validatePlan(answer: unknown, ctx: { docs: readonly Doc[]; links
     if (new Set(paths).size !== paths.length) problems.push('Two steps write the same file');
     if (kinds.includes('write-code') && !paths.includes('index.html')) problems.push('A site needs an index.html');
     const htmlStep = list.find((s) => s.args.files?.some((f) => f.path === 'index.html'));
+    // Every required part goes to the step that writes index.html: that is where it must stand.
+    const pool = [...list.flatMap((s) => s.args.required ?? []), ...looseRequired];
+    if (htmlStep && pool.length) htmlStep.args.required = pool.filter((r, k) => pool.findIndex((x) => x.selector === r.selector) === k).slice(0, 8);
     for (const s of list) if (s !== htmlStep && s.args.required) delete s.args.required;
   }
   if (a.deliverable === 'document' && !kinds.includes('write-section')) problems.push('A document needs at least one write-section step');
@@ -284,4 +307,14 @@ export function basicPlan(deliverable: DeliverableKind, ctx: { docs: readonly Do
   };
   const r = validatePlan(answer, ctx);
   return r.plan!;
+}
+
+/** Order of code steps: one writing a page first, then scripts, then styles. */
+export function fileRank(path: string): number {
+  return /\.html?$/i.test(path) ? 0 : /\.css$/i.test(path) ? 2 : 1;
+}
+
+function codeRank(step: PlanStep): number {
+  const files = step.args.files ?? [];
+  return files.length ? Math.min(...files.map((f) => fileRank(f.path))) : 1;
 }

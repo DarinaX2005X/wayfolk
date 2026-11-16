@@ -19,33 +19,33 @@
 /** Raw colours, named as in DESIGN "Цвет". */
 export const COLOR = {
   void: {
-    /** Top of the sky. */
-    zenith: '#3F5C6C',
-    /** At +12°. */
-    mid: '#9DB5BB',
-    /** The light band at eye level. */
-    horizon: '#F4E7D0',
+    /** Top of the sky: near night. */
+    zenith: '#05080F',
+    /** At +4°: the deep blue of the blue hour. */
+    mid: '#14244A',
+    /** The thin warm band at eye level. */
+    horizon: '#C88A58',
     /** Fallback horizon if the headset shows the band too bright. */
-    horizonSoft: '#E6D9C2',
-    /** At −12°. */
-    low: '#CFC6B5',
+    horizonSoft: '#A3714B',
+    /** At −2°. */
+    low: '#141B2B',
     /** Under the island. */
-    nadir: '#586A70',
+    nadir: '#04060A',
   },
   ground: {
-    /** Three tones of a tile; the tone is picked by seed. */
-    tile: ['#E6D6B8', '#DDCBAA', '#EBDDC2'],
-    /** Rings of tiles of the home plot. */
-    home: ['#D9C9AB', '#D1C0A0'],
+    /** Three tones of basalt for a tile; the tone is picked by seed. */
+    tile: ['#2B3039', '#262B33', '#31363F'],
+    /** Rings of graphite tiles of the home plot. */
+    home: ['#1E232A', '#1A1E24'],
     /** The even cut, 45 mm along the inner edge of a plot. */
-    cut: '#B8805A',
+    cut: '#3A414C',
     /** The keel, 65 mm under the cut, set back by 5 cm. */
-    keel: '#463D37',
+    keel: '#0A0C10',
   },
-  /** Bench slab, board bodies, mechanisms. */
-  slate: '#2C383D',
-  slateEdge: '#465359',
-  /** Instruments, panel faces, trays. */
+  /** Bench slab, board bodies, mechanisms: graphite. */
+  slate: '#1A1F27',
+  slateEdge: '#2E3641',
+  /** Instruments, keys, trays: matte ceramic. */
   bone: '#F3EEE4',
   boneShade: '#CFC6B6',
   /** Sheets, pages, cards, envelopes. */
@@ -54,28 +54,48 @@ export const COLOR = {
   edge: '#D6CCBB',
   ink: '#1E2421',
   inkSoft: '#4E5753',
-  /** The accent: the plan and work in progress, the primary action, selection, focus. */
-  cobalt: '#2E57C9',
+  /** The accent of the world: rings, stakes, survey lines, selection, focus. */
+  cobalt: '#4A78FF',
+  /** Accent text on light surfaces (bone keys, paper, the browser pages). */
   cobaltText: '#2449B0',
-  /** Contradiction and refusal. */
+  /** Fill of a primary action with white text. */
+  action: '#2D56D6',
+  /** A verified tile's seam: a thin unlit line. */
+  seam: '#5FA4FF',
+  /** Sent back and refusal. */
   vermilion: '#C4422C',
   vermilionText: '#A3331F',
-  /** Checked. */
-  moss: '#4C7A3A',
-  mossText: '#3D6430',
+  /** Passed: a clear green. */
+  moss: '#26934F',
+  mossText: '#2C6B3E',
   /** Waiting and warning. */
   amber: '#C98A1B',
   amberText: '#865A0A',
   /** Background of a verbatim quote on a page. */
   highlight: '#F2D98A',
   /** Dashed outline of slots not taken yet; decorative. */
-  outline: '#8FA6AE',
+  outline: '#3D4757',
+  /** Panels of the headset: dark smoked glass with crisp white type. */
+  glass: {
+    face: '#121821',
+    edge: '#2C3542',
+    text: '#F2F5F9',
+    soft: '#A7B2C3',
+    quiet: '#1C2430',
+    inset: '#0C1117',
+    accentText: '#8FB0FF',
+    okFill: '#1E7A41',
+    okText: '#62D894',
+    dangerFill: '#B63A26',
+    dangerText: '#FF8D77',
+    waitText: '#F2C462',
+  },
   /** High contrast panels; hc.cobalt is also the mark accent on dark. */
   hc: { bg: '#111513', text: '#FFFDF7', cobalt: '#9DB6FF' },
   /** Data categories (parties, guest sides, the second person), always with a shape. */
   category: { ochre: '#A87A22', sage: '#6C8F60', steel: '#61728A', terracotta: '#A9583F' },
   /** Field of the cover and dark sections of the landing. */
-  coverField: '#2B4656',
+  coverField: '#0E1626',
 } as const;
 
 /** The shape that goes with each category colour: colour never carries meaning alone. */
@@ -97,12 +117,12 @@ export const ROLE = {
   textSoft: COLOR.inkSoft,
   textOnDark: COLOR.paper,
   border: COLOR.edge,
-  action: COLOR.cobalt,
+  action: COLOR.action,
   actionText: COLOR.paper,
   link: COLOR.cobaltText,
-  focus: COLOR.cobalt,
+  focus: COLOR.action,
   focusOnDark: COLOR.hc.cobalt,
-  selected: COLOR.cobalt,
+  selected: COLOR.action,
   success: COLOR.mossText,
   warning: COLOR.amberText,
   danger: COLOR.vermilionText,
@@ -116,58 +136,67 @@ export const ROLE = {
  */
 export type ContrastPair = { fg: string; bg: string; ratio: number; min: 3 | 4.5 | 7; pass: boolean; use: string };
 export const CONTRAST: readonly ContrastPair[] = [
-  { fg: COLOR.ink, bg: COLOR.bone, ratio: 13.66, min: 4.5, pass: true, use: 'text of panels and cards' },
-  { fg: COLOR.ink, bg: COLOR.paper, ratio: 14.89, min: 4.5, pass: true, use: 'text of pages' },
-  { fg: COLOR.inkSoft, bg: COLOR.bone, ratio: 6.46, min: 4.5, pass: true, use: 'captions and units' },
-  { fg: COLOR.inkSoft, bg: COLOR.paper, ratio: 7.04, min: 4.5, pass: true, use: 'captions on paper' },
-  { fg: COLOR.cobaltText, bg: COLOR.bone, ratio: 6.84, min: 4.5, pass: true, use: 'accent text' },
-  { fg: COLOR.cobaltText, bg: COLOR.paper, ratio: 7.46, min: 4.5, pass: true, use: 'links on paper' },
-  { fg: COLOR.paper, bg: COLOR.cobalt, ratio: 5.96, min: 4.5, pass: true, use: 'primary button text' },
-  { fg: COLOR.vermilionText, bg: COLOR.bone, ratio: 5.95, min: 4.5, pass: true, use: 'reasons for rejection' },
-  { fg: COLOR.vermilionText, bg: COLOR.paper, ratio: 6.49, min: 4.5, pass: true, use: 'reasons on paper' },
-  { fg: COLOR.paper, bg: COLOR.vermilion, ratio: 4.76, min: 4.5, pass: true, use: 'text on the stamp' },
-  { fg: COLOR.mossText, bg: COLOR.bone, ratio: 5.93, min: 4.5, pass: true, use: '"Kept", "Fixed on a second look"' },
-  { fg: COLOR.amberText, bg: COLOR.bone, ratio: 5.22, min: 4.5, pass: true, use: '"Waiting for the model"' },
+  { fg: COLOR.glass.text, bg: COLOR.glass.face, ratio: 16.3, min: 4.5, pass: true, use: 'text of panels and cards' },
+  { fg: COLOR.glass.soft, bg: COLOR.glass.face, ratio: 8.32, min: 4.5, pass: true, use: 'captions and units on glass' },
+  { fg: COLOR.glass.accentText, bg: COLOR.glass.face, ratio: 8.34, min: 4.5, pass: true, use: 'work in progress, accent text' },
+  { fg: COLOR.glass.okText, bg: COLOR.glass.face, ratio: 9.99, min: 4.5, pass: true, use: 'checks passed' },
+  { fg: COLOR.glass.dangerText, bg: COLOR.glass.face, ratio: 7.92, min: 4.5, pass: true, use: 'reasons for sent back' },
+  { fg: COLOR.glass.waitText, bg: COLOR.glass.face, ratio: 10.9, min: 4.5, pass: true, use: 'waiting for the model' },
+  { fg: COLOR.glass.text, bg: COLOR.glass.quiet, ratio: 14.28, min: 4.5, pass: true, use: 'secondary buttons' },
+  { fg: COLOR.glass.text, bg: COLOR.glass.inset, ratio: 17.33, min: 4.5, pass: true, use: 'preview of a step, code' },
+  { fg: '#FFFFFF', bg: COLOR.action, ratio: 6.15, min: 4.5, pass: true, use: 'primary button text' },
+  { fg: COLOR.paper, bg: COLOR.glass.okFill, ratio: 5.06, min: 4.5, pass: true, use: 'text on a green chip' },
+  { fg: COLOR.paper, bg: COLOR.glass.dangerFill, ratio: 5.47, min: 4.5, pass: true, use: 'text on a sent-back chip' },
   { fg: COLOR.ink, bg: COLOR.amber, ratio: 5.37, min: 4.5, pass: true, use: 'text on an amber plate' },
   { fg: COLOR.ink, bg: COLOR.highlight, ratio: 11.33, min: 4.5, pass: true, use: 'quote on highlight' },
-  { fg: COLOR.paper, bg: COLOR.slate, ratio: 11.38, min: 4.5, pass: true, use: 'sheets on the bench' },
-  { fg: COLOR.bone, bg: COLOR.slate, ratio: 10.44, min: 4.5, pass: true, use: 'trays and the model on the bench' },
-  { fg: COLOR.paper, bg: COLOR.void.zenith, ratio: 6.69, min: 4.5, pass: true, use: 'word on the dark sky' },
-  { fg: COLOR.paper, bg: COLOR.coverField, ratio: 9.37, min: 4.5, pass: true, use: 'Groundwork on the cover' },
-  { fg: COLOR.ink, bg: COLOR.ground.tile[0], ratio: 11.04, min: 4.5, pass: true, use: 'labels next to tiles' },
-  { fg: COLOR.ink, bg: COLOR.ground.tile[1], ratio: 9.93, min: 4.5, pass: true, use: 'labels next to darker tiles' },
+  { fg: COLOR.glass.text, bg: COLOR.slate, ratio: 15.13, min: 4.5, pass: true, use: 'station sign on graphite' },
+  { fg: COLOR.glass.soft, bg: COLOR.slate, ratio: 7.72, min: 4.5, pass: true, use: 'numbers on a station sign' },
+  { fg: COLOR.glass.text, bg: COLOR.void.mid, ratio: 13.91, min: 4.5, pass: true, use: 'word on the blue sky' },
+  { fg: COLOR.ink, bg: COLOR.bone, ratio: 13.66, min: 4.5, pass: true, use: 'text on bone keys and pages' },
+  { fg: COLOR.ink, bg: COLOR.paper, ratio: 14.89, min: 4.5, pass: true, use: 'text of pages' },
+  { fg: COLOR.inkSoft, bg: COLOR.bone, ratio: 6.46, min: 4.5, pass: true, use: 'captions on bone' },
+  { fg: COLOR.inkSoft, bg: COLOR.paper, ratio: 7.04, min: 4.5, pass: true, use: 'captions on paper' },
+  { fg: COLOR.cobaltText, bg: COLOR.bone, ratio: 6.84, min: 4.5, pass: true, use: 'accent text on bone' },
+  { fg: COLOR.cobaltText, bg: COLOR.paper, ratio: 7.46, min: 4.5, pass: true, use: 'links on paper' },
+  { fg: COLOR.paper, bg: COLOR.action, ratio: 5.8, min: 4.5, pass: true, use: 'primary button of the pages' },
+  { fg: COLOR.vermilionText, bg: COLOR.bone, ratio: 5.95, min: 4.5, pass: true, use: 'reasons for rejection on bone' },
+  { fg: COLOR.vermilionText, bg: COLOR.paper, ratio: 6.49, min: 4.5, pass: true, use: 'reasons on paper' },
+  { fg: COLOR.paper, bg: COLOR.vermilion, ratio: 4.76, min: 4.5, pass: true, use: 'text on the stamp' },
+  { fg: COLOR.mossText, bg: COLOR.bone, ratio: 5.54, min: 4.5, pass: true, use: 'kept, fixed on a second look' },
+  { fg: COLOR.amberText, bg: COLOR.bone, ratio: 5.22, min: 4.5, pass: true, use: 'waiting for the model, on bone' },
+  { fg: COLOR.paper, bg: COLOR.slate, ratio: 15.6, min: 4.5, pass: true, use: 'sheets on the bench' },
+  { fg: COLOR.paper, bg: COLOR.coverField, ratio: 17.05, min: 4.5, pass: true, use: 'Groundwork on the cover' },
   { fg: COLOR.hc.text, bg: COLOR.hc.bg, ratio: 18.1, min: 7, pass: true, use: 'high contrast' },
   { fg: COLOR.hc.cobalt, bg: COLOR.hc.bg, ratio: 9.27, min: 4.5, pass: true, use: 'accent on dark' },
-  { fg: COLOR.hc.cobalt, bg: COLOR.slate, ratio: 6.07, min: 4.5, pass: true, use: 'accent on slate' },
-  { fg: COLOR.cobalt, bg: COLOR.bone, ratio: 5.47, min: 3, pass: true, use: 'instrument ring, focus ring' },
-  { fg: COLOR.cobalt, bg: COLOR.paper, ratio: 5.96, min: 3, pass: true, use: 'focus ring on paper' },
-  { fg: COLOR.cobalt, bg: COLOR.ground.tile[0], ratio: 4.42, min: 3, pass: true, use: 'stakes on the shelf' },
-  { fg: COLOR.cobalt, bg: COLOR.ground.tile[1], ratio: 3.97, min: 3, pass: true, use: 'stakes on darker tiles' },
-  { fg: COLOR.cobalt, bg: COLOR.ground.tile[2], ratio: 4.71, min: 3, pass: true, use: 'stakes on lighter tiles' },
-  { fg: COLOR.cobalt, bg: COLOR.ground.home[0], ratio: 3.88, min: 3, pass: true, use: 'dashes on the home plot' },
-  { fg: COLOR.cobalt, bg: COLOR.void.horizon, ratio: 5.17, min: 3, pass: true, use: 'future plot outline on the sky' },
-  { fg: COLOR.cobalt, bg: COLOR.void.low, ratio: 3.73, min: 3, pass: true, use: 'future plot outline low' },
-  { fg: COLOR.cobalt, bg: COLOR.void.mid, ratio: 2.94, min: 3, pass: false, use: 'never: the plan line always lies on tiles' },
-  { fg: COLOR.cobalt, bg: COLOR.slate, ratio: 1.91, min: 3, pass: false, use: 'never: cobalt on the bench stands on bone' },
-  { fg: COLOR.vermilion, bg: COLOR.paper, ratio: 4.76, min: 3, pass: true, use: 'thread over cards' },
+  { fg: COLOR.hc.cobalt, bg: COLOR.slate, ratio: 8.33, min: 4.5, pass: true, use: 'accent on graphite' },
+  { fg: COLOR.cobalt, bg: COLOR.bone, ratio: 3.35, min: 3, pass: true, use: 'instrument ring, the first stake on its plate' },
+  { fg: COLOR.cobalt, bg: COLOR.slate, ratio: 4.27, min: 3, pass: true, use: 'active bar of a sign' },
+  { fg: COLOR.cobalt, bg: COLOR.ground.tile[0], ratio: 3.42, min: 3, pass: true, use: 'stakes and survey line on the shelf' },
+  { fg: COLOR.cobalt, bg: COLOR.ground.tile[1], ratio: 3.67, min: 3, pass: true, use: 'stakes on darker basalt' },
+  { fg: COLOR.cobalt, bg: COLOR.ground.tile[2], ratio: 3.13, min: 3, pass: true, use: 'stakes on lighter basalt' },
+  { fg: COLOR.cobalt, bg: COLOR.ground.home[0], ratio: 4.08, min: 3, pass: true, use: 'dashes on the home plot' },
+  { fg: COLOR.cobalt, bg: COLOR.void.mid, ratio: 3.93, min: 3, pass: true, use: 'the plan line against the sky' },
+  { fg: COLOR.seam, bg: COLOR.ground.tile[0], ratio: 5.2, min: 3, pass: true, use: 'lit seams between basalt tiles' },
+  { fg: COLOR.seam, bg: COLOR.ground.tile[1], ratio: 5.58, min: 3, pass: true, use: 'lit seams, darker tiles' },
+  { fg: COLOR.seam, bg: COLOR.ground.tile[2], ratio: 4.76, min: 3, pass: true, use: 'lit seams, lighter tiles' },
+  { fg: COLOR.moss, bg: COLOR.ground.tile[0], ratio: 3.39, min: 3, pass: true, use: 'done collar on the shelf' },
+  { fg: COLOR.moss, bg: COLOR.slate, ratio: 4.23, min: 3, pass: true, use: 'done bar of a sign' },
+  { fg: COLOR.moss, bg: COLOR.bone, ratio: 3.38, min: 3, pass: true, use: 'checks on bone' },
+  { fg: COLOR.vermilion, bg: COLOR.slate, ratio: 3.28, min: 3, pass: true, use: 'sent-back bar of a sign' },
   { fg: COLOR.vermilion, bg: COLOR.bone, ratio: 4.36, min: 3, pass: true, use: 'stamp on a slip' },
-  { fg: COLOR.vermilion, bg: COLOR.ground.tile[0], ratio: 3.53, min: 3, pass: true, use: 'tags over tiles' },
-  { fg: COLOR.vermilion, bg: COLOR.ground.tile[1], ratio: 3.17, min: 3, pass: true, use: 'tags over darker tiles' },
-  { fg: COLOR.vermilion, bg: COLOR.slate, ratio: 2.39, min: 3, pass: false, use: 'never: slips lie in a bone tray' },
-  { fg: COLOR.moss, bg: COLOR.ground.tile[0], ratio: 3.53, min: 3, pass: true, use: 'checks over tiles' },
-  { fg: COLOR.moss, bg: COLOR.bone, ratio: 4.37, min: 3, pass: true, use: 'checks on bone' },
-  { fg: COLOR.amber, bg: COLOR.slate, ratio: 4.1, min: 3, pass: true, use: 'hourglass by the bench' },
-  { fg: COLOR.amber, bg: COLOR.bone, ratio: 2.55, min: 3, pass: false, use: 'never: amber on bone only as a plate with ink text' },
-  { fg: COLOR.slate, bg: COLOR.void.horizon, ratio: 9.88, min: 3, pass: true, use: 'board body on the sky' },
-  { fg: COLOR.slate, bg: COLOR.void.mid, ratio: 5.61, min: 3, pass: true, use: 'board body high' },
-  { fg: COLOR.slate, bg: COLOR.void.low, ratio: 7.12, min: 3, pass: true, use: 'board body low' },
-  { fg: COLOR.bone, bg: COLOR.void.horizon, ratio: 1.06, min: 3, pass: false, use: 'never: a board has a slate rim' },
-  { fg: COLOR.bone, bg: COLOR.void.mid, ratio: 1.86, min: 3, pass: false, use: 'never: a board has a slate rim' },
+  { fg: COLOR.amber, bg: COLOR.slate, ratio: 5.62, min: 3, pass: true, use: 'waiting bar of a sign' },
+  { fg: COLOR.bone, bg: COLOR.void.mid, ratio: 13.15, min: 3, pass: true, use: 'instruments against the sky' },
+  { fg: COLOR.slate, bg: COLOR.void.horizon, ratio: 5.7, min: 3, pass: true, use: 'a sign against the warm band' },
   { fg: COLOR.category.ochre, bg: COLOR.bone, ratio: 3.32, min: 3, pass: true, use: 'category mark with shape' },
   { fg: COLOR.category.sage, bg: COLOR.bone, ratio: 3.17, min: 3, pass: true, use: 'category mark with shape' },
   { fg: COLOR.category.steel, bg: COLOR.bone, ratio: 4.24, min: 3, pass: true, use: 'category mark with shape' },
   { fg: COLOR.category.terracotta, bg: COLOR.bone, ratio: 4.37, min: 3, pass: true, use: 'category mark with shape' },
-  { fg: COLOR.category.steel, bg: COLOR.slate, ratio: 2.46, min: 3, pass: false, use: 'never: the second person has a bone base' },
+  { fg: COLOR.cobaltText, bg: COLOR.glass.face, ratio: 2.25, min: 4.5, pass: false, use: 'never: on glass the accent text is glass.accentText' },
+  { fg: COLOR.vermilionText, bg: COLOR.glass.face, ratio: 2.59, min: 4.5, pass: false, use: 'never: on glass reasons use glass.dangerText' },
+  { fg: COLOR.mossText, bg: COLOR.glass.face, ratio: 2.78, min: 4.5, pass: false, use: 'never: on glass passed uses glass.okText' },
+  { fg: COLOR.ink, bg: COLOR.glass.face, ratio: 1.13, min: 4.5, pass: false, use: 'never: ink only on light plates' },
+  { fg: COLOR.outline, bg: COLOR.ground.tile[0], ratio: 1.41, min: 3, pass: false, use: 'never: empty slots are decoration only' },
+  { fg: COLOR.amber, bg: COLOR.bone, ratio: 2.55, min: 3, pass: false, use: 'never: amber on bone only as a plate with ink text' },
 ];
 
 // ---------------------------------------------------------------- sky
@@ -179,14 +208,15 @@ export const CONTRAST: readonly ContrastPair[] = [
 export const SKY = {
   stops: [
     { el: 90, color: COLOR.void.zenith },
-    { el: 12, color: COLOR.void.mid },
+    { el: 4, color: COLOR.void.mid },
     { el: 0, color: COLOR.void.horizon },
-    { el: -12, color: COLOR.void.low },
+    { el: -2, color: COLOR.void.low },
     { el: -90, color: COLOR.void.nadir },
   ],
-  /** Light patch: a soft gradient, no disc. */
-  sun: { az: -35, el: 12, radiusDeg: 16 },
-  ibl: { sky: COLOR.void.zenith, equator: COLOR.void.horizon, ground: COLOR.void.nadir },
+  /** Light patch where the sun has just set: a soft gradient on the band, no disc. */
+  sun: { az: -35, el: 0.5, radiusDeg: 6 },
+  /** Environment light: the blue of the sky above, a cool equator, dark ground. */
+  ibl: { sky: '#2A3E66', equator: '#4A5670', ground: '#0B0F16' },
   /** Environment light in Room is half of the Void. */
   roomEnvScale: 0.5,
   /** The sky dissolves and comes back in this time. */
@@ -196,8 +226,8 @@ export const SKY = {
 // ---------------------------------------------------------------- light and shadow
 
 export const LIGHT = {
-  key: { az: -35, el: 24, color: '#FFE8C6', void: 2.2, room: 1.2 },
-  fill: { sky: '#CFDCE0', ground: '#8C7B66', intensity: 0.9 },
+  key: { az: -35, el: 20, color: '#FFDDB8', void: 1.45, room: 1.2 },
+  fill: { sky: '#7D95C4', ground: '#1A1F29', intensity: 1.15 },
   /** Long shadow of an object: an elongated patch 2.25 × its height, ink at 0.22. */
   longShadow: { length: 2.25, color: COLOR.ink, opacity: 0.22 },
   /** Contact patch under every object: ink 0.35 at the centre. */
@@ -316,8 +346,9 @@ export const PANEL = {
     eyeDist: 0.68,
     lines: [{ role: 'flat', chars: 22, count: 2 }],
     reserve: 0.044,
-    size: { w: 0.4, h: 0.13 },
-    large: { w: 0.4, h: 0.145 },
+    // DESIGN gave 13 cm (14.5 large); the line under "Run it live" adds a row.
+    size: { w: 0.4, h: 0.156 },
+    large: { w: 0.4, h: 0.176 },
   },
   captionRail: {
     role: 'read',
@@ -356,8 +387,9 @@ export const PANEL = {
       { role: 'label', chars: 28, count: 1 },
       { role: 'read', chars: 25, count: 6 },
     ],
-    size: { w: 0.42, h: 0.34 },
-    large: { w: 0.5, h: 0.41 },
+    // Six lines and no counter: 2 cm taller than a station board (2.8 cm in large text).
+    size: { w: 0.42, h: 0.36 },
+    large: { w: 0.5, h: 0.438 },
   },
   stationChip: {
     role: 'label',
@@ -486,12 +518,12 @@ const BENCH: Record<BenchItem, Place> = {
   inbox: place(-30, 0.5, 0, 0.21, 0.1, 0.075),
   /** Cobalt stake 5 cm on a bone plate 12 × 9 cm with the dashed outline of an envelope. */
   firstStake: place(-10, 0.46, 0, 0.12, 0.09, 0.05),
-  /** Bone card 40 × 13 cm lying flat (14.5 cm deep in large text). */
-  runCard: place(-7, 0.6, 0, 0.4, 0.13, 0.003, 0.68),
+  /** Card 40 × 15.6 cm lying flat (17.6 cm deep in large text), its far edge inside the slab. */
+  runCard: place(-7, 0.59, 0, 0.4, 0.156, 0.003, 0.68),
   /** Bone tray 16 × 11 cm, the long side in depth. */
-  traySent: place(14, 0.46, 0, 0.11, 0.16, 0.03),
+  traySent: place(20, 0.45, 0, 0.11, 0.16, 0.03),
   /** The same tray with a small stamp head; appears after a run. */
-  trayFool: place(30, 0.5, 0, 0.11, 0.16, 0.03),
+  trayFool: place(32, 0.52, 0, 0.11, 0.16, 0.03),
   /** Slate stone 5 cm across on a bone stand. */
   voiceStone: place(22, 0.6, 0, 0.06, 0.06, 0.035),
   /** Bone cap 6 cm, 3 cm high. */
@@ -531,13 +563,13 @@ function narrowBench(): Record<BenchItem, Place> {
   return {
     inbox: n('inbox', -25.5, 0.46),
     firstStake: n('firstStake', -3.5, 0.46),
-    runCard: n('runCard', -7, 0.6),
+    runCard: n('runCard', -7, 0.595),
     traySent: n('traySent', 14, 0.44),
     trayFool: n('trayFool', 26.5, 0.5),
     voiceStone: n('voiceStone', 16.8, 0.59),
     modeSwitch: n('modeSwitch', 23, 0.61),
     settingsTile: n('settingsTile', -26.5, 0.69),
-    keyIsland: n('keyIsland', -25.8, 0.56),
+    keyIsland: n('keyIsland', -25.5, 0.54),
     keySend: n('keySend', 24.8, 0.69),
   };
 }

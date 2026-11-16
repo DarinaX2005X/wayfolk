@@ -1,0 +1,470 @@
+/* ============================================================
+   Marlow Street Bakery — styles.css
+   Warm cream and dark brown, plain readable type, calm spacing.
+   No image files: the only texture is made with CSS gradients.
+   ============================================================ */
+
+/* ---------- Design tokens ---------- */
+:root {
+  /* Palette: cream paper, dark brown ink, one warm caramel accent */
+  --cream: #f7eddb;
+  --cream-deep: #efe0c7;
+  --paper: #fffaf1;
+  --rule: #ddc9ab;
+
+  --brown: #2e2016;
+  --ink: #3a2a1d;
+  --ink-soft: #5a4534;
+
+  --accent: #a1551f;
+  --accent-deep: #7f3f12;
+  --accent-wash: #f3e2c9;
+
+  /* Type */
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Layout */
+  --page: 48rem;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(58, 42, 29, 0.05), 0 10px 24px -16px rgba(58, 42, 29, 0.45);
+}
+
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem);
+  line-height: 1.65;
+  color: var(--ink);
+  background-color: var(--cream);
+  /* A warm glow at the top of the page, drawn with a gradient. */
+  background-image: radial-gradient(115% 55% at 50% 0%, #fffaf1 0%, rgba(255, 250, 241, 0) 62%);
+  background-repeat: no-repeat;
+}
+
+h1,
+h2 {
+  margin: 0 0 1rem;
+  font-family: var(--serif);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--brown);
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(2rem, 1.4rem + 3.4vw, 3.35rem);
+}
+
+h2 {
+  font-size: clamp(1.3rem, 1.15rem + 0.8vw, 1.75rem);
+}
+
+h2::after {
+  content: "";
+  display: block;
+  width: 3rem;
+  height: 3px;
+  margin-top: 0.55rem;
+  border-radius: 2px;
+  background-color: var(--accent);
+}
+
+p {
+  margin: 0 0 0.85rem;
+  max-width: 68ch;
+  text-wrap: pretty;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: var(--accent-deep);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+::selection {
+  background-color: #e8c79a;
+  color: var(--brown);
+}
+
+/* ---------- Shared layout ---------- */
+.wrap {
+  max-width: var(--page);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 1.75rem);
+}
+
+/* ---------- Skip link ---------- */
+.skip-link {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 20;
+  transform: translateY(-200%);
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  background-color: var(--brown);
+  color: #fdf6ea;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.15s ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  color: #fdf6ea;
+}
+
+/* ---------- Header ---------- */
+.site-header {
+  border-top: 4px solid var(--brown);
+  border-bottom: 1px solid var(--rule);
+  background-color: var(--cream);
+  background-image: linear-gradient(180deg, var(--paper), var(--cream-deep));
+  padding-top: clamp(1.75rem, 5vw, 3rem);
+}
+
+.site-header .wrap {
+  padding-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+}
+
+.tagline {
+  margin: 0.55rem 0 0;
+  font-size: clamp(1.05rem, 1rem + 0.4vw, 1.25rem);
+  color: var(--ink-soft);
+}
+
+.open-line {
+  display: inline-block;
+  margin: 0.95rem 0 0;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid #e3c9a3;
+  border-radius: 999px;
+  background-color: var(--accent-wash);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--accent-deep);
+}
+
+/* ---------- Nav ---------- */
+.site-nav {
+  background-color: var(--brown);
+  padding: 0.35rem clamp(0.75rem, 4vw, 1.75rem);
+}
+
+.site-nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.15rem 0.25rem;
+  max-width: var(--page);
+  margin-inline: auto;
+  padding-block: 0.35rem;
+  list-style: none;
+}
+
+.site-nav a {
+  display: block;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  color: #f3e3cb;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.site-nav a:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #fff8ec;
+}
+
+.site-nav :focus-visible {
+  outline-color: #ffd8a0;
+}
+
+/* ---------- Main ---------- */
+main {
+  display: grid;
+  gap: clamp(1rem, 3vw, 1.5rem);
+  max-width: var(--page);
+  margin-inline: auto;
+  padding: clamp(1.25rem, 4vw, 2.25rem) clamp(1rem, 4vw, 1.75rem) clamp(2rem, 6vw, 3rem);
+}
+
+main > section {
+  padding: clamp(1.15rem, 3.5vw, 2rem);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background-color: var(--paper);
+  box-shadow: var(--shadow);
+  scroll-margin-top: 1rem;
+}
+
+main section > :last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- Hours ---------- */
+.hours-table {
+  width: 100%;
+  margin: 1.1rem 0 0.25rem;
+  border-collapse: collapse;
+  font-size: clamp(0.92rem, 0.9rem + 0.2vw, 1rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.hours-table th,
+.hours-table td {
+  padding: 0.65rem 0.8rem;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: baseline;
+}
+
+.hours-table thead th {
+  background-color: var(--cream-deep);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.hours-table tbody th {
+  font-weight: 600;
+  color: var(--brown);
+}
+
+.hours-table tbody td {
+  color: var(--ink-soft);
+}
+
+.hours-table tbody tr:nth-child(even) {
+  background-color: #fdf6ea;
+}
+
+.hours-table tbody tr:last-child th,
+.hours-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* ---------- Notes ---------- */
+.note {
+  max-width: 60ch;
+  margin: 1.1rem 0 0;
+  padding: 0.1rem 0 0.1rem 0.85rem;
+  border-left: 3px solid var(--accent);
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+}
+
+/* ---------- Menu ---------- */
+.menu-list {
+  margin: 1.2rem 0 0.25rem;
+  list-style: none;
+}
+
+.menu-item {
+  display: grid;
+  grid-template-columns: auto minmax(1rem, 1fr) auto;
+  column-gap: 0.6rem;
+  align-items: baseline;
+  padding-block: 0.45rem;
+}
+
+.menu-item::before {
+  content: "";
+  grid-row: 1;
+  grid-column: 2;
+  align-self: baseline;
+  transform: translateY(-0.22em);
+  border-bottom: 2px dotted var(--rule);
+}
+
+.item-name {
+  grid-row: 1;
+  grid-column: 1;
+  color: var(--ink);
+}
+
+.item-price {
+  grid-row: 1;
+  grid-column: 3;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--brown);
+}
+
+/* ---------- Baking note ---------- */
+.baking p:first-of-type {
+  font-size: clamp(1.03rem, 1rem + 0.25vw, 1.15rem);
+  color: var(--brown);
+}
+
+.baking p + p {
+  margin-top: 0.35rem;
+}
+
+/* ---------- Special orders ---------- */
+.order {
+  border-color: #4a3626;
+  background-color: var(--brown);
+  color: #f0e3d0;
+}
+
+.order h2 {
+  color: #fdf6ea;
+}
+
+.order h2::after {
+  background-color: #e0a86a;
+}
+
+.order p {
+  max-width: 58ch;
+  color: #f0e3d0;
+}
+
+.order a {
+  color: #ffd8a0;
+  text-decoration-thickness: 2px;
+  font-weight: 600;
+}
+
+.order a:hover {
+  color: #fff8ec;
+}
+
+.order .order-phone {
+  margin: 1.15rem 0 0.85rem;
+  font-size: clamp(1.05rem, 1rem + 0.4vw, 1.2rem);
+  color: #fdf6ea;
+}
+
+.order .order-phone a {
+  font-size: 1.1em;
+}
+
+.order :focus-visible {
+  outline-color: #ffd8a0;
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  border-top: 1px solid var(--rule);
+  background-color: var(--cream-deep);
+  padding-block: clamp(1.5rem, 4vw, 2.25rem);
+}
+
+.footer-heading {
+  margin: 0 0 0.35rem;
+  font-family: var(--serif);
+  font-size: clamp(1.1rem, 1rem + 0.5vw, 1.35rem);
+  font-weight: 600;
+  color: var(--brown);
+}
+
+.footer-heading::after {
+  content: none;
+}
+
+.footer-address,
+.footer-phone {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+.site-footer a {
+  color: var(--accent-deep);
+  font-weight: 600;
+  text-underline-offset: 0.15em;
+}
+
+.footer-hours {
+  max-width: 60ch;
+  margin: 0.9rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px dashed var(--rule);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+/* ---------- Small screens ---------- */
+@media (max-width: 30rem) {
+  .hours-table th,
+  .hours-table td {
+    padding: 0.55rem 0.5rem;
+  }
+
+  .site-nav ul {
+    gap: 0.1rem;
+  }
+
+  .site-nav a {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .open-line {
+    font-size: 0.82rem;
+  }
+
+  .menu-item {
+    column-gap: 0.4rem;
+  }
+}
+
+/* ---------- Respect reduced-motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

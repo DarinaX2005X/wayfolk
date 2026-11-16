@@ -18,7 +18,7 @@
  *   { "type": { "into": "#code", "text": "X4KM7" } }
  *   { "upload": { "into": "input[type=file]", "file": "tests/web/files/one.pdf" } }
  *   { "expectText": "Enter Groundwork" } | { "expectText": { "in": "h1", "text": "..." } }
- *   { "expectNoRequest": "/api/llm" }                   no request to it since the page loaded
+ *   { "expectNoRequest": "POST /api/llm" }              no such request since the page loaded ("METHOD url")
  *   { "eval": "store.mode.value", "equals": "desk" }    as in xr.mjs, over window.__gw
  *   { "run": { ... } } | { "mouse": { "target": "name", "action": "click" | "drag", "to": ... } }
  *   { "include": "parts/<package>/<file>.json" }        tests/web/ first, then tests/xr/
@@ -161,7 +161,12 @@ async function runStep(step, ctx) {
     }
     case 'expectNoRequest': {
       const pattern = String(step.expectNoRequest);
-      const hits = ctx.requests.filter((url) => url.includes(pattern));
+      // "POST /api/llm" matches only that method; a bare address matches any method.
+      const [, method, part] = /^(?:([A-Z]+) )?(.*)$/.exec(pattern);
+      const hits = ctx.requests.filter((line) => {
+        const [m, url] = line.split(' ', 2);
+        return (!method || m === method) && url.includes(part);
+      });
       if (hits.length) throw new StepFailure(`the page asked for ${pattern}: ${hits.slice(0, 3).join(', ')}`);
       return `${ctx.requests.length} requests, none to ${pattern}`;
     }
@@ -231,7 +236,7 @@ async function main() {
       const page = await context.newPage();
       const requests = [];
       const problems = [];
-      page.on('request', (request) => requests.push(request.url()));
+      page.on('request', (request) => requests.push(`${request.method()} ${request.url()}`));
       page.on('pageerror', (error) => problems.push(String(error.message)));
       const ctx = { page, phone: args.device === 'phone', base: args.base, requests, scenario };
       console.log(`\n${scenario.name}  (${rel(scenario.file)})\n  ${args.base}  ${args.device}`);

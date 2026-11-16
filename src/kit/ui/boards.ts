@@ -157,7 +157,8 @@ export class CaptionRail extends UiPanel<RailSpec> {
     const r = SIZE.rail;
     const h = t.large ? r.hLarge : r.h;
     const lines = (this.state.lines ?? store.captions.peek()).slice(-2);
-    const hidden = this.state.lines === undefined && store.settings.peek().captions === false;
+    // Nothing to say, or captions off: the rail is not drawn at all.
+    const hidden = this.state.lines === undefined && (store.settings.peek().captions === false || lines.length === 0);
     const face = new Container({ ...faceStyle(t, r.w, { padding: 0, gap: 0 }), paddingX: r.padX, paddingY: r.padY, width: r.w, height: h, justifyContent: 'flex-end' } as never);
     if (!hidden) {
       for (const line of lines) {

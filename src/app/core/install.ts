@@ -21,6 +21,8 @@ import { parseAppParams } from '../params';
 import { measure } from '../perf/info';
 import { zone } from '../perf/zone';
 import { persist } from '../persist';
+import { bindInteract } from '../../interact/bind';
+import { startLlmStatus } from '../../net/index';
 
 export const order = 0;
 
@@ -216,6 +218,10 @@ export function install(app: App): void {
 
   // Everything the input layer draws under the player rig (hands, rays) counts as the hands zone.
   zone(world.player, 'hands');
+
+  // ---- input, feel and the agents' status: after the roots and the clock exist
+  bindInteract(app);
+  startLlmStatus();
 
   // ---- debug hooks
   registerDebug('clock', clock);

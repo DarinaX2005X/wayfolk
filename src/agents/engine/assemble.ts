@@ -19,7 +19,7 @@ export function assemble(e: Engine): Deliverable | null {
     const files = [...e.files].map(([path, f]) => ({ path, text: f.text }));
     if (!files.length) return null;
     const required = plan.steps.flatMap((s) => s.args.required ?? []);
-    const pc = checkProject(files, { required, ...(e.hasMaterials ? { sources: e.baseSources() } : {}) });
+    const pc = checkProject(files, { required, house: true, ...(e.hasMaterials ? { sources: e.baseSources() } : {}) });
     const siteFiles: SiteFile[] = files.map((f) => {
       const c = pc.files.find((x) => x.path === f.path)!;
       return { path: f.path, mime: mimeOf(f.path), text: f.text, bytes: new TextEncoder().encode(f.text).length, checks: c.checks, ok: c.problems.length === 0 };

@@ -266,3 +266,46 @@
     animation-duration: 3s;
   }
 }
+
+/* ------------------------------------------------------------------ the task line at the desk */
+
+.app-caption-source {
+  font-weight: 700;
+}
+
+.app-caption.is-key {
+  font-weight: 400;
+}
+
+.app-task {
+  display: flex;
+  gap: 8px;
+}
+
+.app-task-field {
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--role-border);
+  border-radius: var(--radius-control);
+  background: var(--role-surface);
+  color: var(--role-text);
+  font: inherit;
+}
+
+.app-task-field:focus-visible {
+  outline: 3px solid var(--role-focus);
+  outline-offset: 2px;
+}
+
+.app-task-note,
+.app-task-link {
+  margin: 0;
+  color: var(--role-text-soft);
+  font-size: var(--text-caption);
+}
+
+.app-task-note:empty {
+  display: none;
+}

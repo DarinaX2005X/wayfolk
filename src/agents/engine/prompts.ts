@@ -6,6 +6,16 @@
  */
 import type { ChatMessage, Doc, Page, Plan, PlanStep } from '../types';
 import { OBJECTS, PLANNER_KINDS, STEP_LIBRARY } from './library';
+import { houseRules } from './house-rules';
+
+/** The house rules a step writes by (or, for a review, reads against). */
+function rulesFor(step: PlanStep, plan: Plan): string {
+  if (step.kind === 'write-code') return houseRules('site');
+  if (step.kind === 'write-section') return houseRules('document');
+  if (step.kind === 'make-plan') return houseRules('plan');
+  if (step.kind === 'review') return `Read the work against these rules too, and name each one it breaks.\n${houseRules(plan.deliverable)}`;
+  return '';
+}
 
 const SYSTEM_COMMON =
   'You are one of the agents of Groundwork, a workshop where agents do real work for a person. ' +
@@ -27,6 +37,8 @@ export type StepInputs = {
   /** A person's instruction for a redo, and what the step gave before. */
   instruction?: string;
   before?: string;
+  /** A step this one uses was redone with this instruction: `before` is this step's earlier answer. */
+  upstream?: string;
 };
 
 export function materialsText(docs: readonly Doc[], pages: readonly Page[], perDoc = 12_000): string {
@@ -63,7 +75,7 @@ export function plannerMessages(input: { goal: string; docs: readonly Doc[]; lin
     '- 3 to 9 steps of your own. Use "uses" to say which earlier steps (or "materials") a step needs; steps that do not depend on each other run at the same time.\n' +
     '- With files, start with research so later steps work from checked facts with quotes. Without files, do not add research.\n' +
     '- For a site: write-code steps name their files; index.html first, then styles.css and app.js (a separate step or the same one). Plain HTML, CSS and JavaScript, no frameworks, no build step, no files that are not written by a step (no image files: use CSS and inline SVG). In "required" give 3–6 parts the page must have, as CSS selectors of elements written in index.html itself (not made by scripts), e.g. "#menu", "form#order", "footer".\n' +
-    '- For a plan: give windowFrom and windowTo from the goal or files (or a sensible window starting after today), and the team: the people the goal or files name. Plan items must have owners from the team.\n' +
+    '- For a plan: give windowFrom and windowTo from the goal or files (or a sensible window starting after today), and the team: the people the goal or files name. Plan items must have owners from the team. One make-plan step writes all the items (8–16 of them); its extra columns are only what items need beyond task, owner, dates and dependencies (a money column when the goal or files give a budget). Add a decide step only when the goal asks for a choice.\n' +
     '- Add a review step before the end when the work is long enough to benefit from a second reader.\n' +
     '- question: ask only when the goal can honestly be read in very different ways; put the reading you assume first in options. Most goals need no question.\n' +
     '- fit: "no" only for what agents here cannot do at all (booking, buying, sending, deploying to someone\'s server); then say what can\'t be done and what you can make instead. "partly" when part of it can be done.\n' +
@@ -83,9 +95,9 @@ const ROLE_INTRO: Record<string, string> = {
   analyst: 'You are the Analyst. You compare, decide and plan from the facts you are given.',
   writer: 'You are the Writer. You write clear, warm, concrete text from the facts you are given.',
   builder:
-    'You are the Builder, a senior front-end developer with a designer\'s eye. You write production-quality files for a real product: ' +
-    'semantic HTML, modern CSS (custom properties, grid, flexbox, clamp() type scale, good spacing, a calm palette with one accent, ' +
-    'responsive down to 360 px, visible focus states), and plain modern JavaScript without libraries.',
+    'You are the Builder, a front-end developer and designer from a strong studio. You write production-quality files for a real product: ' +
+    'semantic HTML, modern CSS (custom properties, grid, flexbox, clamp() type scale) and plain modern JavaScript without libraries. ' +
+    'You design for this one subject, the way a studio would for a paying client, never from a template.',
   reviewer: 'You are the Reviewer, a critical colleague. You read the work and say plainly what is weak, wrong or missing.',
 };
 
@@ -100,7 +112,10 @@ function kindRules(step: PlanStep, inputs: StepInputs): string {
     case 'compare':
       return 'Fill the table: one row per option and criterion. Values short. When the materials back a value, copy the exact words as the quote with its page; otherwise leave quote empty and page 0.';
     case 'decide':
-      return 'Choose one option. Give reasons that rest on the facts or rows given (their ids in "from"). Numbers in a reason must come from those facts.';
+      return (
+        'Choose one option. Give reasons that rest on what you are given. In "from" put the ids of the facts, rows or items a reason relies on (the ids in square brackets), ' +
+        'the id of a whole earlier step (like "s2"), or "goal" when it rests on the goal itself. Numbers in a reason must come from those.'
+      );
     case 'write-section':
       return (
         `Write these sections: ${(step.args.sections ?? []).join('; ') || 'as the step says'}. ` +
@@ -113,7 +128,7 @@ function kindRules(step: PlanStep, inputs: StepInputs): string {
       return (
         `Write the plan items (8–16 for a real plan). Dates are YYYY-MM-DD ${w}; an item ends on or after its start and starts after the items it depends on end. ` +
         `Owners are people of the team: ${inputs.plan.team.join(', ') || '(none named: use roles)'}. ` +
-        (cols ? `Extra columns: ${cols}; give each item a value for each. ` : '') +
+        (cols ? `Extra columns: ${cols}; give each item a value for each in "cells" (only these columns: task, owner and dates have their own fields). ` : 'Leave "cells" empty. ') +
         'When a column holds money, give totals for it, and use only amounts the goal or materials state.'
       );
     }
@@ -126,7 +141,8 @@ function kindRules(step: PlanStep, inputs: StepInputs): string {
 
 export function stepMessages(i: StepInputs, extra = ''): ChatMessage[] {
   const role = STEP_LIBRARY[i.step.kind].role ?? 'writer';
-  const system = `${SYSTEM_COMMON}\n\n${ROLE_INTRO[role] ?? ''}\n\n${kindRules(i.step, i)}`;
+  const rules = rulesFor(i.step, i.plan);
+  const system = `${SYSTEM_COMMON}\n\n${ROLE_INTRO[role] ?? ''}\n\n${kindRules(i.step, i)}${rules ? `\n\n${rules}` : ''}`;
   const parts: string[] = [];
   parts.push(`Goal of the project: ${i.goal}`);
   parts.push(`The planner understood it as: ${i.plan.understood}`);
@@ -140,7 +156,10 @@ export function stepMessages(i: StepInputs, extra = ''): ChatMessage[] {
   if (i.pages.length) parts.push(`--- Materials ---\n${materialsText(i.docs, i.pages)}`);
   if (i.instruction) {
     parts.push(`--- Your earlier answer for this step ---\n${i.before ?? ''}`);
-    parts.push(`The person looked at it and asks you to redo it: "${i.instruction}". Keep what they did not ask to change.`);
+    parts.push(`The person looked at it and asks you to redo it: "${i.instruction}". Keep what they did not ask to change, and answer with the whole answer again, the parts that stay the same included.`);
+  } else if (i.upstream && i.before) {
+    parts.push(`--- Your earlier answer for this step ---\n${i.before}`);
+    parts.push(`An earlier step was redone because the person asked: "${i.upstream}". Bring your answer in line with what changed there, and keep everything else as it was in your earlier answer (every feature, part and wording).`);
   }
   if (extra) parts.push(extra);
   return [
@@ -160,9 +179,11 @@ export function fileExtra(f: FileTask): string {
       'Link the stylesheets and scripts of the project with relative paths (scripts with defer). Use a system font stack, no external fonts, scripts or CDNs. ' +
         'Write all visible text in full: no placeholders. Every in-page link (#id) must point at an id that exists.',
     );
+    if (f.all.some((x) => /\.css$/.test(x.path))) lines.push('All styling lives in the CSS file of the project: no <style> block and no style attributes in the HTML.');
+    if (f.all.some((x) => /\.m?js$/.test(x.path))) lines.push('All behaviour lives in the script file of the project: no inline <script> code and no onclick attributes.');
     if (f.required.length) lines.push(`index.html must contain these parts, written in the HTML itself:\n${f.required.map((r) => `- ${r.what}: ${r.selector}`).join('\n')}`);
   }
-  if (/\.css$/.test(f.path)) lines.push('Style the classes and ids the HTML below uses. Make it look like a finished, polished product.');
+  if (/\.css$/.test(f.path)) lines.push('Style every class and id the HTML and the scripts below use, including the elements the scripts create. Make it look like a finished, polished product.');
   if (/\.m?js$/.test(f.path)) lines.push('Use only ids and classes the HTML below has (or elements this script creates). No libraries. Wrap start-up code so it runs after the page loads.');
   for (const w of f.written) lines.push(`--- ${w.path} (already written) ---\n${w.text}`);
   return lines.join('\n\n');
@@ -173,5 +194,5 @@ export function fixMessages(i: StepInputs, sent: { id: string; text: string; pro
     `Code checked your answer and sent back ${sent.length} ${what}. For each, either fix it (action "fix", the corrected ${what === 'file' || what === 'files' ? 'whole file' : 'unit'}) ` +
     'or withdraw it (action "withdraw") when it can\'t be backed by the materials.\n\n' +
     sent.map((s) => `--- ${s.id} ---\nProblems found by code:\n${s.problems.map((p) => '- ' + p).join('\n')}\nWhat you gave:\n${s.text}`).join('\n\n');
-  return stepMessages({ ...i, instruction: undefined }, extra);
+  return stepMessages({ ...i, instruction: undefined, upstream: undefined }, extra);
 }

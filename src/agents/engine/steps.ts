@@ -15,14 +15,16 @@ import { runGate, type Candidate, type GateSpec, type Problem, type Verdict } fr
 import { fileExtra, fixMessages, stepMessages } from './prompts';
 import { DECISION_SCHEMA, FACTS_SCHEMA, FILE_SCHEMA, fixSchema, ITEMS_SCHEMA, REVIEW_SCHEMA, SECTIONS_SCHEMA, TABLE_SCHEMA, UNIT_SCHEMAS } from './schemas';
 import { plantFile, plantItems, plantSections } from './plant';
+import { fileRank } from './plan-check';
 import { CHECK_LINES } from './library';
+import { headingProblems, hypeProblems, proseProblems, shoutProblems } from '../checks/prose';
 
 export type Fact = { claim: string; quote: string; page: number };
 export type Row = { option: string; criterion: string; value: string; quote: string; page: number };
 export type Decision = { choice: string; reasons: { text: string; from: string[] }[]; risks: string[] };
 export type Section = { heading: string; text: string; from: string[] };
 export type FileData = { path: string; text: string; summary: string };
-export type ItemData = { id: string; task: string; owner: string; start: string; end: string; depends: string[]; cells: { column: string; value: string }[] };
+export type ItemData = { id: string; task: string; owner: string; start: string; end: string; depends: string[]; cells: { column: string; value: string }[]; done?: string };
 
 const plural = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? one : many}`;
 const words = (s: string) => s.split(/\s+/).filter(Boolean).length;
@@ -100,7 +102,9 @@ function fixer<T>(e: Engine, step: PlanStep, noun: string, schemaUnit: Parameter
     }
     const fixes = (r.json as { fixes: { id: string; action: 'fix' | 'withdraw'; unit: unknown }[] }).fixes;
     for (const s of sent) {
-      const f = fixes.find((x) => x.id === s.c.id) ?? fixes.find((x) => x.id.endsWith('.' + s.c.id.split('.').pop()));
+      // Models often answer with the short id ("i2" for "s3.i2"): the last part decides.
+      const tail = (id: string) => id.split('.').pop();
+      const f = fixes.find((x) => x.id === s.c.id) ?? fixes.find((x) => tail(x.id) === tail(s.c.id));
       if (!f) out.set(s.c.id, 'withdraw');
       else out.set(s.c.id, f.action === 'withdraw' ? 'withdraw' : read(f.unit));
     }
@@ -151,7 +155,7 @@ function checkFact(e: Engine, c: Candidate<Fact>, kept: readonly Candidate<Fact>
   checks.push('numbers');
   for (const m of n.missing) problems.push({ reason: m.mention.kind === 'date' ? 'date-mismatch' : 'number-not-in-source', text: missingLine(m, 'its quote') });
   if (!problems.length) {
-    const dup = dedupe({ page: data.page, quote: data.quote }, kept.map((k) => ({ id: k.id, page: k.data.page, quote: k.data.quote })));
+    const dup = dedupe({ page: data.page, quote: data.quote, claim: data.claim }, kept.map((k) => ({ id: k.id, page: k.data.page, quote: k.data.quote, claim: k.data.claim })));
     if (dup) return { status: 'merged', problems: [{ reason: 'duplicate', text: `The same fact as ${dup}` }], checks: [...checks, 'dedupe'], mergedInto: dup };
   }
   const ref = { docId: quoteSource(e, page).docId, page };
@@ -258,7 +262,9 @@ async function compare(e: Engine, step: PlanStep): Promise<StepOutcome> {
 
 async function decide(e: Engine, step: PlanStep): Promise<StepOutcome> {
   const r = await e.call(step, 1, 'step', stepMessages(e.inputsFor(step)), DECISION_SCHEMA, { what: 'the choice' });
-  const known = new Set(e.units.map((u) => u.id));
+  // A reason may rest on units, on a whole earlier step it uses, on the goal or the materials.
+  const known = new Set([...e.units.map((u) => u.id), ...step.uses, 'goal']);
+  const stepTexts = (ids: readonly string[]) => ids.map((id) => e.outputs.get(id)?.text ?? '').filter(Boolean);
   const spec: GateSpec<Decision> = {
     station: step.id,
     kind: 'decision',
@@ -267,7 +273,7 @@ async function decide(e: Engine, step: PlanStep): Promise<StepOutcome> {
       const problems: Problem[] = [];
       for (const reason of c.data.reasons) {
         for (const id of reason.from) if (!known.has(id)) problems.push({ reason: 'from-unknown', text: `The reason "${reason.text.slice(0, 60)}" points at ${id}, which no step produced` });
-        const n = checkNumbers(reason.text, [...e.unitTexts(reason.from), ...e.baseSources()]);
+        const n = checkNumbers(reason.text, [...e.unitTexts(reason.from), ...stepTexts(reason.from), ...e.baseSources()]);
         for (const m of n.missing) problems.push({ reason: 'number-not-in-source', text: missingLine(m, 'the facts it rests on') });
       }
       // The choice is a judgement: the label stays "Reviewed by an agent" even when its numbers pass.
@@ -314,9 +320,13 @@ async function writeSections(e: Engine, step: PlanStep): Promise<StepOutcome> {
     claim: (s) => s.heading,
     check: (c) => {
       const s = c.data;
-      if (!checkable) return { status: 'accepted', problems: [], checks: [] };
-      const problems: Problem[] = [];
-      const checks: CheckName[] = ['numbers'];
+      // House rules of wording hold for every section, with or without materials.
+      const house: Problem[] = [...headingProblems(s.heading), ...proseProblems(s.text)].map((text) => ({ reason: 'house-rule', text }));
+      // Without materials or facts the content itself can't be checked: the label stays
+      // "Reviewed by an agent" even though the wording rules ran.
+      if (!checkable) return house.length ? { status: 'rejected', problems: house, checks: [] } : { status: 'accepted', problems: [], checks: [] };
+      const problems: Problem[] = [...house];
+      const checks: CheckName[] = ['numbers', 'house'];
       const from = s.from.filter((id) => known.has(id));
       for (const id of s.from) if (!known.has(id)) problems.push({ reason: 'from-unknown', text: `It cites ${id}, which no step produced` });
       const sources = [...e.baseSources(), ...e.unitTexts(from.length ? from : undefined)];
@@ -332,6 +342,7 @@ async function writeSections(e: Engine, step: PlanStep): Promise<StepOutcome> {
       }
       return problems.length ? { status: 'rejected', problems, checks } : { status: 'accepted', problems: [], checks };
     },
+    soft: ['house-rule'],
     fix: fixer(e, step, 'section', UNIT_SCHEMAS.section, (s) => `## ${s.heading}\n${s.text}\n(from: ${s.from.join(', ')})`, (u) => u as Section),
     unit: (c, status, checks) => ({ id: c.id, stepId: step.id, kind: 'section', title: c.data.heading, body: c.data.text, from: c.data.from.filter((id) => known.has(id)), status, checks, version: 1 }),
   };
@@ -365,10 +376,10 @@ async function writeCode(e: Engine, step: PlanStep): Promise<StepOutcome> {
   const own = new Map<string, string>();
   const summaries = new Map<string, string>();
   const planted = new Map<string, string[]>();
-  const htmlFirst = files.filter((f) => /\.html?$/i.test(f.path));
-  const rest = files.filter((f) => !/\.html?$/i.test(f.path));
-  // Later files see the pages already written, so their selectors and ids match.
-  const written = () => [...[...e.files].map(([path, f]) => ({ path, text: f.text })), ...[...own].map(([path, text]) => ({ path, text }))].filter((w) => /\.html?$/i.test(w.path));
+  // Page, then scripts, then styles, one after another: each file sees the files already
+  // written, so a script uses the page's ids and the styles cover every class in use.
+  const ordered = [...files].sort((a, b) => fileRank(a.path) - fileRank(b.path));
+  const written = () => [...[...e.files].map(([path, f]) => ({ path, text: f.text })), ...[...own].map(([path, text]) => ({ path, text }))].filter((w) => /\.(html?|m?js)$/i.test(w.path));
   const htmlNow = () => own.get('index.html') ?? e.files.get('index.html')?.text ?? [...own].find(([p]) => /\.html?$/i.test(p))?.[1] ?? '';
   const writeOne = async (f: { path: string; purpose: string }, k: number) => {
     const extra = fileExtra({ path: f.path, purpose: f.purpose, all, written: written().filter((w) => w.path !== f.path), required: f.path === 'index.html' ? required : [] });
@@ -385,15 +396,14 @@ async function writeCode(e: Engine, step: PlanStep): Promise<StepOutcome> {
     summaries.set(f.path, j.summary);
     planted.set(f.path, e.plantedFor(r.response, 0));
   };
-  let k = 1;
-  for (const f of htmlFirst) await writeOne(f, k++);
-  await Promise.all(rest.map((f, i) => writeOne(f, k + i)));
+  // Call numbers stay those of the planner's file order, so recordings keep their keys.
+  for (const f of ordered) await writeOne(f, files.indexOf(f) + 1);
 
   const sources = e.hasMaterials ? e.baseSources() : undefined;
   const check = (c: Candidate<FileData>, current: ReadonlyMap<string, string>): Verdict<FileData> => {
     const merged = new Map(current);
     merged.set(c.data.path, c.data.text);
-    const pc = checkProject(projectFiles(e, merged), { required, ...(sources ? { sources } : {}) });
+    const pc = checkProject(projectFiles(e, merged), { required, house: true, ...(sources ? { sources } : {}) });
     const fc = pc.files.find((x) => x.path === c.data.path)!;
     const problems: Problem[] = fc.problems.map((p) => ({ reason: p.reason, text: p.text, ...(p.line ? { line: p.line } : {}) }));
     return problems.length ? { status: 'rejected', problems, checks: fc.checks, ref: { file: c.data.path, ...(problems[0].line ? { line: problems[0].line } : {}) } } : { status: 'accepted', problems: [], checks: fc.checks };
@@ -402,6 +412,7 @@ async function writeCode(e: Engine, step: PlanStep): Promise<StepOutcome> {
   const cands: Candidate<FileData>[] = files.filter((f) => own.has(f.path)).map((f) => ({ id: `${step.id}:${f.path}`, data: { path: f.path, text: own.get(f.path)!, summary: summaries.get(f.path) ?? '' }, planted: planted.get(f.path) ?? [] }));
   const spec: GateSpec<FileData> = {
     station: step.id,
+    soft: ['house-rule'],
     kind: 'file',
     claim: (d) => d.path,
     check: (c) => check(c, current),
@@ -453,15 +464,39 @@ export function stripFence(s: string): string {
 
 // ------------------------------------------------------------------ plan items
 
+/** Fewer items than this is not a plan: code asks for the whole plan once more. */
+const MIN_ITEMS = 4;
+const FIELD_COLUMN = /^(task|owner|start|end|depend|after|date)/i;
+
 async function makePlan(e: Engine, step: PlanStep): Promise<StepOutcome> {
-  const r = await e.call(step, 1, 'step', stepMessages(e.inputsFor(step)), ITEMS_SCHEMA, {
-    what: 'the plan items',
-    transform: (json) => {
-      const p = plantItems(json as Parameters<typeof plantItems>[0], { window: e.plan.window, team: e.plan.team });
-      return { json: p.json, planted: p.planted, notes: p.notes };
-    },
-  });
+  const ask = (k: number, extra = '') =>
+    e.call(step, k, 'step', stepMessages(e.inputsFor(step), extra), ITEMS_SCHEMA, {
+      what: k === 1 ? 'the plan items' : 'the plan items again',
+      transform: (json) => {
+        const p = plantItems(json as Parameters<typeof plantItems>[0], { window: e.plan.window, team: e.plan.team });
+        return { json: p.json, planted: p.planted, notes: p.notes };
+      },
+    });
+  let r = await ask(1);
+  const first = (r.json as { items: ItemData[] }).items.length;
+  if (first < MIN_ITEMS) {
+    e.ctx.note(step.id, 'Run', `The plan came back with ${plural(first, 'item')}. Code asks for the whole plan again.`);
+    r = await ask(2, `Your previous answer had only ${plural(first, 'item')}. A real plan here has 8 to 16 items that cover everything the goal and the materials ask for. Answer again with the whole plan.`);
+  }
   const answer = r.json as { items: ItemData[]; totals: { column: string; value: string }[] };
+  // An item id that already carries the step's prefix (a redo reads the earlier ids) keeps one.
+  const prefix = step.id + '.';
+  const own = (id: string) => {
+    let x = id;
+    while (x.startsWith(prefix)) x = x.slice(prefix.length);
+    return x;
+  };
+  for (const it of answer.items) {
+    it.id = own(it.id);
+    it.depends = it.depends.map(own);
+  }
+  // Task, owner, dates and dependencies are fields of the item, not extra columns.
+  for (const it of answer.items) it.cells = it.cells.filter((c) => !FIELD_COLUMN.test(c.column.trim()));
   const local = new Map(answer.items.map((it) => [it.id, `${step.id}.${it.id}`]));
   const toItem = (d: ItemData, id: string): PlanItem => ({
     id,
@@ -471,6 +506,7 @@ async function makePlan(e: Engine, step: PlanStep): Promise<StepOutcome> {
     end: d.end,
     depends: d.depends.map((x) => local.get(x) ?? x),
     cells: Object.fromEntries(d.cells.map((c) => [c.column, c.value])),
+    ...(d.done?.trim() ? { done: d.done.trim() } : {}),
     units: [id],
   });
   const cands: Candidate<ItemData>[] = answer.items.slice(0, 24).map((it, i) => ({ id: `${step.id}.${it.id || 'i' + (i + 1)}`, data: it, planted: e.plantedFor(r.response, i) }));
@@ -479,12 +515,20 @@ async function makePlan(e: Engine, step: PlanStep): Promise<StepOutcome> {
   const sources = e.hasMaterials ? e.baseSources() : [];
   const spec: GateSpec<ItemData> = {
     station: step.id,
+    soft: ['house-rule'],
     kind: 'item',
     claim: (d) => `${d.task} (${d.owner}, ${d.start} to ${d.end})`,
     check: (c) => {
       const it = toItem(c.data, c.id);
-      const problems = checkPlanItem(it, { all: [...current.values()], window: e.plan.window, team: e.plan.team, sources, moneyColumns });
-      const checks: CheckName[] = ['plan-table', 'dates', ...(moneyColumns.length && sources.length ? (['numbers'] as CheckName[]) : [])];
+      const problems: Problem[] = checkPlanItem(it, { all: [...current.values()], window: e.plan.window, team: e.plan.team, sources, moneyColumns });
+      // House rules of a plan: a done-when for every item, task names without shouting or hype.
+      const house = [
+        ...((c.data.done ?? '').trim().split(/\s+/).filter(Boolean).length < 3 ? [`"${c.data.task}" has no done-when: one sentence that says how anyone can tell it is finished`] : []),
+        ...shoutProblems(c.data.task, 'The task'),
+        ...hypeProblems(c.data.task),
+      ];
+      for (const text of house) problems.push({ reason: 'house-rule', text });
+      const checks: CheckName[] = ['plan-table', 'dates', 'house', ...(moneyColumns.length && sources.length ? (['numbers'] as CheckName[]) : [])];
       return problems.length ? { status: 'rejected', problems, checks } : { status: 'accepted', problems: [], checks };
     },
     fix: fixer(e, step, 'item', UNIT_SCHEMAS.items, (d) => JSON.stringify(d), (u) => {
@@ -564,7 +608,7 @@ async function checkStep(e: Engine, step: PlanStep): Promise<StepOutcome> {
   const t0 = e.ctx.now();
   const files = [...e.files].map(([path, f]) => ({ path, text: f.text }));
   const required = e.plan.steps.flatMap((s) => s.args.required ?? []);
-  const pc = checkProject(files, { required, ...(e.hasMaterials ? { sources: e.baseSources() } : {}) });
+  const pc = checkProject(files, { required, house: true, ...(e.hasMaterials ? { sources: e.baseSources() } : {}) });
   e.addCheckMs(e.ctx.now() - t0);
   const units: Unit[] = [];
   e.required = { total: pc.load.required.length, found: pc.load.required.filter((r) => r.found).length };

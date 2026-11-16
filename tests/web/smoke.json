@@ -22,7 +22,7 @@
     { "goto": "/app" },
     { "label": "the plate with the main button", "expectText": "Enter Groundwork" },
     { "label": "the microphone button", "expectText": "Allow microphone for voice" },
-    { "label": "nothing asks the model before entry", "expectNoRequest": "/api/llm" },
+    { "label": "nothing asks the model before entry", "expectNoRequest": "POST /api/llm" },
     { "shot": "app-before.png" },
     { "goto": "/app?testscene=1&debug=1" },
     { "include": "parts/core/scene.json" },

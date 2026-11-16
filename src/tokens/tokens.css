@@ -2,37 +2,51 @@
    change tokens.ts and run "npm run tokens". */
 :root {
   /* Colour, named as in DESIGN */
-  --color-void-zenith: #3F5C6C;
-  --color-void-mid: #9DB5BB;
-  --color-void-horizon: #F4E7D0;
-  --color-void-horizon-soft: #E6D9C2;
-  --color-void-low: #CFC6B5;
-  --color-void-nadir: #586A70;
-  --color-ground-tile-1: #E6D6B8;
-  --color-ground-tile-2: #DDCBAA;
-  --color-ground-tile-3: #EBDDC2;
-  --color-ground-home-1: #D9C9AB;
-  --color-ground-home-2: #D1C0A0;
-  --color-ground-cut: #B8805A;
-  --color-ground-keel: #463D37;
-  --color-slate: #2C383D;
-  --color-slate-edge: #465359;
+  --color-void-zenith: #05080F;
+  --color-void-mid: #14244A;
+  --color-void-horizon: #C88A58;
+  --color-void-horizon-soft: #A3714B;
+  --color-void-low: #141B2B;
+  --color-void-nadir: #04060A;
+  --color-ground-tile-1: #2B3039;
+  --color-ground-tile-2: #262B33;
+  --color-ground-tile-3: #31363F;
+  --color-ground-home-1: #1E232A;
+  --color-ground-home-2: #1A1E24;
+  --color-ground-cut: #3A414C;
+  --color-ground-keel: #0A0C10;
+  --color-slate: #1A1F27;
+  --color-slate-edge: #2E3641;
   --color-bone: #F3EEE4;
   --color-bone-shade: #CFC6B6;
   --color-paper: #FBF8F1;
   --color-edge: #D6CCBB;
   --color-ink: #1E2421;
   --color-ink-soft: #4E5753;
-  --color-cobalt: #2E57C9;
+  --color-cobalt: #4A78FF;
   --color-cobalt-text: #2449B0;
+  --color-action: #2D56D6;
+  --color-seam: #5FA4FF;
   --color-vermilion: #C4422C;
   --color-vermilion-text: #A3331F;
-  --color-moss: #4C7A3A;
-  --color-moss-text: #3D6430;
+  --color-moss: #26934F;
+  --color-moss-text: #2C6B3E;
   --color-amber: #C98A1B;
   --color-amber-text: #865A0A;
   --color-highlight: #F2D98A;
-  --color-outline: #8FA6AE;
+  --color-outline: #3D4757;
+  --color-glass-face: #121821;
+  --color-glass-edge: #2C3542;
+  --color-glass-text: #F2F5F9;
+  --color-glass-soft: #A7B2C3;
+  --color-glass-quiet: #1C2430;
+  --color-glass-inset: #0C1117;
+  --color-glass-accent-text: #8FB0FF;
+  --color-glass-ok-fill: #1E7A41;
+  --color-glass-ok-text: #62D894;
+  --color-glass-danger-fill: #B63A26;
+  --color-glass-danger-text: #FF8D77;
+  --color-glass-wait-text: #F2C462;
   --color-hc-bg: #111513;
   --color-hc-text: #FFFDF7;
   --color-hc-cobalt: #9DB6FF;
@@ -40,7 +54,7 @@
   --color-category-sage: #6C8F60;
   --color-category-steel: #61728A;
   --color-category-terracotta: #A9583F;
-  --color-cover-field: #2B4656;
+  --color-cover-field: #0E1626;
 
   /* What each colour is for */
   --role-canvas: var(--color-bone);
@@ -52,18 +66,18 @@
   --role-text-soft: var(--color-ink-soft);
   --role-text-on-dark: var(--color-paper);
   --role-border: var(--color-edge);
-  --role-action: var(--color-cobalt);
+  --role-action: var(--color-action);
   --role-action-text: var(--color-paper);
   --role-link: var(--color-cobalt-text);
-  --role-focus: var(--color-cobalt);
+  --role-focus: var(--color-action);
   --role-focus-on-dark: var(--color-hc-cobalt);
-  --role-selected: var(--color-cobalt);
+  --role-selected: var(--color-action);
   --role-success: var(--color-moss-text);
   --role-warning: var(--color-amber-text);
   --role-danger: var(--color-vermilion-text);
 
   /* Sky of the first frame */
-  --sky-gradient: linear-gradient(180deg, #3F5C6C 0%, #9DB5BB 22%, #F4E7D0 33%, #CFC6B5 46%, #586A70 100%);
+  --sky-gradient: linear-gradient(180deg, #05080F 0%, #14244A 22%, #C88A58 33%, #141B2B 46%, #04060A 100%);
 
   /* Type */
   --font-family: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif;

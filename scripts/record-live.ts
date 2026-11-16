@@ -9,7 +9,11 @@
  *                                           planted mistakes, then its ready redo; writes
  *                                           content/answers/<sample>.live.json
  *   npm run record -- --task "<goal>" [--file <path>]...   a fresh live task, printed
+ *   npm run record -- --redo <sample>       record only the ready redo again, on top of the
+ *                                           recorded full run (replayed, no cost)
  *   npm run record -- --spend               the ledger
+ *   npm run record -- --replay [<sample>]   each sample from its recording at pace 0, every
+ *                                           check run now: stations, counts, caught mistakes
  *
  * Environment: LLM_MODEL (default below), SPEND_LEDGER, SPEND_LIMIT_USD (default 1.50).
  */
@@ -24,13 +28,13 @@ import { materialHash } from '../src/materials/normalize';
 import { readFile } from '../src/materials/read';
 import { numberPages } from '../src/materials/pages';
 import type { AnswerSet, Doc, LlmClient, RunDeps, RunEvent, RunRecord, SampleId, TaskResult } from '../src/agents/types';
-import { sampleDocs, sampleMeta } from '../content/samples';
+import { SAMPLE_TODAY, sampleDocs, sampleProject } from '../content/samples';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const MODEL = process.env.LLM_MODEL || 'deepseek/deepseek-v4.1-flash';
 const LEDGER = process.env.SPEND_LEDGER || path.resolve(ROOT, '..', '.groundwork-spend.json');
 const LIMIT = Number(process.env.SPEND_LIMIT_USD || 1.5);
-export const TODAY = '2026-11-16';
+export const TODAY = SAMPLE_TODAY;
 
 /** Ready redos recorded with each sample: they work offline. */
 export const READY_REDOS: Record<SampleId, { kind: string; preset: string; instruction: string }> = {
@@ -141,10 +145,9 @@ function guard(): void {
 
 async function recordSample(id: SampleId): Promise<void> {
   guard();
-  const meta = sampleMeta(id);
   const docs = await sampleDocs(id);
   const llm = liveClient();
-  const project = newTaskProject({ text: meta.task, by: 'sample', links: meta.links }, { sample: id, id: `p_sample${id.replace(/-/g, '').slice(0, 6)}`, title: meta.title });
+  const project = sampleProject(id);
   const h = await startTask(project, docs, runDeps(llm), { today: TODAY, plant: true, pace: 0 });
   const record = await h.done;
   printRun(record, `${id} (recording)`);
@@ -178,6 +181,29 @@ async function recordSample(id: SampleId): Promise<void> {
   console.log(`\nWrote ${path.relative(ROOT, out)}. This recording: ${llm.calls()} calls, $${llm.spent().toFixed(6)}. Ledger: $${l.total.toFixed(6)}.`);
 }
 
+/** Records only the ready redo again, on top of the recorded full run (replayed, no cost). */
+async function recordRedo(id: SampleId): Promise<void> {
+  guard();
+  const { runSample } = await import('../content/answers/run');
+  const file = path.join(ROOT, 'content', 'answers', `${id}.live.json`);
+  const set = JSON.parse(readFileSync(file, 'utf8')) as AnswerSet;
+  const first = await runSample(id, set, { pace: 0 });
+  const result = first.result as TaskResult | null;
+  const ready = READY_REDOS[id];
+  const step = result?.plan.steps.find((s) => s.kind === ready.kind);
+  if (first.status !== 'ready' || !result || !step) throw new Error(`${id}: the recorded run ended ${first.status}`);
+  const llm = liveClient();
+  const h = await redoStep(sampleProject(id), result, step.id, ready.instruction, await sampleDocs(id), runDeps(llm), { today: TODAY, preset: ready.preset, pace: 0 });
+  const r2 = await h.done;
+  printRun(r2, `${id} redo ${step.id} "${ready.preset}"`);
+  const l = addSpend(`record redo ${id}`, llm.calls(), llm.spent());
+  if (r2.status !== 'ready') throw new Error(`${id}: the redo ended ${r2.status}; the set is unchanged`);
+  set.calls = [...set.calls.filter((c) => !c.redo), ...r2.calls];
+  set.redos = [{ stepId: step.id, preset: ready.preset, instruction: ready.instruction }];
+  writeFileSync(file, JSON.stringify(set, null, 1) + '\n');
+  console.log(`\nWrote ${path.relative(ROOT, file)}. This redo: ${llm.calls()} calls, $${llm.spent().toFixed(6)}. Ledger: $${l.total.toFixed(6)}.`);
+}
+
 async function liveTask(goal: string, files: string[]): Promise<void> {
   guard();
   const docs: Doc[] = [];
@@ -198,12 +224,30 @@ async function liveTask(goal: string, files: string[]): Promise<void> {
   console.log(`\nThis run: ${llm.calls()} calls, $${llm.spent().toFixed(6)}. Ledger: $${l.total.toFixed(6)}.`);
 }
 
+async function replay(ids: SampleId[]): Promise<void> {
+  const { answersFor } = await import('../content/answers');
+  const { runSample, runSampleRedo } = await import('../content/answers/run');
+  for (const id of ids) {
+    const set = await answersFor(id);
+    const t0 = performance.now();
+    const record = await runSample(id, set, { pace: 0 });
+    printRun(record, `${id} (replay, pace 0, ${Math.round(performance.now() - t0)} ms)`);
+    const result = record.result as TaskResult | null;
+    if (result) {
+      const r2 = await runSampleRedo(id, set, result, { pace: 0 });
+      if (r2) printRun(r2, `${id} ready redo "${set.redos?.[0]?.preset}"`);
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2).filter((a) => a !== '--');
   if (args[0] === '--spend') {
     console.log(JSON.stringify(readLedger(), null, 2));
     return;
   }
+  if (args[0] === '--replay') return replay(args[1] ? [args[1] as SampleId] : (['bakery-site', 'habit-tracker', 'launch-plan'] as SampleId[]));
+  if (args[0] === '--redo') return recordRedo(args[1] as SampleId);
   if (args[0] === '--task') {
     const files: string[] = [];
     for (let i = 2; i < args.length; i++) if (args[i] === '--file') files.push(args[++i]);

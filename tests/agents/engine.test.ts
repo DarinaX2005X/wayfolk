@@ -22,7 +22,7 @@ Phone: (555) 014-2290
 
 const GOOD_HTML = `<!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>Bakery</title><link rel="stylesheet" href="styles.css"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Bakery</title><link rel="stylesheet" href="styles.css"></head>
 <body>
 <header><h1>Bakery</h1><nav><a href="#menu">Menu</a> <a href="#hours">Hours</a></nav></header>
 <main>
@@ -33,7 +33,8 @@ const GOOD_HTML = `<!doctype html>
 </body>
 </html>`;
 const BROKEN_HTML = GOOD_HTML.replace('</section>\n<section id="hours">', '\n<section id="hours">').replace('$7.50', '$7.95');
-const CSS = 'body { margin: 0; font-family: system-ui, sans-serif; }\nsection { padding: 2rem; }\n';
+const CSS =
+  'body { margin: 0; font-family: system-ui, sans-serif; }\nsection { padding: 2rem; }\na:hover { color: brown; }\na:focus-visible { outline: 2px solid brown; }\n@media (max-width: 600px) { section { padding: 1rem; } }\n';
 
 function siteModel(opts: { brokenHtml?: boolean; badQuote?: boolean } = {}) {
   return fakeModel((req: LlmRequest, user: string) => {
@@ -147,6 +148,14 @@ describe('the task engine on a site', () => {
     const ran = of(r, 'step-start').map((e) => e.station);
     expect(ran).toEqual(['s3', 's4', 's5', 's6']);
     expect(model.requests.every((q) => q.redo === `s3:${'' + (model.requests[0].redo ?? '').split(':')[1]}`)).toBe(true);
+    // The step redone hears the instruction with its earlier answer; a later step hears what changed.
+    const text = (q: LlmRequest) => q.messages.map((m) => (typeof m.content === 'string' ? m.content : '')).join('\n');
+    const own = model.requests.filter((q) => Math.floor(q.index / 100) === 3);
+    expect(own.length).toBeGreaterThan(0);
+    for (const q of own) expect(text(q)).toContain('asks you to redo it: "Warmer headline"');
+    for (const q of own) expect(text(q)).toContain('Your earlier answer for this step');
+    const later = model.requests.filter((q) => Math.floor(q.index / 100) > 3);
+    for (const q of later) expect(text(q)).toContain('An earlier step was redone because the person asked: "Warmer headline"');
     const site = (r.result as TaskResult).deliverable!;
     expect(site.kind === 'site' && site.files[0].text.includes('Our bakery')).toBe(true);
     expect((r.result as TaskResult).stats.redos).toBe(1);
@@ -164,9 +173,9 @@ Team: Maya Lindqvist (product), Sam Okoro (developer).
 Budget: ads $1,500, gifts $400.
 `;
   const items = [
-    { id: 'i1', task: 'Beta', owner: 'Sam Okoro', start: '2027-01-11', end: '2027-01-24', depends: [], cells: [{ column: 'Cost', value: '$400' }] },
-    { id: 'i2', task: 'Ads', owner: 'Maya', start: '2027-02-09', end: '2027-02-05', depends: ['i1'], cells: [{ column: 'Cost', value: '$1,500' }] },
-    { id: 'i3', task: 'Party', owner: 'Jordan Blake', start: '2027-02-09', end: '2027-02-09', depends: [], cells: [{ column: 'Cost', value: '' }] },
+    { id: 'i1', task: 'Beta', owner: 'Sam Okoro', start: '2027-01-11', end: '2027-01-24', depends: [], cells: [{ column: 'Cost', value: '$400' }], done: 'It is finished and shown to the team' },
+    { id: 'i2', task: 'Ads', owner: 'Maya', start: '2027-02-09', end: '2027-02-05', depends: ['i1'], cells: [{ column: 'Cost', value: '$1,500' }], done: 'It is finished and shown to the team' },
+    { id: 'i3', task: 'Party', owner: 'Jordan Blake', start: '2027-02-09', end: '2027-02-09', depends: [], cells: [{ column: 'Cost', value: '' }], done: 'It is finished and shown to the team' },
   ];
   const model = () =>
     fakeModel((req, user) => {
@@ -217,14 +226,14 @@ Budget: ads $1,500, gifts $400.
     expect(d.items.map((i) => i.task)).toEqual(['Beta', 'Ads']);
     expect(d.totals[0]).toMatchObject({ column: 'Cost', value: '$1,900', stated: '$2,000', ok: false });
     expect(equalityProblems(result.stats)).toEqual([]);
-    expect(toCsv(d).split('\r\n')[0]).toBe('Task,Owner,Start,End,Depends on,Cost');
-    expect(toCsv(d)).toContain('Ads,Maya,2027-02-01,2027-02-14,Beta,"$1,500"');
+    expect(toCsv(d).split('\r\n')[0]).toBe('Task,Owner,Start,End,Depends on,Done when,Cost');
+    expect(toCsv(d)).toContain('Ads,Maya,2027-02-01,2027-02-14,Beta,It is finished and shown to the team,"$1,500"');
     const ics = toIcs(d);
     expect(ics).toContain('DTSTART;VALUE=DATE:20270201');
     expect(ics).toContain('DTEND;VALUE=DATE:20270215');
     expect(toMarkdown(result)).toContain('code summed the items again');
     const files = await exportFiles(result);
-    expect(files.map((f) => f.name.split('.').pop())).toEqual(['md', 'csv', 'ics']);
+    expect(files.map((f) => f.name.split('.').pop())).toEqual(['md', 'csv', 'ics', 'html']);
   });
 
   it('lets the person approve a card and edit a row, with the plan checks run again', async () => {

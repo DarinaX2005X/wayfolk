@@ -63,7 +63,7 @@ export const STEP_LIBRARY: Record<StepKind, StepSpec> = {
     does: 'Write sections of a document; every number must come from the facts or materials',
     output: 'section',
     unit: 'section',
-    checks: ['numbers', 'quote', 'links'],
+    checks: ['numbers', 'quote', 'links', 'house'],
   },
   'write-code': {
     kind: 'write-code',
@@ -73,7 +73,7 @@ export const STEP_LIBRARY: Record<StepKind, StepSpec> = {
     does: 'Write the files of a web page or web app (index.html first, then CSS and JS)',
     output: 'files',
     unit: 'file',
-    checks: ['parse', 'refs', 'required', 'links', 'numbers'],
+    checks: ['parse', 'refs', 'required', 'links', 'numbers', 'house'],
   },
   'make-plan': {
     kind: 'make-plan',
@@ -83,7 +83,7 @@ export const STEP_LIBRARY: Record<StepKind, StepSpec> = {
     does: 'Write plan items with a task, an owner from the team, start and end dates, and dependencies',
     output: 'items',
     unit: 'item',
-    checks: ['plan-table', 'dates', 'sums', 'numbers'],
+    checks: ['plan-table', 'dates', 'sums', 'numbers', 'house'],
   },
   review: {
     kind: 'review',
@@ -103,7 +103,7 @@ export const STEP_LIBRARY: Record<StepKind, StepSpec> = {
     does: 'Check the whole result by code: pages parse, links and files resolve, required parts are there',
     output: 'checks',
     unit: 'element',
-    checks: ['parse', 'refs', 'required', 'links'],
+    checks: ['parse', 'refs', 'required', 'links', 'house'],
   },
   assemble: {
     kind: 'assemble',
@@ -153,6 +153,7 @@ export const CHECK_LINES: Record<CheckName, string> = {
   links: 'Links inside the project lead somewhere',
   'plan-table': 'Plan items end after they start, stay in the window, have a known owner',
   dedupe: 'The same fact is not counted twice',
+  house: 'The house rules code can read: no eyebrow labels, dashes or exclamation marks, a chosen sans, hover and focus states, a phone layout',
 };
 
 /** Words of a call's role, for captions ("Builder is asked to answer again"). */

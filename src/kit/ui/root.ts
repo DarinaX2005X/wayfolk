@@ -40,6 +40,8 @@ export function rootProps(widthMm: number, heightMm: number): Record<string, unk
     fontFamily: FONT_FAMILY,
     flexDirection: 'column',
     alignItems: 'flex-start',
+    // Panels stand nearest to the eyes: drawn after the world's labels, which write no depth.
+    renderOrder: 10,
   };
 }
 
