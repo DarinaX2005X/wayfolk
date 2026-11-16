@@ -1,0 +1,16 @@
+{
+  "example": "synthetic",
+  "scope": "full",
+  "answers": "scripted",
+  "materialHash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "calls": [
+    { "callId": "c1", "task": "plan", "index": 0, "attempt": 1, "reqHash": "00000000", "ms": 3100, "ok": true,
+      "json": { "batches": [{ "from": 1, "to": 3 }] }, "provider": "script", "model": "script" },
+    { "callId": "c2", "task": "extract", "index": 0, "attempt": 1, "reqHash": "00000000", "ms": 6200, "ok": true,
+      "json": { "claims": [{ "quote": "the key was returned on 3 March", "page": 2 }] }, "provider": "script", "model": "script" },
+    { "callId": "c3", "task": "extract", "index": 1, "attempt": 1, "reqHash": "00000000", "ms": 5400, "ok": false,
+      "json": null, "provider": "script", "model": "script" },
+    { "callId": "c4", "task": "reconcile", "index": 0, "attempt": 1, "reqHash": "00000000", "ms": 6000, "ok": true,
+      "json": { "verdicts": { "pair-a": "contradiction", "pair-b": "explained" } }, "provider": "script", "model": "script" }
+  ]
+}

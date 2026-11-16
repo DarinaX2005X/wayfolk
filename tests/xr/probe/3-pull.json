@@ -1,0 +1,19 @@
+{
+  "name": "probe 3: pull the bead toward the seat by the travel of the wrist",
+  "route": "/gallery?section=probe",
+  "xr": true,
+  "device": "metaQuest3",
+  "mode": "hand-ray",
+  "steps": [
+    { "label": "probe ready", "eval": "typeof handProbe !== 'undefined' && handProbe.reset() === undefined", "equals": true, "within": 30 },
+    { "label": "bead at its far end", "eval": "handProbe.at('bead')[2]", "near": -0.95, "tol": 0.01 },
+    { "label": "pinch the bead along the ray and draw the hand 8 cm back", "pull": { "target": "probe:bead", "by": 0.08, "seconds": 0.5 } },
+    { "label": "released short of 15 cm: cancelled", "eval": "handProbe.last('pull-cancel', 'probe:bead')?.k", "atLeast": 0.3, "atMost": 0.99 },
+    { "label": "nothing committed", "eval": "handProbe.count('pull-commit')", "equals": 0 },
+    { "label": "the bead springs back", "wait": 0.6 },
+    { "label": "back at its far end", "eval": "handProbe.at('bead')[2]", "near": -0.95, "tol": 0.01 },
+    { "label": "pull again, 18 cm this time", "pull": { "target": "probe:bead", "by": 0.18, "seconds": 0.7 } },
+    { "label": "committed at the threshold", "eval": "handProbe.count('pull-commit', 'probe:bead')", "equals": 1 },
+    { "label": "and only once", "eval": "handProbe.last('pull-commit', 'probe:bead')?.k", "equals": 1 }
+  ]
+}

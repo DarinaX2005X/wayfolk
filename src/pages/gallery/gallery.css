@@ -1,0 +1,414 @@
+/*
+ * The state gallery: a working page for agents and reviewers, in the browser style of
+ * the product. One section per frame at 1440 × 900.
+ */
+
+.g-page {
+  min-height: 100vh;
+  background: var(--role-canvas);
+}
+
+.g-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding: 10px 24px;
+  background: var(--color-paper);
+  box-shadow: var(--shadow-rest);
+}
+
+.g-logo {
+  height: 28px;
+  width: auto;
+}
+
+.g-title {
+  margin: 0;
+  font-size: var(--text-lead);
+  font-weight: var(--heading-weight);
+  letter-spacing: var(--heading-tracking);
+}
+
+.g-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-left: auto;
+}
+
+.g-toggle,
+.g-select {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--role-border);
+  border-radius: var(--radius-control);
+  background: var(--color-bone);
+  color: var(--role-text);
+  font: inherit;
+  font-size: var(--text-caption);
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease), transform var(--dur-press) var(--ease);
+}
+
+.g-toggle:hover,
+.g-select:hover {
+  background: var(--color-paper);
+}
+
+.g-toggle:active {
+  transform: scale(var(--press-scale));
+}
+
+.g-toggle[aria-pressed='true'] {
+  background: var(--role-action);
+  border-color: var(--role-action);
+  color: var(--role-action-text);
+}
+
+.g-choice,
+.g-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-caption);
+  color: var(--role-text-soft);
+}
+
+.g-range {
+  width: 140px;
+  accent-color: var(--role-action);
+}
+
+.g-time-value {
+  min-width: 72px;
+  color: var(--role-text);
+}
+
+.g-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 8px 24px;
+  font-size: var(--text-caption);
+}
+
+.g-nav-link {
+  color: var(--role-link);
+}
+
+.g-section {
+  min-height: calc(100vh - 110px);
+  padding: 16px 24px 24px;
+  scroll-margin-top: 64px;
+}
+
+.g-heading {
+  margin: 0 0 12px;
+  font-size: var(--text-heading);
+  font-weight: var(--heading-weight);
+  letter-spacing: var(--heading-tracking);
+  line-height: var(--heading-leading);
+}
+
+.g-sub {
+  margin: 20px 0 10px;
+  font-size: var(--text-lead);
+  font-weight: var(--heading-weight);
+}
+
+/* ------------------------------------------------------------------ 3D stage */
+
+.g-stage {
+  position: relative;
+  height: calc(100vh - 170px);
+  min-height: 520px;
+  overflow: hidden;
+  border-radius: var(--radius-large);
+  background: var(--sky-gradient);
+  box-shadow: var(--shadow-raised);
+}
+
+.g-stage[data-room='room'] {
+  background: linear-gradient(180deg, #8c8a83 0%, #a8a49b 55%, #6f6a62 100%);
+}
+
+.g-stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.g-stage[data-device='quest']::after,
+.g-stage[data-device='glasses']::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  border: 2px dashed var(--color-cobalt);
+  border-radius: 12px;
+}
+
+/* Seat camera spans 90° across; Quest sees about 104°, the glasses 74° by 68° (25° up, 43° down). */
+.g-stage[data-device='quest']::after {
+  inset: 2% 1%;
+}
+
+.g-stage[data-device='glasses']::after {
+  left: 12%;
+  right: 12%;
+  top: 22%;
+  bottom: 4%;
+}
+
+.g-holder {
+  display: none;
+}
+
+.g-labels {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.g-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.2;
+  color: var(--color-ink);
+  background: color-mix(in srgb, var(--color-paper) 82%, transparent);
+  padding: 1px 6px;
+  border-radius: var(--radius-tag);
+}
+
+.g-label-entry {
+  font-size: 15px;
+  font-weight: 700;
+  transform-origin: left bottom;
+  margin-top: -22px;
+}
+
+.g-stage-note {
+  position: absolute;
+  left: 20px;
+  bottom: 16px;
+  z-index: 3;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-control);
+  background: var(--color-paper);
+}
+
+/* ------------------------------------------------------------------ tokens */
+
+.g-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.g-swatch {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.g-swatch-chip {
+  grid-row: span 2;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-tag);
+  box-shadow: inset 0 0 0 1px #1e242120;
+}
+
+.g-swatch-hex {
+  color: var(--role-text-soft);
+}
+
+.g-pairs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 6px 16px;
+}
+
+.g-pair {
+  display: grid;
+  grid-template-columns: 72px 46px 1fr;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.g-pair-sample {
+  padding: 4px 6px;
+  border-radius: var(--radius-tag);
+  font-weight: 700;
+  text-align: center;
+}
+
+.g-pair-ratio {
+  font-weight: 700;
+}
+
+.g-pair.is-forbidden .g-pair-ratio {
+  color: var(--role-danger);
+}
+
+.g-pair.is-forbidden .g-pair-use {
+  color: var(--role-danger);
+}
+
+/* ------------------------------------------------------------------ type */
+
+.g-table {
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.g-table th,
+.g-table td {
+  padding: 4px 14px 4px 0;
+  text-align: left;
+}
+
+.g-table th {
+  color: var(--role-text-soft);
+  font-weight: 700;
+}
+
+.g-webtype-line {
+  margin: 4px 0;
+  line-height: 1.2;
+}
+
+.g-webtype-display {
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-tracking);
+  line-height: var(--display-leading);
+}
+
+.g-webtype-title,
+.g-webtype-heading {
+  font-weight: var(--heading-weight);
+  letter-spacing: var(--heading-tracking);
+}
+
+/* ------------------------------------------------------------------ browser controls */
+
+.g-web {
+  display: grid;
+  gap: 18px;
+}
+
+.g-web-row {
+  display: grid;
+  grid-template-columns: 90px repeat(5, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px;
+}
+
+.g-web-name {
+  padding-top: 16px;
+  font-weight: 700;
+}
+
+.g-web-cell {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+
+.g-web-state,
+.g-web-reason {
+  font-size: 13px;
+  color: var(--role-text-soft);
+}
+
+.g-web .is-hover {
+  transform: translateY(calc(-1 * var(--hover-lift)));
+  box-shadow: var(--shadow-raised);
+}
+
+.g-web .is-pressed {
+  transform: scale(var(--press-scale));
+}
+
+.g-web .is-focus {
+  outline: var(--focus-ring) solid var(--role-focus);
+  outline-offset: var(--focus-offset);
+}
+
+.g-code {
+  display: flex;
+  gap: 8px;
+}
+
+.g-code-cell {
+  width: 56px;
+  height: 64px;
+  border: 1px solid var(--role-border);
+  border-radius: var(--radius-control);
+  background: var(--color-paper);
+  font: inherit;
+  font-size: 32px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.g-code-cell:focus-visible {
+  outline: var(--focus-ring) solid var(--role-focus);
+  outline-offset: var(--focus-offset);
+}
+
+/* ------------------------------------------------------------------ sounds */
+
+.g-sounds {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 12px 24px;
+}
+
+.g-sound {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  align-items: start;
+  gap: 4px 12px;
+}
+
+.g-sound-play {
+  min-height: 44px;
+}
+
+.g-sound-phrase {
+  grid-column: 2;
+  justify-self: start;
+  min-height: 32px;
+}
+
+.g-sound-text p {
+  margin: 0;
+}
+
+.g-sound-like {
+  font-size: 15px;
+}
+
+.g-sound-numbers,
+.g-sound-events {
+  font-size: 13px;
+  color: var(--role-text-soft);
+}

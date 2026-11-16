@@ -3,6 +3,7 @@
 //   node tools/dev-api/bundle.mjs
 
 // api/_lib/http.ts
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 var JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 var NO_STORE = { "cache-control": "no-store" };
 var BODY_LIMIT = 4 * 1024 * 1024;
@@ -16,9 +17,1288 @@ function fail(status, error, extra = {}) {
   }
   return json(status, { error, ...extra }, headers);
 }
+var isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+async function readBody(request, limit = BODY_LIMIT) {
+  const declared = request.headers.get("content-length");
+  if (declared !== null && Number(declared) > limit) return null;
+  if (!request.body) return new Uint8Array(0);
+  const reader = request.body.getReader();
+  const chunks = [];
+  let total = 0;
+  for (; ; ) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel().catch(() => void 0);
+      return null;
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
+}
+function clientAddress(request) {
+  const real = request.headers.get("x-real-ip")?.trim();
+  if (real) return real;
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return forwarded || "unknown";
+}
+function hashAddress(request, key) {
+  return createHmac("sha256", key || "groundwork").update(clientAddress(request)).digest("hex").slice(0, 32);
+}
+function sha256(text2) {
+  return createHash("sha256").update(text2).digest("hex");
+}
+function sameHash(a, b) {
+  const left = Buffer.from(a, "utf8");
+  const right = Buffer.from(b, "utf8");
+  return left.length === right.length && timingSafeEqual(left, right);
+}
+function describeError(err) {
+  const text2 = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+  return text2.replace(/vercel_blob_rw_[A-Za-z0-9_]+/g, "[token]").replace(/sk-or-[A-Za-z0-9_-]+/g, "[key]").replace(/Bearer\s+[A-Za-z0-9._-]+/gi, "Bearer [key]").slice(0, 300);
+}
+
+// api/_lib/llm/schema.ts
+var TYPES = ["object", "array", "string", "number", "integer", "boolean"];
+var KEYS = /* @__PURE__ */ new Set(["type", "description", "properties", "required", "additionalProperties", "items", "enum", "minItems", "maxItems"]);
+var isRecord2 = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+function schemaProblem(value, path = "$", depth = 0) {
+  if (depth > 12) return `${path}: nested too deep`;
+  if (!isRecord2(value)) return `${path}: not an object`;
+  for (const key of Object.keys(value)) if (!KEYS.has(key)) return `${path}: unsupported keyword ${key}`;
+  if (!TYPES.includes(value.type)) return `${path}: unsupported type`;
+  if (value.description !== void 0 && typeof value.description !== "string") return `${path}: description`;
+  if (value.additionalProperties !== void 0 && value.additionalProperties !== false) return `${path}: additionalProperties`;
+  if (value.enum !== void 0 && (!Array.isArray(value.enum) || value.enum.some((v) => typeof v !== "string"))) return `${path}: enum`;
+  for (const key of ["minItems", "maxItems"]) {
+    const n = value[key];
+    if (n !== void 0 && (!Number.isInteger(n) || n < 0)) return `${path}: ${key}`;
+  }
+  if (value.properties !== void 0) {
+    if (!isRecord2(value.properties)) return `${path}: properties`;
+    for (const [name, child] of Object.entries(value.properties)) {
+      const problem = schemaProblem(child, `${path}.${name}`, depth + 1);
+      if (problem) return problem;
+    }
+  }
+  if (value.required !== void 0) {
+    if (!Array.isArray(value.required) || value.required.some((r) => typeof r !== "string")) return `${path}: required`;
+  }
+  if (value.items !== void 0) return schemaProblem(value.items, `${path}[]`, depth + 1);
+  if (value.type === "array" && value.items === void 0) return `${path}: array without items`;
+  return null;
+}
+function validate(value, schema, path = "$") {
+  switch (schema.type) {
+    case "object": {
+      if (!isRecord2(value)) return `${path}: expected object`;
+      for (const name of schema.required ?? []) {
+        if (!Object.hasOwn(value, name)) return `${path}.${name}: missing`;
+      }
+      const properties = schema.properties ?? {};
+      for (const [name, child] of Object.entries(value)) {
+        const sub = properties[name];
+        if (!sub) {
+          if (schema.additionalProperties === false) return `${path}.${name}: not allowed`;
+          continue;
+        }
+        const problem = validate(child, sub, `${path}.${name}`);
+        if (problem) return problem;
+      }
+      return null;
+    }
+    case "array": {
+      if (!Array.isArray(value)) return `${path}: expected array`;
+      if (schema.minItems !== void 0 && value.length < schema.minItems) return `${path}: fewer than ${schema.minItems}`;
+      if (schema.maxItems !== void 0 && value.length > schema.maxItems) return `${path}: more than ${schema.maxItems}`;
+      if (schema.items) {
+        for (let i = 0; i < value.length; i += 1) {
+          const problem = validate(value[i], schema.items, `${path}[${i}]`);
+          if (problem) return problem;
+        }
+      }
+      return null;
+    }
+    case "string":
+      if (typeof value !== "string") return `${path}: expected string`;
+      if (schema.enum && !schema.enum.includes(value)) return `${path}: not one of the allowed values`;
+      return null;
+    case "number":
+      return typeof value === "number" && Number.isFinite(value) ? null : `${path}: expected number`;
+    case "integer":
+      return Number.isInteger(value) ? null : `${path}: expected integer`;
+    case "boolean":
+      return typeof value === "boolean" ? null : `${path}: expected boolean`;
+  }
+}
+function strictSchema(schema) {
+  const out = { ...schema };
+  if (schema.type === "object") {
+    out.additionalProperties = false;
+    if (schema.properties) {
+      out.properties = Object.fromEntries(Object.entries(schema.properties).map(([k, v]) => [k, strictSchema(v)]));
+    }
+  }
+  if (schema.items) out.items = strictSchema(schema.items);
+  return out;
+}
+function parseModelJson(textValue) {
+  const trimmed = textValue.trim();
+  const attempts = [trimmed];
+  const fenced = /^```[a-zA-Z]*\s*\n?([\s\S]*?)\n?```$/.exec(trimmed);
+  if (fenced) attempts.push(fenced[1].trim());
+  const start = trimmed.search(/[[{]/);
+  const end = Math.max(trimmed.lastIndexOf("}"), trimmed.lastIndexOf("]"));
+  if (start >= 0 && end > start) attempts.push(trimmed.slice(start, end + 1));
+  for (const attempt of attempts) {
+    try {
+      return JSON.parse(attempt);
+    } catch {
+    }
+  }
+  return void 0;
+}
+
+// api/_lib/llm/request.ts
+var TASKS = ["plan", "extract", "recheck", "reconcile", "wishes", "mark", "intent"];
+var FIXTURE_KEY = /^([a-z0-9-]{1,40})\/(full|late)\/([a-z]+)\/(\d{1,4})\/(\d{1,3})$/;
+var RUN_ID = /^[A-Za-z0-9_-]{1,64}$/;
+var BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
+var MAX_MESSAGES = 16;
+function parseMessage(value, i) {
+  if (!isRecord(value)) return `messages[${i}]: not an object`;
+  if (value.role !== "system" && value.role !== "user") return `messages[${i}].role`;
+  if (typeof value.content === "string") return { role: value.role, content: value.content };
+  if (!Array.isArray(value.content) || value.content.length === 0) return `messages[${i}].content`;
+  const parts = [];
+  for (const part of value.content) {
+    if (isRecord(part) && part.type === "text" && typeof part.text === "string") {
+      parts.push({ type: "text", text: part.text });
+    } else if (isRecord(part) && part.type === "input_audio" && isRecord(part.input_audio) && typeof part.input_audio.data === "string" && BASE64.test(part.input_audio.data) && part.input_audio.format === "wav") {
+      parts.push({ type: "input_audio", input_audio: { data: part.input_audio.data, format: "wav" } });
+    } else {
+      return `messages[${i}].content: unsupported part`;
+    }
+  }
+  return { role: value.role, content: parts };
+}
+function parseLlmRequest(value) {
+  if (!isRecord(value)) return { ok: false, problem: "body is not an object" };
+  const { task, index, attempt } = value;
+  if (typeof task !== "string" || !TASKS.includes(task)) return { ok: false, problem: "task" };
+  if (!Number.isInteger(index) || index < 0) return { ok: false, problem: "index" };
+  if (!Number.isInteger(attempt) || attempt < 0) return { ok: false, problem: "attempt" };
+  if (!Array.isArray(value.messages) || value.messages.length === 0 || value.messages.length > MAX_MESSAGES) {
+    return { ok: false, problem: "messages" };
+  }
+  const messages = [];
+  for (let i = 0; i < value.messages.length; i += 1) {
+    const message = parseMessage(value.messages[i], i);
+    if (typeof message === "string") return { ok: false, problem: message };
+    messages.push(message);
+  }
+  if (!messages.some((m) => m.role === "user")) return { ok: false, problem: "messages: no user message" };
+  const problem = schemaProblem(value.schema);
+  if (problem) return { ok: false, problem: `schema ${problem}` };
+  const body = {
+    task,
+    index,
+    attempt,
+    messages,
+    schema: value.schema
+  };
+  if (value.audio !== void 0) {
+    if (typeof value.audio !== "string" || value.audio.length === 0 || !BASE64.test(value.audio)) return { ok: false, problem: "audio" };
+    body.audio = value.audio;
+  }
+  if (value.fixture !== void 0) {
+    if (typeof value.fixture !== "string" || !FIXTURE_KEY.test(value.fixture)) return { ok: false, problem: "fixture" };
+    body.fixture = value.fixture;
+  }
+  if (value.runId !== void 0) {
+    if (typeof value.runId !== "string" || !RUN_ID.test(value.runId)) return { ok: false, problem: "runId" };
+    body.runId = value.runId;
+  }
+  return { ok: true, body };
+}
+function withAudio(body) {
+  const hasAudio2 = body.messages.some((m) => typeof m.content !== "string" && m.content.some((p) => p.type === "input_audio"));
+  if (!body.audio || hasAudio2) return body.messages;
+  const last = body.messages.map((m) => m.role).lastIndexOf("user");
+  return body.messages.map((message, i) => {
+    if (i !== last) return message;
+    const parts = typeof message.content === "string" ? [{ type: "text", text: message.content }] : [...message.content];
+    parts.push({ type: "input_audio", input_audio: { data: body.audio, format: "wav" } });
+    return { role: message.role, content: parts };
+  });
+}
+var hasAudio = (body) => Boolean(body.audio) || body.messages.some((m) => typeof m.content !== "string" && m.content.some((p) => p.type === "input_audio"));
+
+// api/_lib/llm/fixtures.ts
+var source = async () => null;
+function setFixtureSource(next) {
+  source = next;
+}
+function findRecord(set, task, index, attempt) {
+  return set.calls.find((call) => call.task === task && call.index === index && call.attempt === attempt) ?? null;
+}
+function createFixtures(own) {
+  return async ({ body }) => {
+    const match = body.fixture ? FIXTURE_KEY.exec(body.fixture) : null;
+    if (!match) return { ok: false, kind: "offline", need: "fixture" };
+    const [, example, scope, task, index, attempt] = match;
+    const set = await (own ?? source)(example, scope);
+    const record = set ? findRecord(set, task, Number(index), Number(attempt)) : null;
+    if (!record) return { ok: false, kind: "offline", need: "fixture" };
+    if (!record.ok) return { ok: false, kind: "bad-output" };
+    return { ok: true, json: record.json, model: "recorded", usage: {}, ms: record.ms };
+  };
+}
+
+// api/_lib/kv.ts
+import * as blobSdk from "@vercel/blob";
+
+// api/_lib/blob-json.ts
+var BlobJsonError = class extends Error {
+  constructor(reason) {
+    super(`blob-json: ${reason}`);
+    this.reason = reason;
+    this.name = "BlobJsonError";
+  }
+  reason;
+};
+function within(signal, work) {
+  if (!signal) return work;
+  return new Promise((resolve, reject) => {
+    const onAbort = () => reject(new BlobJsonError("timeout"));
+    if (signal.aborted) onAbort();
+    else signal.addEventListener("abort", onAbort, { once: true });
+    work.then(resolve, reject).finally(() => signal.removeEventListener("abort", onAbort));
+  });
+}
+var PATH_SHAPE = /^(?:[a-z0-9_-][a-z0-9_.-]*\/)*[a-z0-9_-][a-z0-9_.-]*\.json$/;
+function assertPath(pathname) {
+  if (pathname.length > 200 || !PATH_SHAPE.test(pathname) || pathname.split("/").some((s) => s === "." || s === "..")) {
+    throw new BlobJsonError("bad-key");
+  }
+}
+function createBlobJson(sdk, token, options = {}) {
+  const access = options.access ?? "private";
+  const maxAge = options.maxAge ?? 60;
+  const put = (pathname, value, allowOverwrite, signal) => within(
+    signal,
+    sdk.put(pathname, JSON.stringify(value), {
+      access,
+      token,
+      addRandomSuffix: false,
+      allowOverwrite,
+      contentType: "application/json",
+      cacheControlMaxAge: maxAge,
+      abortSignal: signal
+    })
+  );
+  const exists = async (pathname, signal) => {
+    try {
+      await within(signal, sdk.head(pathname, { token, abortSignal: signal }));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  return {
+    async read(pathname, signal) {
+      assertPath(pathname);
+      const found = await within(signal, sdk.get(pathname, { access, token, abortSignal: signal, useCache: false }));
+      if (!found || found.statusCode !== 200 || !found.stream) return null;
+      const text2 = await within(signal, new Response(found.stream).text());
+      try {
+        return JSON.parse(text2);
+      } catch {
+        throw new BlobJsonError("corrupt-record");
+      }
+    },
+    async create(pathname, value, signal) {
+      assertPath(pathname);
+      try {
+        await put(pathname, value, false, signal);
+        return true;
+      } catch (err) {
+        if (signal?.aborted || err instanceof BlobJsonError) throw err;
+        if (await exists(pathname, signal)) return false;
+        throw err;
+      }
+    },
+    async write(pathname, value, signal) {
+      assertPath(pathname);
+      await put(pathname, value, true, signal);
+    },
+    async remove(pathname, signal) {
+      assertPath(pathname);
+      await within(signal, sdk.del(pathname, { token, abortSignal: signal }));
+    }
+  };
+}
+
+// api/_lib/env.ts
+var warned = /* @__PURE__ */ new Set();
+function warnOnce(name) {
+  if (warned.has(name)) return;
+  warned.add(name);
+  console.warn(JSON.stringify({ at: "config", variable: name, problem: "unreadable, default used" }));
+}
+function text(env, name) {
+  return (env[name] ?? "").trim();
+}
+function num(env, name, fallback) {
+  const raw = text(env, name);
+  if (raw === "") return fallback;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0) {
+    warnOnce(name);
+    return fallback;
+  }
+  return value;
+}
+function list(env, name) {
+  return text(env, name).split(",").map((part) => part.trim()).filter((part) => part !== "");
+}
+function flag(env, name) {
+  const raw = text(env, name).toLowerCase();
+  return raw === "1" || raw === "true" || raw === "yes";
+}
+function onVercel(env) {
+  return text(env, "VERCEL") !== "";
+}
+
+// api/_lib/budget.ts
+var MONTH_TTL = 40 * 24 * 3600;
+var DAY_TTL = 2 * 24 * 3600;
+var FLUSH_EVERY = 10;
+var EXPORT_RESERVE = 250;
+var month = (ms) => new Date(ms).toISOString().slice(0, 7);
+var day = (ms) => new Date(ms).toISOString().slice(0, 10);
+function limits(env) {
+  const writes = num(env, "BLOB_MONTHLY_WRITES", 1950);
+  return {
+    kvCommands: num(env, "KV_MONTHLY_COMMANDS", 4e5),
+    blobWritesExport: writes,
+    blobWrites: Math.max(0, writes - EXPORT_RESERVE),
+    blobReads: num(env, "BLOB_MONTHLY_READS", 8e3),
+    uploadBytes: num(env, "UPLOAD_DAILY_BYTES", 200 * 1024 * 1024)
+  };
+}
+function createBudget(options) {
+  const { counters } = options;
+  const now = options.now ?? Date.now;
+  const caps = limits(options.env);
+  let pending = 0;
+  let skip = 0;
+  let known = null;
+  const flush = async () => {
+    const count = pending + 2;
+    pending = 0;
+    skip += 2;
+    known = await counters.incr(`ops:${month(now())}:kv`, count, { ex: MONTH_TTL });
+  };
+  return {
+    commands(count) {
+      if (!options.countsCommands) return;
+      const own = Math.min(skip, count);
+      skip -= own;
+      pending += count - own;
+    },
+    async checkCommands() {
+      if (!options.countsCommands) return;
+      if (known === null) {
+        known = Number(await counters.get(`ops:${month(now())}:kv`) ?? 0);
+      }
+      if (pending >= FLUSH_EVERY) await flush();
+      if (known + pending >= caps.kvCommands) throw new KvError("storage-busy", "monthly commands");
+    },
+    async blob(kind, purpose, n = 1) {
+      const key = `ops:${month(now())}:blob:${kind === "write" ? "w" : "r"}`;
+      const cap2 = kind === "read" ? caps.blobReads : purpose === "export" ? caps.blobWritesExport : caps.blobWrites;
+      const value = await counters.incr(key, n, { ex: MONTH_TTL });
+      if (value > cap2) throw new KvError("storage-busy", `monthly blob ${kind}s`);
+    },
+    async uploadBytes(bytes) {
+      const value = await counters.incr(`ops:${day(now())}:upload-bytes`, Math.ceil(bytes), { ex: DAY_TTL });
+      if (value > caps.uploadBytes) throw new KvError("storage-busy", "daily upload bytes");
+    }
+  };
+}
+
+// api/_lib/kv.ts
+var KvError = class extends Error {
+  constructor(reason, detail = "") {
+    super(`kv: ${reason}${detail ? ` (${detail})` : ""}`);
+    this.reason = reason;
+    this.name = "KvError";
+  }
+  reason;
+};
+var MAX_VALUE_BYTES = 900 * 1024;
+var KEY_SHAPE = /^[\x21-\x7e]{1,200}$/;
+function assertKey(key) {
+  if (!KEY_SHAPE.test(key)) throw new KvError("bad-key", key.slice(0, 40));
+}
+function encodeValue(value) {
+  if (value === void 0) throw new KvError("bad-value", "undefined");
+  const json2 = JSON.stringify(value);
+  if (Buffer.byteLength(json2, "utf8") > MAX_VALUE_BYTES) throw new KvError("too-big");
+  return json2;
+}
+function assertSeconds(ex) {
+  if (ex !== void 0 && (!Number.isInteger(ex) || ex < 1)) throw new KvError("bad-value", `ex ${ex}`);
+}
+function assertInteger(by) {
+  if (!Number.isSafeInteger(by)) throw new KvError("bad-value", `by ${by}`);
+}
+var revOf = (value) => typeof value === "object" && value !== null && !Array.isArray(value) ? value.rev : void 0;
+function createMemoryKv(options = {}) {
+  const now = options.now ?? Date.now;
+  const records = /* @__PURE__ */ new Map();
+  const sets = /* @__PURE__ */ new Map();
+  const live = (key) => {
+    const entry = records.get(key);
+    if (!entry) return null;
+    if (entry.exp !== null && entry.exp <= now()) {
+      records.delete(key);
+      return null;
+    }
+    return entry;
+  };
+  return {
+    driver: "memory",
+    sharedCounters: options.shared ?? true,
+    async get(key) {
+      assertKey(key);
+      const entry = live(key);
+      return entry ? JSON.parse(entry.json) : null;
+    },
+    async set(key, value, opts = {}) {
+      assertKey(key);
+      assertSeconds(opts.ex);
+      const json2 = encodeValue(value);
+      const current = live(key);
+      if (opts.nx && current) return false;
+      if (opts.ifRev !== void 0 && (!current || revOf(JSON.parse(current.json)) !== opts.ifRev)) return false;
+      records.set(key, { json: json2, exp: opts.ex ? now() + opts.ex * 1e3 : null });
+      return true;
+    },
+    async del(key) {
+      assertKey(key);
+      records.delete(key);
+      sets.delete(key);
+    },
+    async incr(key, by, opts = {}) {
+      assertKey(key);
+      assertInteger(by);
+      assertSeconds(opts.ex);
+      const current = live(key);
+      const before = current ? Number(JSON.parse(current.json)) : 0;
+      if (!Number.isSafeInteger(before)) throw new KvError("bad-value", "not an integer");
+      const value = before + by;
+      const exp = current?.exp ?? (opts.ex ? now() + opts.ex * 1e3 : null);
+      records.set(key, { json: String(value), exp });
+      return value;
+    },
+    async zadd(key, score, member) {
+      assertKey(key);
+      if (!Number.isFinite(score)) throw new KvError("bad-value", "score");
+      let set = sets.get(key);
+      if (!set) sets.set(key, set = /* @__PURE__ */ new Map());
+      set.set(member, score);
+    },
+    async zdue(key, at, max) {
+      assertKey(key);
+      const set = sets.get(key);
+      if (!set || max < 1) return [];
+      const due = [...set.entries()].filter(([, score]) => score <= at).sort((a, b) => a[1] - b[1] || (a[0] < b[0] ? -1 : 1)).slice(0, max).map(([member]) => member);
+      for (const member of due) set.delete(member);
+      return due;
+    }
+  };
+}
+var ZDUE_SCRIPT = [
+  "local m = redis.call('ZRANGEBYSCORE', KEYS[1], '-inf', ARGV[1], 'LIMIT', 0, tonumber(ARGV[2]))",
+  "if #m > 0 then redis.call('ZREM', KEYS[1], unpack(m)) end",
+  "return m"
+].join("\n");
+var IF_REV_SCRIPT = [
+  "local cur = redis.call('GET', KEYS[1])",
+  "if not cur then return 0 end",
+  "local ok, obj = pcall(cjson.decode, cur)",
+  "if not ok or type(obj) ~= 'table' or obj['rev'] ~= tonumber(ARGV[2]) then return 0 end",
+  "if ARGV[3] ~= '' then redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[3]) else redis.call('SET', KEYS[1], ARGV[1]) end",
+  "return 1"
+].join("\n");
+function createRedisKv(options) {
+  const base = options.url.replace(/\/+$/, "");
+  const doFetch = options.fetch ?? fetch;
+  const timeoutMs = options.timeoutMs ?? 4e3;
+  async function send(path, body, count) {
+    options.onCommands?.(count);
+    let response;
+    try {
+      response = await doFetch(base + path, {
+        method: "POST",
+        headers: { authorization: `Bearer ${options.token}`, "content-type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(timeoutMs)
+      });
+    } catch (err) {
+      throw new KvError("unavailable", err instanceof Error ? err.name : "network");
+    }
+    let parsed = null;
+    try {
+      parsed = await response.json();
+    } catch {
+      parsed = null;
+    }
+    const message = typeof parsed?.error === "string" ? parsed.error : "";
+    if (/limit exceeded|max requests|max daily|max monthly/i.test(message)) throw new KvError("storage-busy", "upstash limit");
+    if (!response.ok) throw new KvError("unavailable", `http ${response.status}`);
+    return parsed;
+  }
+  async function command(...args) {
+    const reply = await send("", args.map(String), 1);
+    if (!reply || typeof reply !== "object" || "error" in reply) throw new KvError("unavailable", reply?.error ?? "no reply");
+    return reply.result;
+  }
+  async function pipeline(commands) {
+    const replies = await send(
+      "/pipeline",
+      commands.map((c) => c.map(String)),
+      commands.length
+    );
+    if (!Array.isArray(replies) || replies.length !== commands.length) throw new KvError("unavailable", "pipeline");
+    return replies.map((reply) => {
+      if (!reply || typeof reply !== "object" || reply.error !== void 0) throw new KvError("unavailable", reply?.error ?? "pipeline");
+      return reply.result;
+    });
+  }
+  return {
+    driver: "redis",
+    sharedCounters: true,
+    async get(key) {
+      assertKey(key);
+      const result = await command("GET", key);
+      if (result === null || result === void 0) return null;
+      try {
+        return JSON.parse(String(result));
+      } catch {
+        throw new KvError("bad-value", "stored value is not JSON");
+      }
+    },
+    async set(key, value, opts = {}) {
+      assertKey(key);
+      assertSeconds(opts.ex);
+      const json2 = encodeValue(value);
+      if (opts.ifRev !== void 0) {
+        if (!Number.isFinite(opts.ifRev)) throw new KvError("bad-value", "ifRev");
+        const result = await command("EVAL", IF_REV_SCRIPT, 1, key, json2, opts.ifRev, opts.ex ?? "");
+        return Number(result) === 1;
+      }
+      const args = ["SET", key, json2];
+      if (opts.ex) args.push("EX", opts.ex);
+      if (opts.nx) args.push("NX");
+      return await command(...args) === "OK";
+    },
+    async del(key) {
+      assertKey(key);
+      await command("DEL", key);
+    },
+    async incr(key, by, opts = {}) {
+      assertKey(key);
+      assertInteger(by);
+      assertSeconds(opts.ex);
+      if (!opts.ex) return Number(await command("INCRBY", key, by));
+      const [value] = await pipeline([
+        ["INCRBY", key, by],
+        ["EXPIRE", key, opts.ex, "NX"]
+      ]);
+      return Number(value);
+    },
+    async zadd(key, score, member) {
+      assertKey(key);
+      if (!Number.isFinite(score)) throw new KvError("bad-value", "score");
+      await command("ZADD", key, score, member);
+    },
+    async zdue(key, at, max) {
+      assertKey(key);
+      if (max < 1) return [];
+      const result = await command("EVAL", ZDUE_SCRIPT, 1, key, at, Math.floor(max));
+      return Array.isArray(result) ? result.map(String) : [];
+    }
+  };
+}
+var COUNTER_PREFIXES = ["llm:", "ops:", "tries:"];
+var isCounter = (key) => COUNTER_PREFIXES.some((prefix) => key.startsWith(prefix));
+function keyPath(key) {
+  assertKey(key);
+  const segments = key.split(":").map((segment) => {
+    if (segment === "") return "_";
+    let out = "";
+    for (const ch of segment) {
+      out += /[a-z0-9-]/.test(ch) ? ch : `_${ch.charCodeAt(0).toString(16).padStart(2, "0")}`;
+    }
+    return out;
+  });
+  const path = `kv/${segments.join("/")}.json`;
+  if (path.length > 200) throw new KvError("bad-key", "too long");
+  return path;
+}
+function createBlobJsonKv(options) {
+  const { store } = options;
+  const now = options.now ?? Date.now;
+  const counters = options.counters ?? createMemoryKv({ now, shared: false });
+  const before = options.beforeOp ?? (async () => void 0);
+  const read = async (key) => {
+    await before("read");
+    const found = await store.read(keyPath(key));
+    if (!found || typeof found !== "object" || !("v" in found)) return null;
+    if (found.exp !== null && typeof found.exp === "number" && found.exp <= now()) return null;
+    return found;
+  };
+  const write = async (key, value, ex) => {
+    await before("write");
+    await store.write(keyPath(key), { v: value, exp: ex ? now() + ex * 1e3 : null });
+  };
+  return {
+    driver: "blob-json",
+    sharedCounters: false,
+    async get(key) {
+      if (isCounter(key)) return counters.get(key);
+      const found = await read(key);
+      return found ? found.v : null;
+    },
+    async set(key, value, opts = {}) {
+      if (isCounter(key)) return counters.set(key, value, opts);
+      assertSeconds(opts.ex);
+      encodeValue(value);
+      if (opts.ifRev !== void 0) {
+        const current = await read(key);
+        if (!current || revOf(current.v) !== opts.ifRev) return false;
+        await write(key, value, opts.ex);
+        return true;
+      }
+      if (opts.nx) {
+        await before("write");
+        const created = await store.create(keyPath(key), { v: value, exp: opts.ex ? now() + opts.ex * 1e3 : null });
+        if (created) return true;
+        if (await read(key)) return false;
+        await write(key, value, opts.ex);
+        return true;
+      }
+      await write(key, value, opts.ex);
+      return true;
+    },
+    async del(key) {
+      if (isCounter(key)) return counters.del(key);
+      await store.remove(keyPath(key));
+    },
+    async incr(key, by, opts) {
+      return counters.incr(key, by, opts);
+    },
+    async zadd(key, score, member) {
+      if (!Number.isFinite(score)) throw new KvError("bad-value", "score");
+      const queue = (await read(key))?.v ?? {};
+      queue[member] = score;
+      await write(key, queue);
+    },
+    async zdue(key, at, max) {
+      if (max < 1) return [];
+      const found = await read(key);
+      const queue = found?.v ?? {};
+      const due = Object.entries(queue).filter(([, score]) => score <= at).sort((a, b) => a[1] - b[1] || (a[0] < b[0] ? -1 : 1)).slice(0, max).map(([member]) => member);
+      if (due.length === 0) return [];
+      for (const member of due) delete queue[member];
+      await write(key, queue);
+      return due;
+    }
+  };
+}
+function chooseDriver(env) {
+  const url = text(env, "KV_REST_API_URL") || text(env, "UPSTASH_REDIS_REST_URL");
+  const token = text(env, "KV_REST_API_TOKEN") || text(env, "UPSTASH_REDIS_REST_TOKEN");
+  const blobToken = text(env, "BLOB_READ_WRITE_TOKEN");
+  const named = text(env, "STORAGE_DRIVER").toLowerCase();
+  const redis = () => url && token ? { driver: "redis", url, token } : { driver: null, problem: "redis variables are not set" };
+  const blob = () => blobToken ? { driver: "blob-json", token: blobToken } : { driver: null, problem: "BLOB_READ_WRITE_TOKEN is not set" };
+  if (named === "redis") return redis();
+  if (named === "blob-json") return blob();
+  if (named === "memory") return { driver: "memory" };
+  if (named !== "") return { driver: null, problem: `unknown STORAGE_DRIVER ${named}` };
+  if (url && token) return redis();
+  if (blobToken) return blob();
+  return { driver: null, problem: "no storage is configured" };
+}
+function guardKv(inner, options) {
+  const check = options.check ?? (async () => void 0);
+  const writable = async () => {
+    if (options.readonly()) throw new KvError("storage-readonly");
+    await check();
+  };
+  return {
+    driver: inner.driver,
+    sharedCounters: inner.sharedCounters,
+    async get(key) {
+      await check();
+      return inner.get(key);
+    },
+    async set(key, value, opts) {
+      await writable();
+      return inner.set(key, value, opts);
+    },
+    async del(key) {
+      await check();
+      return inner.del(key);
+    },
+    async incr(key, by, opts) {
+      await writable();
+      return inner.incr(key, by, opts);
+    },
+    async zadd(key, score, member) {
+      await writable();
+      return inner.zadd(key, score, member);
+    },
+    async zdue(key, at, max) {
+      await check();
+      return inner.zdue(key, at, max);
+    }
+  };
+}
+var memoryStore = null;
+var cached = null;
+function buildStorage(choice, env, deps = {}) {
+  const now = deps.now ?? Date.now;
+  const readonly = flag(env, "STORAGE_READONLY");
+  let budget = null;
+  let raw;
+  let counters;
+  if (choice.driver === "redis") {
+    raw = createRedisKv({ url: choice.url, token: choice.token, fetch: deps.fetch, onCommands: (n) => budget?.commands(n) });
+    counters = raw;
+  } else if (choice.driver === "memory") {
+    memoryStore ??= createMemoryKv({ now, shared: !onVercel(env) });
+    raw = memoryStore;
+    counters = raw;
+  } else {
+    counters = createMemoryKv({ now, shared: false });
+    raw = createBlobJsonKv({
+      store: deps.blob ?? createBlobJson(blobSdk, choice.token),
+      now,
+      counters,
+      beforeOp: (kind) => budget.blob(kind, "record")
+    });
+  }
+  budget = createBudget({ counters, env, now, countsCommands: choice.driver === "redis" });
+  const kv = guardKv(raw, { readonly: () => readonly, check: () => budget.checkCommands() });
+  return { kv, counters, budget, driver: choice.driver, readonly };
+}
+function getStorage(env = process.env) {
+  const choice = chooseDriver(env);
+  if (choice.driver === null) throw new KvError("storage-off", choice.problem);
+  const signature = JSON.stringify([
+    choice,
+    text(env, "STORAGE_READONLY"),
+    text(env, "KV_MONTHLY_COMMANDS"),
+    text(env, "BLOB_MONTHLY_WRITES"),
+    text(env, "BLOB_MONTHLY_READS"),
+    text(env, "UPLOAD_DAILY_BYTES")
+  ]);
+  if (cached?.signature === signature) return cached.storage;
+  const storage = buildStorage(choice, env);
+  cached = { signature, storage };
+  return storage;
+}
+function getKv(env = process.env) {
+  return getStorage(env).kv;
+}
+
+// api/_lib/test-fail.ts
+var MODES = ["offline", "429", "slow", "503", "401", "404", "bad-output", "daily-cap", "storage-busy"];
+function testFailure(request, env = process.env) {
+  if (!flag(env, "API_TEST_FAIL")) return null;
+  const wanted = request.headers.get("x-test-fail")?.trim() ?? "";
+  return MODES.includes(wanted) ? wanted : null;
+}
+
+// api/_lib/llm/config.ts
+var PROVIDERS = ["openrouter", "gemini", "fixtures"];
+var micros = (usd) => Math.round(usd * 1e6);
+function readLlmConfig(env) {
+  const named = text(env, "LLM_PROVIDER").toLowerCase();
+  const known = PROVIDERS.includes(named);
+  const provider = known ? named : "fixtures";
+  const models = provider === "gemini" ? list(env, "GEMINI_MODEL").length ? list(env, "GEMINI_MODEL") : list(env, "LLM_MODEL") : list(env, "LLM_MODEL");
+  const production = text(env, "VERCEL_PROJECT_PRODUCTION_URL");
+  return {
+    provider,
+    providerProblem: named && !known ? `unknown LLM_PROVIDER ${named}` : null,
+    key: provider === "openrouter" ? text(env, "OPENROUTER_API_KEY") : provider === "gemini" ? text(env, "GEMINI_API_KEY") : "",
+    models: provider === "fixtures" ? ["recorded"] : models,
+    audioModels: list(env, "LLM_AUDIO_MODEL"),
+    priceIn: num(env, "LLM_PRICE_IN", 0),
+    priceOut: num(env, "LLM_PRICE_OUT", 0),
+    dailyMicros: micros(num(env, "LLM_DAILY_USD", 0.2)),
+    totalMicros: micros(num(env, "LLM_TOTAL_USD", 6)),
+    reserveMicros: micros(num(env, "LLM_RUN_RESERVE_USD", 0.08)),
+    estCallMicros: Math.max(1, micros(num(env, "LLM_EST_CALL_USD", 4e-3))),
+    runCalls: Math.floor(num(env, "LLM_RUN_CALLS", 32)),
+    runsPerAddress: Math.floor(num(env, "LLM_DAILY_RUNS_PER_ADDRESS", 2)),
+    voicePerAddress: Math.floor(num(env, "LLM_VOICE_CALLS_PER_ADDRESS", 40)),
+    devToken: text(env, "LLM_DEV_TOKEN"),
+    addressSalt: "groundwork-llm",
+    siteUrl: production ? `https://${production}` : ""
+  };
+}
+var paid = (provider) => provider === "openrouter" || provider === "gemini";
+
+// api/_lib/llm/provider.ts
+function retryAfterSeconds(header, fallback, now = Date.now()) {
+  if (!header) return fallback;
+  const seconds = Number(header);
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.min(120, Math.ceil(seconds));
+  const at = Date.parse(header);
+  if (Number.isFinite(at)) return Math.min(120, Math.max(1, Math.ceil((at - now) / 1e3)));
+  return fallback;
+}
+function thrownOutcome(signal) {
+  return signal.aborted ? { ok: false, kind: "timeout" } : { ok: false, kind: "busy" };
+}
+
+// api/_lib/llm/gemini.ts
+var GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
+function geminiSchema(schema) {
+  const out = { type: schema.type.toUpperCase() };
+  if (schema.description) out.description = schema.description;
+  if (schema.enum) {
+    out.enum = schema.enum;
+    out.format = "enum";
+  }
+  if (schema.properties) {
+    out.properties = Object.fromEntries(Object.entries(schema.properties).map(([k, v]) => [k, geminiSchema(v)]));
+  }
+  if (schema.required) out.required = schema.required;
+  if (schema.items) out.items = geminiSchema(schema.items);
+  if (schema.minItems !== void 0) out.minItems = schema.minItems;
+  if (schema.maxItems !== void 0) out.maxItems = schema.maxItems;
+  return out;
+}
+function partsOf(message) {
+  if (typeof message.content === "string") return [{ text: message.content }];
+  return message.content.map(
+    (part) => part.type === "text" ? { text: part.text } : { inlineData: { mimeType: "audio/wav", data: part.input_audio.data } }
+  );
+}
+function retryDelay(body) {
+  const details = body?.error?.details;
+  const found = Array.isArray(details) ? details.find((d) => typeof d?.retryDelay === "string") : void 0;
+  const match = typeof found?.retryDelay === "string" ? /^(\d+(?:\.\d+)?)s$/.exec(found.retryDelay) : null;
+  return match ? match[1] : null;
+}
+function createGemini(options) {
+  const doFetch = options.fetch ?? fetch;
+  return async ({ body, model, signal }) => {
+    const messages = withAudio(body);
+    const system = messages.filter((m) => m.role === "system").flatMap(partsOf);
+    const request = {
+      contents: messages.filter((m) => m.role === "user").map((m) => ({ role: "user", parts: partsOf(m) })),
+      generationConfig: { responseMimeType: "application/json", responseSchema: geminiSchema(body.schema) }
+    };
+    if (system.length > 0) request.systemInstruction = { parts: system };
+    const id = model.replace(/^models\//, "");
+    let response;
+    try {
+      response = await doFetch(`${options.base ?? GEMINI_BASE}/models/${encodeURIComponent(id)}:generateContent`, {
+        method: "POST",
+        headers: { "x-goog-api-key": options.key, "content-type": "application/json" },
+        body: JSON.stringify(request),
+        signal
+      });
+    } catch {
+      return thrownOutcome(signal);
+    }
+    let parsed = null;
+    try {
+      parsed = await response.json();
+    } catch {
+      if (signal.aborted) return { ok: false, kind: "timeout" };
+    }
+    if (!response.ok) {
+      const raw = JSON.stringify(parsed ?? "");
+      const status = response.status;
+      if (status === 401 || status === 403 || status === 400 && raw.includes("API_KEY_INVALID")) {
+        return { ok: false, kind: "offline", need: "key" };
+      }
+      if (status === 404 || status === 400 && (raw.includes(id) || /model/i.test(raw) && /not found|unsupported|invalid/i.test(raw))) {
+        return { ok: false, kind: "model" };
+      }
+      if (status === 429) {
+        return { ok: false, kind: "rate-limited", retryAfter: retryAfterSeconds(response.headers.get("retry-after") ?? retryDelay(parsed), 5) };
+      }
+      if (status >= 500) return { ok: false, kind: "busy" };
+      return { ok: false, kind: "error" };
+    }
+    const data = parsed;
+    const text2 = (data?.candidates?.[0]?.content?.parts ?? []).map((part) => typeof part.text === "string" ? part.text : "").join("");
+    const meta = data?.usageMetadata;
+    return {
+      ok: true,
+      text: text2,
+      model: typeof data?.modelVersion === "string" ? data.modelVersion : id,
+      usage: {
+        inTokens: typeof meta?.promptTokenCount === "number" ? meta.promptTokenCount : void 0,
+        outTokens: typeof meta?.candidatesTokenCount === "number" ? meta.candidatesTokenCount : void 0
+      }
+    };
+  };
+}
+
+// api/_lib/llm/guard.ts
+var DAY_TTL2 = 2 * 24 * 3600;
+var RUN_TTL = 2 * 24 * 3600;
+var utcDay = (ms) => new Date(ms).toISOString().slice(0, 10);
+var keys = {
+  total: "llm:total",
+  dayUsd: (day2) => `llm:${day2}:usd`,
+  dayCalls: (day2) => `llm:${day2}:calls`,
+  runs: (day2, address) => `llm:${day2}:runs:${address}`,
+  voice: (day2, address) => `llm:${day2}:voice:${address}`,
+  runCalls: (runId) => `llm:run:${runId}:calls`,
+  runOk: (runId) => `llm:run:${runId}:ok`,
+  devUsd: (item) => `llm:dev:${item}:usd`,
+  devCalls: (item) => `llm:dev:${item}:calls`
+};
+var cap = () => ({ ok: false, refusal: { status: 429, error: "daily-cap" } });
+var asNumber = (value) => typeof value === "number" && Number.isFinite(value) ? value : Number(value ?? 0) || 0;
+async function admit(kv, cfg, input) {
+  const day2 = utcDay(input.now);
+  const ticket = { provider: input.provider, caller: input.caller, day: day2, runKey: null };
+  if (!paid(input.provider) || input.caller.kind === "dev") {
+    if (input.runId) {
+      ticket.runKey = keys.runCalls(input.runId);
+      const calls2 = await kv.incr(ticket.runKey, 1, { ex: RUN_TTL });
+      if (calls2 > cfg.runCalls) return cap();
+    }
+    return { ok: true, ticket };
+  }
+  if (!kv.sharedCounters) return { ok: false, refusal: { status: 503, error: "agents-offline", extra: { need: "credit" } } };
+  const address = input.caller.address;
+  const [total, spent] = (await Promise.all([kv.get(keys.total), kv.get(keys.dayUsd(day2))])).map(asNumber);
+  if (total >= cfg.totalMicros || spent >= cfg.dailyMicros) return cap();
+  if (input.task === "intent") {
+    const voice = await kv.incr(keys.voice(day2, address), 1, { ex: DAY_TTL2 });
+    if (voice > cfg.voicePerAddress) return cap();
+    return { ok: true, ticket };
+  }
+  if (!input.runId) return { ok: false, refusal: { status: 400, error: "bad-request", extra: { need: "runId" } } };
+  const runKey = keys.runCalls(input.runId);
+  const calls = await kv.incr(runKey, 1, { ex: RUN_TTL });
+  if (calls > cfg.runCalls) return cap();
+  if (calls === 1) {
+    const left = Math.min(cfg.dailyMicros - spent, cfg.totalMicros - total);
+    if (left < cfg.reserveMicros) {
+      await kv.del(runKey);
+      return cap();
+    }
+    const runs = await kv.incr(keys.runs(day2, address), 1, { ex: DAY_TTL2 });
+    if (runs > cfg.runsPerAddress) {
+      await kv.del(runKey);
+      return cap();
+    }
+    await kv.set(keys.runOk(input.runId), 1, { ex: RUN_TTL });
+  } else if (await kv.get(keys.runOk(input.runId)) === null) {
+    await kv.incr(runKey, -1);
+    return { ok: false, refusal: { status: 429, error: "rate-limited", extra: { retryAfter: 2 } } };
+  }
+  ticket.runKey = runKey;
+  return { ok: true, ticket };
+}
+async function refund(kv, ticket) {
+  if (ticket.runKey) await kv.incr(ticket.runKey, -1);
+}
+function costMicros(usage, cfg) {
+  if (usage?.costUsd !== void 0) return Math.ceil(usage.costUsd * 1e6);
+  const tokens = (usage?.inTokens ?? 0) + (usage?.outTokens ?? 0);
+  if (tokens > 0 && (cfg.priceIn > 0 || cfg.priceOut > 0)) {
+    return Math.ceil((usage?.inTokens ?? 0) * cfg.priceIn + (usage?.outTokens ?? 0) * cfg.priceOut);
+  }
+  return cfg.estCallMicros;
+}
+async function settle(kv, ticket, microsSpent) {
+  if (!paid(ticket.provider) || microsSpent <= 0) return;
+  if (ticket.caller.kind === "dev") {
+    await kv.incr(keys.devUsd(ticket.caller.item), microsSpent);
+    await kv.incr(keys.devCalls(ticket.caller.item), 1);
+    return;
+  }
+  await kv.incr(keys.dayUsd(ticket.day), microsSpent, { ex: DAY_TTL2 });
+  await kv.incr(keys.total, microsSpent);
+  await kv.incr(keys.dayCalls(ticket.day), 1, { ex: DAY_TTL2 });
+}
+async function budgetStatus(kv, cfg, address, now) {
+  const day2 = utcDay(now);
+  const [total, spent, calls, runs] = (await Promise.all([kv.get(keys.total), kv.get(keys.dayUsd(day2)), kv.get(keys.dayCalls(day2)), kv.get(keys.runs(day2, address))])).map(asNumber);
+  const left = Math.max(0, Math.min(cfg.dailyMicros - spent, cfg.totalMicros - total));
+  const average = calls > 0 && spent > 0 ? spent / calls : cfg.estCallMicros;
+  const byMoney = cfg.reserveMicros > 0 ? Math.floor(left / cfg.reserveMicros) : 0;
+  return {
+    live: left > 0,
+    callsLeftToday: Math.floor(left / Math.max(1, average)),
+    runsLeftToday: Math.max(0, Math.min(byMoney, cfg.runsPerAddress - runs))
+  };
+}
+
+// api/_lib/llm/openrouter.ts
+var OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+var isModelMessage = (message, model) => model !== "" && message.includes(model) || /not a valid model|invalid model|model.{0,40}(not found|does not exist|is not available|unknown)|no such model|no endpoints found/i.test(message);
+function usageOf(body) {
+  const usage = body?.usage;
+  if (!usage || typeof usage !== "object") return {};
+  const out = {};
+  if (typeof usage.cost === "number" && Number.isFinite(usage.cost) && usage.cost >= 0) out.costUsd = usage.cost;
+  if (typeof usage.prompt_tokens === "number") out.inTokens = usage.prompt_tokens;
+  if (typeof usage.completion_tokens === "number") out.outTokens = usage.completion_tokens;
+  return out;
+}
+function refusal(status, message, model, retryHeader) {
+  if (status === 401) return { ok: false, kind: "offline", need: "key" };
+  if (status === 402) return { ok: false, kind: "offline", need: "credit" };
+  if (status === 404) return { ok: false, kind: "model" };
+  if (status === 400) return isModelMessage(message, model) ? { ok: false, kind: "model" } : { ok: false, kind: "error" };
+  if (status === 408) return { ok: false, kind: "timeout" };
+  if (status === 429) return { ok: false, kind: "rate-limited", retryAfter: retryAfterSeconds(retryHeader, 5) };
+  if (status >= 500) return { ok: false, kind: "busy" };
+  return { ok: false, kind: "error" };
+}
+function createOpenRouter(options) {
+  const doFetch = options.fetch ?? fetch;
+  return async ({ body, model, fallbacks, signal }) => {
+    const request = {
+      model,
+      messages: withAudio(body),
+      response_format: {
+        type: "json_schema",
+        json_schema: { name: body.task, schema: strictSchema(body.schema), strict: true }
+      },
+      usage: { include: true }
+    };
+    if (fallbacks.length > 0) request.models = [model, ...fallbacks];
+    const headers = {
+      authorization: `Bearer ${options.key}`,
+      "content-type": "application/json",
+      "X-Title": "Groundwork"
+    };
+    if (options.siteUrl) headers["HTTP-Referer"] = options.siteUrl;
+    let response;
+    try {
+      response = await doFetch(options.url ?? OPENROUTER_URL, { method: "POST", headers, body: JSON.stringify(request), signal });
+    } catch {
+      return thrownOutcome(signal);
+    }
+    let parsed = null;
+    try {
+      parsed = await response.json();
+    } catch {
+      if (signal.aborted) return { ok: false, kind: "timeout" };
+      parsed = null;
+    }
+    const error = parsed?.error;
+    const message = typeof error?.message === "string" ? error.message : "";
+    if (!response.ok) return refusal(response.status, message, model, response.headers.get("retry-after"));
+    if (error) {
+      const code = Number(error.code);
+      return refusal(Number.isFinite(code) && code >= 400 ? code : 502, message, model, response.headers.get("retry-after"));
+    }
+    const choice = parsed?.choices?.[0];
+    const content = choice?.message?.content;
+    const answered = typeof parsed?.model === "string" ? parsed.model : model;
+    return { ok: true, text: typeof content === "string" ? content : "", model: answered, usage: usageOf(parsed) };
+  };
+}
+
+// api/_lib/llm/route.ts
+var PROVIDER_DEADLINE_MS = 5e4;
+var DEV_ITEM = /^[a-z0-9-]{1,32}$/;
+var defaultLog = (line) => console.log(JSON.stringify(line));
+function injected(mode) {
+  switch (mode) {
+    case "429":
+      return { ok: false, kind: "rate-limited", retryAfter: 2 };
+    case "503":
+      return { ok: false, kind: "busy" };
+    case "401":
+      return { ok: false, kind: "offline", need: "key" };
+    case "404":
+      return { ok: false, kind: "model" };
+    case "bad-output":
+      return { ok: true, text: "This is not JSON.", model: "test", usage: { costUsd: 0 } };
+    default:
+      return null;
+  }
+}
+function createLlmRoutes(deps = {}) {
+  const env = deps.env ?? (() => process.env);
+  const now = deps.now ?? Date.now;
+  const log = deps.log ?? defaultLog;
+  const kvOf = deps.kv ?? (() => getKv(env()));
+  const adapterFor = (cfg) => {
+    const custom = deps.adapters?.[cfg.provider];
+    if (custom) return custom(cfg);
+    if (cfg.provider === "openrouter") return createOpenRouter({ key: cfg.key, siteUrl: cfg.siteUrl, fetch: deps.fetch });
+    if (cfg.provider === "gemini") return createGemini({ key: cfg.key, fetch: deps.fetch });
+    return createFixtures();
+  };
+  const callerOf = (request, cfg) => {
+    const token = request.headers.get("x-dev-token") ?? "";
+    if (cfg.devToken && token && sameHash(sha256(token), sha256(cfg.devToken))) {
+      const item = (request.headers.get("x-dev-budget") ?? "").trim().toLowerCase();
+      return { kind: "dev", item: DEV_ITEM.test(item) ? item : "unsorted" };
+    }
+    return { kind: "visitor", address: hashAddress(request, cfg.addressSalt) };
+  };
+  async function GET(request) {
+    const cfg = readLlmConfig(env());
+    const status = {
+      live: false,
+      provider: cfg.provider,
+      model: cfg.models[0] ?? "",
+      audio: false,
+      callsLeftToday: 0,
+      runsLeftToday: 0
+    };
+    if (cfg.providerProblem) log({ at: "llm", problem: cfg.providerProblem });
+    if (!paid(cfg.provider) || !cfg.key || cfg.models.length === 0) return json(200, status);
+    try {
+      const kv = kvOf();
+      if (!kv.sharedCounters) return json(200, status);
+      const numbers = await budgetStatus(kv, cfg, hashAddress(request, cfg.addressSalt), now());
+      return json(200, { ...status, ...numbers, audio: numbers.live && cfg.audioModels.length > 0 });
+    } catch (err) {
+      log({ at: "llm", route: "status", problem: describeError(err) });
+      return json(200, status);
+    }
+  }
+  async function POST(request) {
+    const started = now();
+    const environment = env();
+    const cfg = readLlmConfig(environment);
+    const mode = testFailure(request, environment);
+    const line = { at: "llm", provider: cfg.provider };
+    const finish = (response, extra = {}) => {
+      log({ ...line, ...extra, ms: now() - started, status: response.status });
+      return response;
+    };
+    const bytes = await readBody(request);
+    if (bytes === null) return finish(fail(413, "too-big"));
+    line.bytes = bytes.byteLength;
+    let raw;
+    try {
+      raw = JSON.parse(new TextDecoder().decode(bytes));
+    } catch {
+      return finish(fail(400, "bad-request"));
+    }
+    const parsed = parseLlmRequest(raw);
+    if (!parsed.ok) return finish(fail(400, "bad-request"), { problem: parsed.problem });
+    const body = parsed.body;
+    line.task = body.task;
+    if (paid(cfg.provider) && !cfg.key) return finish(fail(503, "agents-offline", { need: "key" }));
+    const models = hasAudio(body) && cfg.audioModels.length > 0 ? cfg.audioModels : cfg.models;
+    if (models.length === 0) return finish(fail(503, "agents-offline", { need: "model" }));
+    if (cfg.provider === "fixtures" && !body.fixture) return finish(fail(503, "agents-offline", { need: "fixture" }));
+    if (mode === "daily-cap") return finish(fail(429, "daily-cap"));
+    let kv = null;
+    let ticket = null;
+    try {
+      if (mode === "storage-busy") throw new KvError("storage-busy", "test");
+      kv = kvOf();
+      const admission = await admit(kv, cfg, { caller: callerOf(request, cfg), task: body.task, runId: body.runId, provider: cfg.provider, now: now() });
+      if (!admission.ok) {
+        const { status, error, extra } = admission.refusal;
+        return finish(fail(status, error, extra));
+      }
+      ticket = admission.ticket;
+    } catch (err) {
+      line.storage = describeError(err);
+      if (paid(cfg.provider)) return finish(fail(503, "agents-offline", { need: "credit" }));
+      kv = null;
+    }
+    const adapter = adapterFor(cfg);
+    const signal = AbortSignal.timeout(deps.deadlineMs ?? PROVIDER_DEADLINE_MS);
+    const callStarted = now();
+    let list2 = models;
+    let outcome = { ok: false, kind: "model" };
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      line.model = list2[0];
+      outcome = injected(mode) ?? await adapter({ body, model: list2[0], fallbacks: list2.slice(1), signal });
+      if (outcome.ok || outcome.kind !== "model" || list2.length < 2) break;
+      list2 = list2.slice(1);
+    }
+    const callMs = now() - callStarted;
+    const giveBack = async () => {
+      if (kv && ticket) await refund(kv, ticket).catch((err) => line.refund = describeError(err));
+    };
+    const charge = async (spent) => {
+      line.usd = spent / 1e6;
+      if (kv && ticket) await settle(kv, ticket, spent).catch((err) => line.settle = describeError(err));
+    };
+    if (outcome.ok) {
+      line.model = outcome.model;
+      await charge(paid(cfg.provider) ? costMicros(outcome.usage, cfg) : 0);
+      const value = outcome.json !== void 0 ? outcome.json : parseModelJson(outcome.text ?? "");
+      const problem = value === void 0 ? "not JSON" : validate(value, body.schema);
+      if (problem) return finish(fail(422, "bad-output"), { problem });
+      const answer = { json: value, provider: cfg.provider, model: outcome.model, ms: outcome.ms ?? callMs };
+      return finish(json(200, answer));
+    }
+    switch (outcome.kind) {
+      case "rate-limited":
+        await giveBack();
+        return finish(fail(429, "rate-limited", { retryAfter: outcome.retryAfter }));
+      case "busy":
+        await giveBack();
+        return finish(fail(503, "provider-busy"));
+      case "offline":
+        await giveBack();
+        return finish(fail(503, "agents-offline", { need: outcome.need }));
+      case "model":
+        await giveBack();
+        return finish(fail(503, "agents-offline", { need: "model" }));
+      case "error":
+        await giveBack();
+        return finish(fail(502, "provider-error"));
+      case "bad-output":
+        return finish(fail(422, "bad-output"), { problem: "recorded failure" });
+      case "timeout":
+        await charge(paid(cfg.provider) ? cfg.estCallMicros : 0);
+        return finish(fail(504, "timeout"));
+    }
+  }
+  const guarded = (handler) => async (request) => {
+    try {
+      return await handler(request);
+    } catch (err) {
+      log({ at: "llm", problem: describeError(err) });
+      return fail(500, "server");
+    }
+  };
+  return { GET: guarded(GET), POST: guarded(POST) };
+}
 
 // api/_routes.ts
-var FUNCTIONS = {};
+var FUNCTIONS = {
+  llm: createLlmRoutes()
+};
 function functionOf(pathname) {
   const parts = pathname.split("/").filter((part) => part !== "");
   if (parts[0] !== "api" || parts.length < 2) return null;
@@ -27,7 +1307,7 @@ function functionOf(pathname) {
 async function handle(request) {
   const name = functionOf(new URL(request.url, "http://localhost").pathname);
   const routes = name !== null && Object.hasOwn(FUNCTIONS, name) ? FUNCTIONS[name] : void 0;
-  if (!routes) return fail(404, "not-found");
+  if (!routes) return fail(404, "not-found", { route: false });
   const method = request.method.toUpperCase();
   const handler = routes[method];
   if (!handler) {
@@ -41,5 +1321,6 @@ async function handle(request) {
 export {
   FUNCTIONS,
   functionOf,
-  handle
+  handle,
+  setFixtureSource
 };

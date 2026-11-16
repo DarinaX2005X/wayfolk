@@ -64,3 +64,24 @@ describe('the dev API', () => {
     expect(Date.now() - started).toBeGreaterThanOrEqual(280);
   });
 });
+
+describe('answer sets of the dev server', () => {
+  it('reads answer sets from disk, skips other JSON and prefers a recording of the real model', async () => {
+    const { diskFixtures } = await import('../../tools/dev-api/plugin');
+    const { mkdtemp, writeFile, copyFile, rm } = await import('node:fs/promises');
+    const os = await import('node:os');
+    const path = await import('node:path');
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'gw-answers-'));
+    try {
+      await copyFile(path.join(__dirname, 'fixtures', 'synthetic.answers.json'), path.join(dir, 'synthetic.json'));
+      await writeFile(path.join(dir, 'expected.json'), '{"claims": 124}');
+      const source = diskFixtures([dir, path.join(dir, 'missing')]);
+      expect((await source('synthetic', 'full'))?.answers).toBe('scripted');
+      expect(await source('synthetic', 'late')).toBeNull();
+      await writeFile(path.join(dir, 'synthetic.live.json'), JSON.stringify({ example: 'synthetic', scope: 'full', answers: 'recorded', materialHash: 'x', calls: [] }));
+      expect((await source('synthetic', 'full'))?.answers).toBe('recorded');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});

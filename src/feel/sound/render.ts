@@ -2,161 +2,109 @@
  * Recipes to samples. Everything here is a pure function of its arguments: the engine
  * turns the result into AudioBuffers, the tests measure the very same arrays.
  */
-import type { Tune } from './scale';
-import { SCALE_HZ, stepSeconds } from './scale';
-import { COMB_LEVEL, combNote, nearestTooth } from './comb';
-import {
-  blockRumble,
-  fadeTail,
-  foldLoop,
-  layersSpan,
-  lp,
-  mixInto,
-  normalize,
-  renderLayers,
-  resample,
-  runBand,
-  trimTail,
-} from './dsp';
-import { LOOPS, PALETTE, layersOf, type LoopName, type SoundName } from './palette';
+import { blockRumble, fadeTail, foldLoop, normalize, renderLayers, runBand, trimTail, lp, rng } from './dsp';
+import { AIR, PALETTE, layersOf, type SoundName } from './palette';
 
 export const SAMPLE_RATE = 48_000;
 
-/** Master gain of the product: −14 dB, as feel.md asks for a low master. */
-export const MASTER_GAIN = 10 ** (-14 / 20);
-
 /**
- * Gain of the melody bus. The fullest phrase a Tune allows (32 steps of three notes at
- * the fastest tempo) peaks under 1 with this gain, so three voices plus the
- * melody stay under −1 dBFS after the master gain; tests/feel/mix.test.ts holds this.
+ * Master gain. The levels of the palette are written as the peak each voice reaches at
+ * the output (DESIGN gives them in dBFS), so the master passes them through unchanged.
  */
-export const TUNE_GAIN = 0.62;
+export const MASTER_GAIN = 1;
 
-/** Voices that may sound at once, loops included. The melody is counted apart. */
+/** Voices that may sound at once; `air` is counted apart. */
 export const MAX_VOICES = 3;
 
 /** Every play is moved in pitch by a random amount within this share. */
 export const PITCH_JITTER = 0.03;
 
-/** The largest gain a single play may ask for through `opts.gain`. */
-export const MAX_PLAY_GAIN = 1.25;
+/** The largest gain a single play may ask for through `opts.gain` (it never raises a voice). */
+export const MAX_PLAY_GAIN = 1;
 
-/** Q of the loop low-pass, as a plain quality factor (BiquadFilterNode takes it in dB). */
-export const LOOP_Q = 0.707;
+export const dbToGain = (db: number): number => 10 ** (db / 20);
 
-function seedOf(name: string, take: number): number {
+function seedOf(name: string, take: number, degree: number): number {
   let h = 2166136261;
   for (let i = 0; i < name.length; i++) h = Math.imul(h ^ name.charCodeAt(i), 16777619);
-  return (h >>> 0) + take * 104_729;
+  return (h >>> 0) + take * 104_729 + degree * 7_919;
 }
 
-/** The paper part of a sound at its own pitch: one take of noise, normalized to the recipe level. */
-export function renderPaper(name: SoundName, sr = SAMPLE_RATE, take = 0, stretch = 1): Float32Array {
+/**
+ * One sound at its level: the recipe drawn for `degree`, one take of its noise, peak
+ * normalised to the patch level in dBFS. `part` renders only the tones or only the
+ * noise (for the band tests).
+ */
+export function renderSound(
+  name: SoundName,
+  o: { sr?: number; take?: number; degree?: number; part?: 'all' | 'tones' | 'noise' } = {},
+): Float32Array {
+  const sr = o.sr ?? SAMPLE_RATE;
   const patch = PALETTE[name];
-  const raw = renderLayers(
-    layersOf((p) => patch.draw(p, stretch)),
-    sr,
-    seedOf(name, take),
-  );
+  const degree = o.degree ?? 0;
+  const keep = o.part === 'tones' ? { noise: false } : o.part === 'noise' ? { tones: false } : {};
+  const raw = renderLayers(layersOf((p) => patch.draw(p, degree), keep), sr, seedOf(name, o.take ?? 0, degree));
   blockRumble(raw, sr);
   const out = trimTail(raw).slice();
-  normalize(out, patch.level);
+  normalize(out, dbToGain(patch.db));
   fadeTail(out, sr);
   return out;
 }
 
-/** The buffer of a loop at full intensity; it repeats without a seam. */
-export function renderLoopBuffer(name: LoopName, sr = SAMPLE_RATE): Float32Array {
-  const patch = LOOPS[name];
-  const overlap = 0.08;
-  const layers = layersOf((p) => patch.draw(p, patch.span + overlap));
-  const raw = renderLayers(layers, sr, seedOf(name, 0)).subarray(0, Math.round(layersSpan(layers) * sr));
-  blockRumble(raw, sr);
-  const out = foldLoop(raw, sr, overlap);
-  normalize(out, patch.level);
-  return out;
-}
-
-const teeth = new Map<string, Float32Array>();
-
-/** A comb note of the scale, cached per sample rate. */
-export function renderTooth(note: number, sr = SAMPLE_RATE): Float32Array {
-  const key = `${note}@${sr}`;
-  let buf = teeth.get(key);
-  if (!buf) teeth.set(key, (buf = combNote(SCALE_HZ[note], sr, 17 + note)));
-  return buf;
+/** Gain of one voice: the caller's gain, never above the level of the patch. */
+export function voiceGain(asked: number): number {
+  return Math.min(Math.max(Number.isFinite(asked) ? asked : 1, 0), MAX_PLAY_GAIN);
 }
 
 /**
- * What one `play(name, opts)` sends to the voice bus, without the random pitch move:
- * the paper part (moved by `pitch` unless the sound carries comb notes) plus its notes.
+ * The air of the Void: pink noise (Paul Kellet's filter) under a 500 Hz low-pass, a
+ * seamless loop at the ambient level. The breathing (±2 dB over 14 s) is applied by the
+ * engine with a slow gain curve, so the loop itself stays short.
  */
-export function renderSound(
-  name: SoundName,
-  o: { sr?: number; take?: number; pitch?: number; gain?: number; stretch?: number } = {},
-): Float32Array {
-  const sr = o.sr ?? SAMPLE_RATE;
-  const pitch = o.pitch ?? 1;
-  const patch = PALETTE[name];
-  const hits = patch.comb?.(pitch) ?? [];
-  let paper = renderPaper(name, sr, o.take ?? 0, o.stretch ?? 1);
-  if (!patch.comb && pitch !== 1) paper = resample(paper, pitch);
-  let length = paper.length;
-  const notes = hits.map((h) => {
-    const { note, rate } = nearestTooth(h.hz);
-    const tooth = rate === 1 ? renderTooth(note, sr) : resample(renderTooth(note, sr), rate);
-    length = Math.max(length, Math.round(h.at * sr) + tooth.length);
-    return { tooth, at: h.at, gain: h.gain };
-  });
-  const out = new Float32Array(length);
-  mixInto(out, paper, sr);
-  for (const n of notes) mixInto(out, n.tooth, sr, n.at, n.gain);
-  const gain = voiceGain(name, o.gain ?? 1);
-  if (gain !== 1) for (let i = 0; i < out.length; i++) out[i] *= gain;
+export function renderAir(sr = SAMPLE_RATE): Float32Array {
+  const overlap = 0.25;
+  const n = Math.round((AIR.loopS + overlap) * sr);
+  const raw = new Float32Array(n);
+  const rand = rng(424242);
+  let b0 = 0;
+  let b1 = 0;
+  let b2 = 0;
+  let b3 = 0;
+  let b4 = 0;
+  let b5 = 0;
+  let b6 = 0;
+  for (let i = 0; i < n; i++) {
+    const white = rand() * 2 - 1;
+    b0 = 0.99886 * b0 + white * 0.0555179;
+    b1 = 0.99332 * b1 + white * 0.0750759;
+    b2 = 0.969 * b2 + white * 0.153852;
+    b3 = 0.8665 * b3 + white * 0.3104856;
+    b4 = 0.55 * b4 + white * 0.5329522;
+    b5 = -0.7616 * b5 - white * 0.016898;
+    raw[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+    b6 = white * 0.115926;
+  }
+  runBand(raw, sr, lp(AIR.cutoff));
+  runBand(raw, sr, lp(AIR.cutoff));
+  blockRumble(raw, sr, 30);
+  const out = foldLoop(raw, sr, overlap);
+  normalize(out, dbToGain(AIR.db));
   return out;
 }
 
-/** The most a voice can peak at gain 1: its paper level plus each of its comb notes at full level. */
-export function peakBound(name: SoundName): number {
-  const patch = PALETTE[name];
-  let bound = patch.level;
-  for (const hit of patch.comb?.(1) ?? []) bound += hit.gain * COMB_LEVEL;
-  return bound;
+/** The breathing of the air: its gain factor at time `t` seconds (±2 dB, 14 s). */
+export function airSwing(t: number): number {
+  return dbToGain(AIR.swingDb * Math.sin((2 * Math.PI * t) / AIR.periodS));
 }
 
-/** Gain of one voice: the caller's gain, held so that the voice never peaks over 1. */
-export function voiceGain(name: SoundName, asked: number): number {
-  const g = Math.min(Math.max(Number.isFinite(asked) ? asked : 1, 0), MAX_PLAY_GAIN);
-  return Math.min(g, 1 / peakBound(name));
-}
-
-/** `seconds` of a loop held at one intensity, as the engine's filter and gain would play it. */
-export function renderLoop(name: LoopName, intensity: number, seconds: number, sr = SAMPLE_RATE): Float32Array {
-  const shape = LOOPS[name].shape(Math.min(Math.max(intensity, 0), 1));
-  const cycle = resample(renderLoopBuffer(name, sr), shape.rate);
-  const out = new Float32Array(Math.round(seconds * sr));
-  for (let i = 0; i < out.length; i++) out[i] = cycle[i % cycle.length];
-  runBand(out, sr, lp(shape.cutoff, LOOP_Q));
-  for (let i = 0; i < out.length; i++) out[i] *= shape.gain;
-  return out;
-}
-
-/** A whole melody on the melody bus (before the master gain), every note left to ring. */
-export function renderTune(t: Tune, sr = SAMPLE_RATE): Float32Array {
-  const step = stepSeconds(t.bpm);
-  const ring = renderTooth(0, sr).length;
-  const out = new Float32Array(Math.round(t.steps.length * step * sr) + ring);
-  t.steps.forEach((notes, i) => {
-    for (const n of notes) mixInto(out, renderTooth(n, sr), sr, i * step, TUNE_GAIN);
-  });
-  return out;
-}
-
-/** Sums what several buses send to the output and applies the master gain. */
+/** Sums several voices to the output at their times (for the mix test). */
 export function mixdown(parts: { samples: Float32Array; at?: number }[], sr = SAMPLE_RATE): Float32Array {
   let length = 0;
   for (const p of parts) length = Math.max(length, Math.round((p.at ?? 0) * sr) + p.samples.length);
   const out = new Float32Array(length);
-  for (const p of parts) mixInto(out, p.samples, sr, p.at ?? 0, MASTER_GAIN);
+  for (const p of parts) {
+    const off = Math.round((p.at ?? 0) * sr);
+    for (let i = 0; i < p.samples.length && off + i < out.length; i++) out[off + i] += p.samples[i] * MASTER_GAIN;
+  }
   return out;
 }

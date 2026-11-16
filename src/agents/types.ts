@@ -81,7 +81,8 @@ export type DocKind =
 export type DocMeta = { id: string; title: string; kind: DocKind; from: number; to: number; date?: string; author?: string };
 export type Block = { k: 'head' | 'p' | 'msg' | 'row' | 'clause' | 'sig'; text: string; who?: string; at?: string };
 /** n counts from 1; text = blocks.map(blockText).join('\n') (src/materials/text.ts). */
-export type Page = { docId: string; n: number; text: string; blocks?: Block[] };
+/** noText: a PDF page without a text layer (a scan). */
+export type Page = { docId: string; n: number; text: string; blocks?: Block[]; noText?: boolean };
 export type Doc = { meta: DocMeta; pages: Page[]; scanned?: boolean };
 
 export type ExampleMeta = {
@@ -298,7 +299,10 @@ export type CallRecord = {
   json: unknown;
   provider: Provider | 'script';
   model: string;
+  /** Indices of claims in json.events that the example's author planted on purpose. */
   planted?: number[];
+  /** Indices of claims in json.events that code seeded into a live recording. */
+  seeded?: number[];
 };
 
 export type AnswerSet = {
@@ -374,7 +378,19 @@ export type LlmRequest = {
   runId?: string;
 };
 
-export type LlmResponse = { json: unknown; provider: Provider | 'script'; model: string; ms: number };
+/**
+ * planted and seeded travel with an answer of recordedLlm (copied from its CallRecord);
+ * missing: recordedLlm had no record of this recheck call and answered with an empty fix.
+ */
+export type LlmResponse = {
+  json: unknown;
+  provider: Provider | 'script';
+  model: string;
+  ms: number;
+  planted?: number[];
+  seeded?: number[];
+  missing?: boolean;
+};
 export type LlmClient = {
   status(): Promise<LlmStatus>;
   call(req: LlmRequest, opts?: { signal?: AbortSignal }): Promise<LlmResponse>;
@@ -511,7 +527,17 @@ export type CaseResult = {
   window: { from: string; to: string };
   deadlines: Deadline[];
   stats: RunStats;
+  /** Last call numbers used, so later pages continue them (extract/12, reconcile/3). */
+  indices?: { batch: number; reconcile: number };
+  /** sha256 of the normalized text of every page read, by page number: a page read again changes nothing. */
+  pageHashes?: Record<string, string>;
+  /** The claims of dropped items by item id, so an event-restore edit can bring one back. */
+  restorable?: Record<string, ExtractedEvent>;
 };
+/** The planner's answer and the plan of a case (flat in the model schema). */
+export type CasePlan = { parties: Party[]; topics: string[]; fields: FactField[] };
+/** extract: the model's answer for one batch. Facts carry '' for a missing subject, from or to. */
+export type CaseExtractAnswer = { events: ExtractedEvent[] };
 export type TimelineFilter = { parties?: string[]; from?: string; to?: string; contradictionsOnly?: boolean; topic?: string };
 
 // ------------------------------------------------------------------ seating result
@@ -675,8 +701,15 @@ export type CaseRecheckAnswer = {
   added: ExtractedEvent[];
 };
 /** reconcile: verdicts joined to candidates by pairKey. */
+/** question and options are filled only for 'unsure' (empty otherwise); options: two answers, conflict first. */
 export type ReconcileAnswer = {
-  verdicts: { pairKey: string; verdict: 'contradiction' | 'explained' | 'unsure'; explanation: string }[];
+  verdicts: {
+    pairKey: string;
+    verdict: 'contradiction' | 'explained' | 'unsure';
+    explanation: string;
+    question?: string;
+    options?: string[];
+  }[];
 };
 /** baseline.ts: the single comparison request to a chat. */
 export type BaselineAnswer = {

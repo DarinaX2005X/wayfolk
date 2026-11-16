@@ -9,17 +9,24 @@
  *
  * `handle(request)` serves any /api/* address by its first segment; the Vite dev server
  * (tools/dev-api/plugin.ts), `npm run xr:prod` and tests call it, so every environment
- * runs the same handlers. Package 01.5 adds the three functions to FUNCTIONS.
+ * runs the same handlers.
  */
 import { fail } from './_lib/http';
+import { setFixtureSource } from './_lib/llm/fixtures';
+import { createLlmRoutes } from './_lib/llm/route';
+
+/** The dev server gives the `fixtures` provider the answer sets on disk (tools/dev-api/plugin.ts). */
+export { setFixtureSource };
 
 export type Method = 'GET' | 'POST' | 'PUT' | 'DELETE';
 export type Handler = (request: Request) => Promise<Response>;
 export type FunctionRoutes = Partial<Record<Method, Handler>>;
 export type FunctionName = 'llm' | 'code' | 'worlds';
 
-/** The deployed functions by name. Filled by package 01.5. */
-export const FUNCTIONS: Partial<Record<FunctionName, FunctionRoutes>> = {};
+/** The deployed functions by name. `code` and `worlds` are added by 02.4 and 04.1. */
+export const FUNCTIONS: Partial<Record<FunctionName, FunctionRoutes>> = {
+  llm: createLlmRoutes(),
+};
 
 /** `/api/code/X4KM7/close` -> 'code'. Null for an address outside /api/. */
 export function functionOf(pathname: string): string | null {
@@ -28,11 +35,14 @@ export function functionOf(pathname: string): string | null {
   return parts[1];
 }
 
-/** Serves one /api/* request: 404 for an unknown function, 405 for a method it lacks. */
+/**
+ * Serves one /api/* request: 404 for an unknown function (with `route: false`, so a
+ * client can tell a missing function from a missing record), 405 for a method it lacks.
+ */
 export async function handle(request: Request): Promise<Response> {
   const name = functionOf(new URL(request.url, 'http://localhost').pathname);
   const routes = name !== null && Object.hasOwn(FUNCTIONS, name) ? FUNCTIONS[name as FunctionName] : undefined;
-  if (!routes) return fail(404, 'not-found');
+  if (!routes) return fail(404, 'not-found', { route: false });
   const method = request.method.toUpperCase() as Method;
   const handler = routes[method];
   if (!handler) {

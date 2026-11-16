@@ -4,34 +4,23 @@
  * Every sound is rendered by the pure code in render.ts into a buffer, so what a test
  * measures is what the browser plays. The graph is small and linear:
  *
- *   voice (buffer -> gain -> panner) --> voice bus --\
- *   loop  (buffer -> low-pass -> gain) -> voice bus ---> master (-14 dB) -> output
- *   comb tooth (buffer -> gain) -------> melody bus --/
+ *   voice (buffer -> gain -> panner at its source) --\
+ *                                                     >--> master -> output
+ *   air   (looping buffer -> gain, breathing) -------/
  *
- * Rules from feel.md live here: silent until the first gesture, a pitch move of up to
- * 3 % on every play, three voices plus the melody, a low master gain, nothing while the
- * page is hidden or the app is paused. There is no limiter: the levels are budgeted so
- * that three voices and the fullest melody stay under -1 dBFS (tests/feel/mix.test.ts).
+ * Rules (DESIGN "Движение и ограничения", feel.md): silent until the first gesture and
+ * while the page is hidden or the app is paused; ±3 % of pitch on every play; three
+ * voices plus the air; every voice placed at its source and heard from the head.
+ * With `?capture=1` every sound is written to a log with the application time, which
+ * the film uses as the backbone of its music.
  */
 import type { Vector3 } from '@iwsdk/core';
-import type { Tune } from './scale';
-import { SCALE_HZ, stepSeconds } from './scale';
-import { nearestTooth } from './comb';
-import { LOOPS, LOOP_NAMES, PALETTE, SOUND_NAMES, type LoopName, type SoundName } from './palette';
-import {
-  LOOP_Q,
-  MASTER_GAIN,
-  MAX_VOICES,
-  PITCH_JITTER,
-  SAMPLE_RATE,
-  TUNE_GAIN,
-  renderLoopBuffer,
-  renderPaper,
-  renderTooth,
-  voiceGain,
-} from './render';
+import { AIR, PALETTE, SOUND_NAMES, degreeOf, type SoundName } from './palette';
+import { MASTER_GAIN, MAX_VOICES, PITCH_JITTER, SAMPLE_RATE, airSwing, dbToGain, renderAir, renderSound, voiceGain } from './render';
 
-export type PlayOptions = { at?: Vector3; pitch?: number; gain?: number };
+export type PlayOptions = { at?: Vector3; value?: number; gain?: number; pitch?: number };
+
+export type SoundLogEntry = { t: number; name: SoundName; degree: number; at: [number, number, number] | null };
 
 export type EngineOptions = {
   /** Makes the audio context. Returns null where the platform has no Web Audio. */
@@ -40,32 +29,9 @@ export type EngineOptions = {
   random?: () => number;
 };
 
-type Voice = {
-  rank: number;
-  endsAt: number;
-  gain: GainNode;
-  exit: AudioNode;
-  sources: AudioBufferSourceNode[];
-};
-
-type LoopVoice = Voice & { name: LoopName; filter: BiquadFilterNode; touched: number };
-
-type Session = { done: boolean; tick: ReturnType<typeof setTimeout> | null; steps: Set<ReturnType<typeof setTimeout>> };
-
-/** Seconds between `play` of a melody and its first note. */
-const LEAD = 0.08;
-/** Notes are handed to the audio clock this far ahead, so a late timer cannot delay them. */
-const AHEAD = 0.2;
-/** How often the melody looks for notes to hand over, milliseconds. */
-const TICK_MS = 50;
-/** A loop nobody has updated for this long fades out by itself: the hand has stopped. */
-const LOOP_HOLD = 0.25;
-/** Stress-free pitch range for `opts.pitch`. */
-const PITCH_MIN = 0.25;
-const PITCH_MAX = 4;
+type Voice = { rank: number; endsAt: number; gain: GainNode; exit: AudioNode; source: AudioBufferSourceNode };
 
 const clamp = (x: number, lo: number, hi: number): number => (x < lo ? lo : x > hi ? hi : x);
-const wall = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
 function defaultContext(): BaseAudioContext | null {
   const g = globalThis as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext };
@@ -79,7 +45,6 @@ export class SoundEngine {
   private ctx: BaseAudioContext | null = null;
   private master: GainNode | null = null;
   private voiceBus: GainNode | null = null;
-  private tuneBus: GainNode | null = null;
   private unlocked = false;
   private muted = false;
   private paused = false;
@@ -88,13 +53,14 @@ export class SoundEngine {
   private readonly buffers = new Map<string, AudioBuffer>();
   private readonly takeAt = new Map<SoundName, number>();
   private voices: Voice[] = [];
-  private readonly loops = new Map<LoopName, LoopVoice>();
-  private readonly ringing = new Map<number, { src: AudioBufferSourceNode; gain: GainNode; at: number }>();
-  private session: Session | null = null;
   private warming = false;
-  private slept = 0;
-  private sleepAt: number | null = null;
   private readonly heard = new Float64Array(6).fill(NaN);
+  private air: { src: AudioBufferSourceNode; gain: GainNode; timer: ReturnType<typeof setInterval> | null } | null = null;
+  private airWanted = false;
+  /** Application time for the log (set by bindFeel to the app clock). */
+  clock: () => number = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+  /** The capture log; null unless the page captures. */
+  log: SoundLogEntry[] | null = null;
 
   constructor(o: EngineOptions = {}) {
     this.make = o.context ?? defaultContext;
@@ -118,56 +84,43 @@ export class SoundEngine {
       this.master.connect(ctx.destination);
       this.voiceBus = ctx.createGain();
       this.voiceBus.connect(this.master);
-      this.tuneBus = ctx.createGain();
-      this.tuneBus.gain.value = TUNE_GAIN;
-      this.tuneBus.connect(this.master);
     }
     this.unlocked = true;
     this.sync();
     this.warm();
+    if (this.airWanted) this.startAir();
   }
 
   /** True once a gesture has unlocked sound and the context is not held back. */
   get live(): boolean {
-    return this.unlocked && this.ctx !== null && !this.asleep;
+    return this.unlocked && this.ctx !== null && !this.paused && !this.hidden;
   }
 
   setMuted(m: boolean): void {
     this.muted = m;
     const ctx = this.ctx;
     if (ctx && this.master) this.master.gain.setTargetAtTime(m ? 0 : MASTER_GAIN, ctx.currentTime, 0.015);
-    if (m) for (const l of [...this.loops.values()]) this.endLoop(l);
-    else this.warm();
+    if (!m) this.warm();
+  }
+
+  get isMuted(): boolean {
+    return this.muted;
   }
 
   /** App pause (headset taken off, system menu). Sound stops where it is. */
   suspend(): void {
-    this.setAsleep(true, this.hidden);
+    this.paused = true;
+    this.sync();
   }
 
   resume(): void {
-    this.setAsleep(false, this.hidden);
+    this.paused = false;
+    this.sync();
   }
 
   /** The page became hidden or visible. A hidden page never sounds. */
   setHidden(hidden: boolean): void {
-    this.setAsleep(this.paused, hidden);
-  }
-
-  private get asleep(): boolean {
-    return this.paused || this.hidden;
-  }
-
-  private setAsleep(paused: boolean, hidden: boolean): void {
-    const was = this.asleep;
-    this.paused = paused;
     this.hidden = hidden;
-    const is = this.asleep;
-    if (is && !was) this.sleepAt = wall();
-    if (!is && was && this.sleepAt !== null) {
-      this.slept += wall() - this.sleepAt;
-      this.sleepAt = null;
-    }
     this.sync();
   }
 
@@ -175,16 +128,11 @@ export class SoundEngine {
     const ctx = this.ctx as (BaseAudioContext & { suspend?: () => Promise<void>; resume?: () => Promise<void> }) | null;
     if (!ctx || !this.unlocked) return;
     try {
-      const done = this.asleep ? ctx.suspend?.() : ctx.resume?.();
+      const done = this.paused || this.hidden ? ctx.suspend?.() : ctx.resume?.();
       done?.catch(() => undefined);
     } catch {
-      // A context that cannot change state (closed, offline) keeps playing what it has.
+      // A context that cannot change state keeps playing what it has.
     }
-  }
-
-  /** Wall clock in seconds that stands still while the app is paused or hidden. */
-  private stillClock(): number {
-    return ((this.sleepAt ?? wall()) - this.slept) / 1000;
   }
 
   /** Where the ears are. Called every frame by the app, so it only writes on change. */
@@ -192,20 +140,9 @@ export class SoundEngine {
     const ctx = this.ctx;
     if (!ctx) return;
     const h = this.heard;
-    const same =
-      Math.abs(h[0] - position.x) < 1e-3 &&
-      Math.abs(h[1] - position.y) < 1e-3 &&
-      Math.abs(h[2] - position.z) < 1e-3 &&
-      Math.abs(h[3] - forward.x) < 1e-3 &&
-      Math.abs(h[4] - forward.y) < 1e-3 &&
-      Math.abs(h[5] - forward.z) < 1e-3;
-    if (same) return;
-    h[0] = position.x;
-    h[1] = position.y;
-    h[2] = position.z;
-    h[3] = forward.x;
-    h[4] = forward.y;
-    h[5] = forward.z;
+    const vals = [position.x, position.y, position.z, forward.x, forward.y, forward.z];
+    if (vals.every((v, i) => Math.abs(h[i] - v) < 1e-3)) return;
+    vals.forEach((v, i) => (h[i] = v));
     const l = ctx.listener;
     if (l.positionX) {
       l.positionX.value = h[0];
@@ -228,11 +165,11 @@ export class SoundEngine {
   private render(key: string): Float32Array {
     let data = this.samples.get(key);
     if (data) return data;
-    const [kind, name, n] = key.split('|');
-    if (kind === 'paper') data = renderPaper(name as SoundName, SAMPLE_RATE, Number(n), 1);
-    else if (kind === 'calm') data = renderPaper(name as SoundName, SAMPLE_RATE, 0, Number(n));
-    else if (kind === 'loop') data = renderLoopBuffer(name as LoopName, SAMPLE_RATE);
-    else data = renderTooth(Number(name), SAMPLE_RATE);
+    if (key === 'air') data = renderAir(SAMPLE_RATE);
+    else {
+      const [name, degree, take] = key.split('|');
+      data = renderSound(name as SoundName, { degree: Number(degree), take: Number(take) });
+    }
     this.samples.set(key, data);
     return data;
   }
@@ -241,26 +178,21 @@ export class SoundEngine {
     let buf = this.buffers.get(key);
     if (buf) return buf;
     const data = this.render(key);
-    // Buffers keep the rate they were rendered at; the context resamples on playback.
     buf = this.ctx!.createBuffer(1, data.length, SAMPLE_RATE);
     buf.getChannelData(0).set(data);
     this.buffers.set(key, buf);
     return buf;
   }
 
-  /**
-   * Renders the palette ahead of use, one sound per idle slice, so that the first tap
-   * does not pay for synthesis. Rendering needs no audio context and may start before
-   * the first gesture.
-   */
+  /** Renders the palette ahead of use, one sound per idle slice. Needs no audio context. */
   warm(): void {
     if (this.warming || this.muted || typeof window === 'undefined') return;
     this.warming = true;
     const keys: string[] = [];
-    for (const name of SOUND_NAMES) keys.push(`paper|${name}|0`);
-    for (let n = 0; n < SCALE_HZ.length; n++) keys.push(`tooth|${n}`);
-    for (const name of LOOP_NAMES) keys.push(`loop|${name}`);
-    for (const name of SOUND_NAMES) for (let t = 1; t < PALETTE[name].takes; t++) keys.push(`paper|${name}|${t}`);
+    for (const name of SOUND_NAMES) keys.push(`${name}|0|0`);
+    keys.push('air');
+    for (let d = 1; d <= 10; d++) keys.push(`tile|${d}|0`);
+    for (let d = 1; d <= 4; d++) keys.push(`stake|${d}|0`);
     const idle =
       (window as { requestIdleCallback?: (fn: () => void, o?: { timeout: number }) => void }).requestIdleCallback ??
       ((fn: () => void) => setTimeout(fn, 30));
@@ -289,37 +221,21 @@ export class SoundEngine {
     }
   }
 
-  private silence(v: Voice, now: number): void {
-    v.gain.gain.cancelScheduledValues(now);
-    v.gain.gain.setTargetAtTime(0, now, 0.004);
-    for (const s of v.sources) {
-      try {
-        s.stop(now + 0.03);
-      } catch {
-        // Not started or already stopped.
-      }
-    }
-  }
-
-  /**
-   * Finds room for a new voice. When all are busy, the one closest to its end among
-   * those of the same or lower rank gives way; a small tick never cuts off a moment.
-   */
+  /** Room for a new voice: the one closest to its end among those of the same or lower rank gives way. */
   private claim(rank: number, now: number): boolean {
     for (const v of [...this.voices]) if (v.endsAt <= now) this.release(v);
-    for (const l of [...this.loops.values()]) if (now - l.touched > LOOP_HOLD + 0.4) this.endLoop(l);
     if (this.voices.length < MAX_VOICES) return true;
     let victim: Voice | null = null;
-    for (const v of this.voices) {
-      if (v.rank <= rank && (!victim || v.endsAt < victim.endsAt)) victim = v;
-    }
+    for (const v of this.voices) if (v.rank <= rank && (!victim || v.endsAt < victim.endsAt)) victim = v;
     if (!victim) return false;
-    const loop = [...this.loops.values()].find((l) => l === victim);
-    if (loop) this.endLoop(loop);
-    else {
-      this.silence(victim, now);
-      this.release(victim);
+    victim.gain.gain.cancelScheduledValues(now);
+    victim.gain.gain.setTargetAtTime(0, now, 0.004);
+    try {
+      victim.source.stop(now + 0.03);
+    } catch {
+      // Already stopped.
     }
+    this.release(victim);
     return true;
   }
 
@@ -327,37 +243,37 @@ export class SoundEngine {
     const takes = PALETTE[name].takes;
     if (takes <= 1) return 0;
     const prev = this.takeAt.get(name) ?? Math.floor(this.random() * takes);
-    // Any take but the previous one, so that a repeat is never the same noise.
     const take = (prev + 1 + Math.floor(this.random() * (takes - 1))) % takes;
     this.takeAt.set(name, take);
     return take;
   }
 
   /**
-   * One sound of the palette. `pitch` multiplies its frequency (for sounds with comb
-   * notes it moves the note), `gain` its level, `at` places it in the room.
-   * `stretch` is the length scale of the paper part for "Less motion" variants.
+   * One sound of the palette at its source. `value` is the event's share (the plot laid
+   * for a tile and a stamp, the station for a stake), `gain` can only lower a voice.
    */
-  play(name: SoundName, opts?: PlayOptions, stretch = 1): void {
-    const ctx = this.ctx;
+  play(name: SoundName, opts: PlayOptions = {}): void {
     const patch = PALETTE[name];
-    if (!ctx || !patch || !this.live || this.muted || !this.voiceBus) return;
+    if (!patch) return;
+    const degree = patch.pitched ? degreeOf(name, opts.value) : 0;
+    if (this.log) {
+      const at = opts.at ? ([opts.at.x, opts.at.y, opts.at.z] as [number, number, number]) : null;
+      this.log.push({ t: Math.round(this.clock()), name, degree, at });
+    }
+    const ctx = this.ctx;
+    if (!ctx || !this.live || this.muted || !this.voiceBus) return;
     const now = ctx.currentTime;
     if (!this.claim(patch.rank, now)) return;
 
-    const pitch = clamp(opts?.pitch ?? 1, PITCH_MIN, PITCH_MAX);
-    const jitter = 1 + (this.random() * 2 - 1) * PITCH_JITTER;
-    // The level only ever varies downward, so the voice stays inside its mix budget.
-    const level = voiceGain(name, opts?.gain ?? 1) * (0.92 + 0.08 * this.random());
-
     const gain = ctx.createGain();
-    gain.gain.value = level;
+    // The level only ever varies downward, so the voice stays inside its budget.
+    gain.gain.value = voiceGain(opts.gain ?? 1) * (0.92 + 0.08 * this.random());
     let exit: AudioNode = gain;
-    if (opts?.at) {
+    if (opts.at) {
       const p = ctx.createPanner();
       p.panningModel = 'equalpower';
       p.distanceModel = 'inverse';
-      p.refDistance = 0.5;
+      p.refDistance = 0.6;
       p.rolloffFactor = 1;
       p.maxDistance = 10;
       if (p.positionX) {
@@ -371,231 +287,86 @@ export class SoundEngine {
       exit = p;
     }
     exit.connect(this.voiceBus);
-
-    const voice: Voice = { rank: patch.rank, endsAt: now, gain, exit, sources: [] };
-    const tail: { src: AudioBufferSourceNode | null } = { src: null };
-    const add = (buf: AudioBuffer, rate: number, at: number, into: AudioNode): void => {
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      src.playbackRate.value = rate;
-      src.connect(into);
-      src.start(now + at);
-      voice.sources.push(src);
-      const end = now + at + buf.duration / rate;
-      if (end >= voice.endsAt) {
-        voice.endsAt = end;
-        tail.src = src;
-      }
-    };
-
-    const key = stretch === 1 ? `paper|${name}|${this.nextTake(name)}` : `calm|${name}|${stretch}`;
-    add(this.buffer(key), (patch.comb ? 1 : pitch) * jitter, 0, gain);
-    for (const hit of patch.comb?.(pitch) ?? []) {
-      const { note, rate } = nearestTooth(hit.hz);
-      const g = ctx.createGain();
-      g.gain.value = hit.gain;
-      g.connect(gain);
-      // A tooth keeps its tuning: only a few cents of drift, never the 3 % of paper.
-      add(this.buffer(`tooth|${note}`), rate * (1 + (this.random() * 2 - 1) * 0.0015), hit.at, g);
-    }
-
+    const src = ctx.createBufferSource();
+    src.buffer = this.buffer(`${name}|${degree}|${this.nextTake(name)}`);
+    src.playbackRate.value = clamp(opts.pitch ?? 1, 0.25, 4) * (1 + (this.random() * 2 - 1) * PITCH_JITTER);
+    src.connect(gain);
+    src.start(now);
+    const voice: Voice = { rank: patch.rank, endsAt: now + src.buffer.duration / src.playbackRate.value, gain, exit, source: src };
     this.voices.push(voice);
-    if (tail.src) tail.src.onended = () => this.release(voice);
+    src.onended = () => this.release(voice);
   }
 
-  // ------------------------------------------------------------ loops
+  // ------------------------------------------------------------ air
 
-  /**
-   * A sound that lasts as long as the hand moves. Call it on every move with the
-   * current intensity (0…1, from hand speed); it fades by itself when the calls stop.
-   */
-  loop(name: LoopName, on: boolean, intensity = 0.6): void {
+  /** The air of the Void: on comes in over 2 s, off fades in 0.8 s. Silent until unlocked. */
+  ambient(on: boolean): void {
+    this.airWanted = on;
+    if (on) this.startAir();
+    else this.stopAir();
+  }
+
+  get ambientOn(): boolean {
+    return this.air !== null;
+  }
+
+  private startAir(): void {
     const ctx = this.ctx;
-    const patch = LOOPS[name];
-    if (!ctx || !patch) return;
-    let l = this.loops.get(name);
-    if (!on || this.muted || !this.live || !this.voiceBus) {
-      if (l) this.endLoop(l);
-      return;
-    }
+    if (!ctx || !this.unlocked || !this.master || this.air) return;
+    const src = ctx.createBufferSource();
+    src.buffer = this.buffer('air');
+    src.loop = true;
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    src.connect(gain);
+    gain.connect(this.master);
     const now = ctx.currentTime;
-    const shape = patch.shape(clamp(intensity, 0, 1));
-    if (!l) {
-      if (!this.claim(2, now)) return;
-      const src = ctx.createBufferSource();
-      src.buffer = this.buffer(`loop|${name}`);
-      src.loop = true;
-      src.playbackRate.value = shape.rate;
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = shape.cutoff;
-      filter.Q.value = 20 * Math.log10(LOOP_Q);
-      const gain = ctx.createGain();
-      gain.gain.value = 0;
-      src.connect(filter);
-      filter.connect(gain);
-      gain.connect(this.voiceBus);
-      src.start(now, this.random() * src.buffer.duration);
-      l = { name, rank: 2, endsAt: Infinity, gain, exit: gain, sources: [src], filter, touched: now };
-      this.loops.set(name, l);
-      this.voices.push(l);
-    }
-    l.touched = now;
-    l.gain.gain.cancelScheduledValues(now);
-    l.gain.gain.setTargetAtTime(shape.gain, now, 0.03);
-    l.gain.gain.setTargetAtTime(0, now + LOOP_HOLD, 0.06);
-    l.filter.frequency.setTargetAtTime(shape.cutoff, now, 0.03);
-    l.sources[0].playbackRate.setTargetAtTime(shape.rate, now, 0.05);
+    src.start(now, this.random() * (src.buffer.duration - 0.1));
+    gain.gain.setTargetAtTime(airSwing(0), now, AIR.fadeInS / 3);
+    // The breathing: a slow curve, retargeted twice a second.
+    const t0 = now;
+    const timer =
+      typeof setInterval === 'function'
+        ? setInterval(() => {
+            if (!this.ctx) return;
+            const t = this.ctx.currentTime;
+            if (t - t0 < AIR.fadeInS) return;
+            gain.gain.setTargetAtTime(airSwing(t - t0), t, 0.25);
+          }, 500)
+        : null;
+    this.air = { src, gain, timer };
   }
 
-  private endLoop(l: LoopVoice): void {
-    const now = this.ctx!.currentTime;
-    this.loops.delete(l.name);
-    this.voices = this.voices.filter((v) => v !== l);
-    l.gain.gain.cancelScheduledValues(now);
-    l.gain.gain.setTargetAtTime(0, now, 0.02);
-    const src = l.sources[0];
-    src.onended = () => {
-      try {
-        l.exit.disconnect();
-      } catch {
-        // Already disconnected.
-      }
-    };
+  private stopAir(): void {
+    const a = this.air;
+    const ctx = this.ctx;
+    if (!a || !ctx) return;
+    this.air = null;
+    if (a.timer !== null) clearInterval(a.timer);
+    const now = ctx.currentTime;
+    a.gain.gain.cancelScheduledValues(now);
+    a.gain.gain.setTargetAtTime(0, now, 0.25);
     try {
-      src.stop(now + 0.15);
+      a.src.stop(now + 1);
     } catch {
       // Already stopped.
     }
   }
 
-  // ------------------------------------------------------------ melody
-
-  /** Plucks one tooth on the melody bus. A tooth that still rings is damped first, as on a real comb. */
-  private pluck(note: number, when: number): void {
-    const ctx = this.ctx;
-    if (!ctx || !this.tuneBus || !Number.isInteger(note) || note < 0 || note >= SCALE_HZ.length) return;
-    const prev = this.ringing.get(note);
-    if (prev) {
-      prev.gain.gain.setTargetAtTime(0, when, 0.012);
-      try {
-        prev.src.stop(when + 0.08);
-      } catch {
-        // Already stopped.
-      }
-    }
-    const src = ctx.createBufferSource();
-    src.buffer = this.buffer(`tooth|${note}`);
-    src.playbackRate.value = 1 + (this.random() * 2 - 1) * 0.0015;
-    const gain = ctx.createGain();
-    gain.gain.value = 0.85 + 0.15 * this.random();
-    src.connect(gain);
-    gain.connect(this.tuneBus);
-    src.start(when);
-    const entry = { src, gain, at: when };
-    this.ringing.set(note, entry);
-    src.onended = () => {
-      if (this.ringing.get(note) === entry) this.ringing.delete(note);
-      try {
-        gain.disconnect();
-      } catch {
-        // Already disconnected.
-      }
-    };
-  }
-
-  /**
-   * Plays a short phrase once. `onStep(i)` fires as step `i` sounds, for the
-   * visible beat of the phrase; it fires on time even when sound is locked or muted.
-   * Starting a melody stops the one before it.
-   */
-  tunePlay(t: Tune, onStep?: (i: number) => void): void {
-    this.tuneStop();
-    const steps = t?.steps;
-    if (!Array.isArray(steps) || steps.length === 0) return;
-    const asked = stepSeconds(t.bpm);
-    const step = Number.isFinite(asked) && asked > 0 ? Math.max(0.05, asked) : 0.25;
-    const ctx = this.ctx;
-    const audible = ctx !== null && this.live;
-    const clock = audible ? () => ctx.currentTime : () => this.stillClock();
-    const t0 = clock() + LEAD;
-    const session: Session = { done: false, tick: null, steps: new Set() };
-    this.session = session;
-    let i = 0;
-    const tick = (): void => {
-      if (session.done) return;
-      const now = clock();
-      while (i < steps.length && t0 + i * step < now + AHEAD) {
-        const index = i++;
-        const at = t0 + index * step;
-        if (audible && !this.muted && Array.isArray(steps[index])) {
-          for (const n of steps[index]) this.pluck(n, Math.max(at, now));
-        }
-        const id = setTimeout(
-          () => {
-            session.steps.delete(id);
-            if (session.done) return;
-            if (index === steps.length - 1) {
-              session.done = true;
-              if (this.session === session) this.session = null;
-            }
-            onStep?.(index);
-          },
-          Math.max(0, (at - now) * 1000),
-        );
-        session.steps.add(id);
-      }
-      session.tick = i < steps.length ? setTimeout(tick, TICK_MS) : null;
-    };
-    tick();
-  }
-
-  /** Stops handing out notes. Teeth already plucked ring out, as when a crank stops. */
-  tuneStop(): void {
-    const s = this.session;
-    if (!s) return;
-    s.done = true;
-    if (s.tick !== null) clearTimeout(s.tick);
-    for (const id of s.steps) clearTimeout(id);
-    s.steps.clear();
-    this.session = null;
-    const ctx = this.ctx;
-    if (!ctx) return;
-    // Notes handed over ahead of time but not yet sounding are taken back.
-    for (const [note, r] of [...this.ringing]) {
-      if (r.at > ctx.currentTime) {
-        this.ringing.delete(note);
-        r.src.onended = null;
-        try {
-          r.gain.disconnect();
-          r.src.stop();
-        } catch {
-          // Already stopped.
-        }
-      }
-    }
-  }
-
-  /** One note of the scale (0…7) for the strip preview. */
-  tuneNote(n: number): void {
-    const ctx = this.ctx;
-    if (!ctx || !this.live || this.muted) return;
-    this.pluck(n, ctx.currentTime);
-  }
-
-  /** Length of a sound in seconds, its comb notes included. */
-  lengthOf(name: SoundName): number {
-    let end = this.render(`paper|${name}|0`).length / SAMPLE_RATE;
-    for (const hit of PALETTE[name].comb?.(1) ?? []) {
-      const { note, rate } = nearestTooth(hit.hz);
-      end = Math.max(end, hit.at + this.render(`tooth|${note}`).length / SAMPLE_RATE / rate);
-    }
-    return end;
-  }
-
-  /** Number of voices sounding now, loops included; the melody is not counted. */
+  /** Number of voices sounding now; the air is not counted. */
   get voiceCount(): number {
     const now = this.ctx?.currentTime ?? 0;
     return this.voices.filter((v) => v.endsAt > now).length;
   }
+
+  /** Level of the air at its peak, linear (for the gallery). */
+  static airLevel(): number {
+    return dbToGain(AIR.db + AIR.swingDb);
+  }
+
+  /** Length of a sound in seconds. */
+  lengthOf(name: SoundName): number {
+    return this.render(`${name}|0|0`).length / SAMPLE_RATE;
+  }
 }
+

@@ -1,15 +1,15 @@
 /**
- * The one sound object of the product (PLAN "Contracts", "Feel"). Features do not call
- * it for their actions: they call `answer()` in ../answer.ts, which looks the event up
- * in the plan. Direct use is for the melody, the loops and the app wiring (unlock,
- * mute, pause, listener).
+ * The one sound object of the product. Features do not call it for their actions: they
+ * call `answer()` in ../answer.ts, which looks the event up in the plan. Direct use is
+ * for the app wiring (unlock, mute, pause, listener, the air of the Void) and for the
+ * gallery's listening buttons.
  */
 import type { Vector3 } from '@iwsdk/core';
-import type { Tune } from './scale';
-import { SoundEngine } from './engine';
-import type { LoopName, SoundName } from './palette';
+import { SoundEngine, type SoundLogEntry } from './engine';
+import type { SoundName } from './palette';
 
-export type { LoopName, SoundName } from './palette';
+export type { SoundName } from './palette';
+export type { SoundLogEntry } from './engine';
 
 export const engine = new SoundEngine();
 
@@ -32,23 +32,16 @@ export const sound = {
   listener(position: Vector3, forward: Vector3): void {
     engine.listener(position, forward);
   },
-  play(name: SoundName, opts?: { at?: Vector3; pitch?: number; gain?: number }): void {
+  play(name: SoundName, opts?: { at?: Vector3; value?: number; gain?: number; pitch?: number }): void {
     engine.play(name, opts);
   },
-  /** A sound that follows the hand: call on every move with intensity 0…1 from hand speed. */
-  loop(name: LoopName, on: boolean, intensity?: number): void {
-    engine.loop(name, on, intensity);
+  /** The air of the Void. */
+  ambient(on: boolean): void {
+    engine.ambient(on);
   },
-  tune: {
-    play(t: Tune, onStep?: (i: number) => void): void {
-      engine.tunePlay(t, onStep);
-    },
-    stop(): void {
-      engine.tuneStop();
-    },
-    note(n: number): void {
-      engine.tuneNote(n);
-    },
+  /** What has sounded since capture began (only with ?capture=1). */
+  log(): SoundLogEntry[] {
+    return engine.log ?? [];
   },
 };
 
