@@ -8,12 +8,11 @@ import { OBJECT_IDS, PLANNER_KINDS } from './library';
 
 const str = (description?: string): JsonSchema => ({ type: 'string', ...(description ? { description } : {}) });
 const int = (description?: string): JsonSchema => ({ type: 'integer', ...(description ? { description } : {}) });
-const arr = (items: JsonSchema, maxItems?: number, description?: string): JsonSchema => ({
-  type: 'array',
-  items,
-  ...(maxItems ? { maxItems } : {}),
-  ...(description ? { description } : {}),
-});
+/** The limit goes into the words, not into maxItems: a long list is trimmed by code, not refused. */
+const arr = (items: JsonSchema, most?: number, description?: string): JsonSchema => {
+  const words = [description, most ? `At most ${most}.` : ''].filter(Boolean).join(' ');
+  return { type: 'array', items, ...(words ? { description: words } : {}) };
+};
 const obj = (properties: Record<string, JsonSchema>, description?: string): JsonSchema => ({
   type: 'object',
   properties,
