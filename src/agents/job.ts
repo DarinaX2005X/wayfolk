@@ -1,8 +1,7 @@
 /**
- * What the runner gives a job, and the registry of jobs by kind of work. The runner
- * owns events, the store, the call queue, asks, timers and the lock; a job (case now,
- * seating and essays later) owns its stations and decisions. A package that adds a kind
- * of work calls registerJob from its own module; the runner never changes for it.
+ * What the runner gives a job, and the registry of jobs. The runner owns events, the
+ * store, the call queue, asks, timers and the lock; the job (src/agents/engine/task.ts,
+ * the one general task) owns its stations and decisions.
  */
 import type {
   AgentRole,
@@ -10,7 +9,6 @@ import type {
   AnswerSet,
   ChatMessage,
   Doc,
-  JobKind,
   JsonSchema,
   LlmResponse,
   LlmTask,
@@ -18,7 +16,9 @@ import type {
   Project,
   RunEvent,
   RunRecord,
+  RunScope,
   RunStats,
+  TaskResult,
   TileRef,
 } from './types';
 
@@ -29,10 +29,13 @@ export type EventBody = RunEvent extends infer E ? (E extends unknown ? Omit<E, 
 export type StoredSpec = {
   project: Project;
   docs: Doc[];
-  scope: 'full' | { pages: number[] };
+  scope: RunScope;
   seed: boolean;
   pace: number;
   answerSet: AnswerSet | null;
+  previous: TaskResult | null;
+  /** 'YYYY-MM-DD': today for the plan's dates. */
+  today: string;
 };
 
 export type CallSpec = {
@@ -46,21 +49,26 @@ export type CallSpec = {
   schema: JsonSchema;
   station: string;
   role: AgentRole;
+  /** What the call works on, for the call card: a file path, 'fix 2 items'. */
+  what?: string;
   pages?: [number, number];
-  /** Higher goes first among waiting calls (a second look before unstarted batches). */
+  /** The key of a redo: recorded redos are found by it. */
+  redo?: string;
+  /** Higher goes first among waiting calls (a second look before steps not yet started). */
   priority?: number;
   /** Problems of the answer; default: against the schema. */
   validate?(json: unknown): string[];
   /**
-   * Changes a fresh answer before it is saved (never a cached one): a live recording
-   * adds the fakes seeded by code here, so the saved call carries them and their indices.
+   * Changes a fresh answer before it is saved (never a cached one): a recording of a
+   * sample plants its mistakes here, so the saved call carries them and their indices.
    */
-  transform?(json: unknown): { json: unknown; seeded?: number[] };
+  transform?(json: unknown): { json: unknown; planted?: number[] };
 };
 
 export type CallResult = { json: unknown; response: LlmResponse; attempt: number; cached: boolean };
 
-export type AskSpec = { pair: [string, string]; question: string; options: { id: string; label: string }[] };
+/** key: unique within the run; defaultId: taken when nobody answers in time. */
+export type AskSpec = { key: string; question: string; options: { id: string; label: string }[]; defaultId: string };
 
 export type JobCtx = {
   readonly runId: string;
@@ -73,7 +81,7 @@ export type JobCtx = {
   readonly seed: boolean;
   /** True when this run continues a stored one after a reload. */
   readonly resumed: boolean;
-  /** Results of finished batches and steps, by key (read on resume). */
+  /** Results of finished steps, by key (read on resume). */
   readonly partial: Record<string, unknown>;
   readonly record: RunRecord;
   emit(event: EventBody): RunEvent;
@@ -100,16 +108,16 @@ export type JobCtx = {
   rng(): number;
 };
 
-export type JobOutcome = { status: 'ready' | 'partial' | 'failed'; result: RunRecord['result']; stats: RunStats };
+export type JobOutcome = { status: 'ready' | 'partial' | 'failed' | 'declined'; result: TaskResult | null; stats: RunStats };
 export type Job = (ctx: JobCtx) => Promise<JobOutcome>;
 
-const jobs = new Map<string, Job>();
+let job: Job | null = null;
 
-/** scope 'full' is the first run; 'late' adds pages to a finished result. */
-export function registerJob(kind: JobKind, scope: 'full' | 'late', job: Job): void {
-  jobs.set(`${kind}/${scope}`, job);
+/** The engine registers its one job when src/agents/engine/task.ts is imported. */
+export function registerJob(next: Job): void {
+  job = next;
 }
 
-export function findJob(kind: JobKind, scope: 'full' | 'late'): Job | null {
-  return jobs.get(`${kind}/${scope}`) ?? null;
+export function findJob(): Job | null {
+  return job;
 }

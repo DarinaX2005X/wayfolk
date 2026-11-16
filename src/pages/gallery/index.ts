@@ -42,7 +42,7 @@ type Section = {
   camera?: 'seat' | 'overview';
 };
 
-type Label = { text: string; at: Vector3; kind: 'entry' | 'state' };
+type Label = { text: string; at: Vector3; kind: 'entry' | 'state'; w?: number };
 type Built = { labels: Label[]; dispose(): void; bounds: Box3 };
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -212,6 +212,8 @@ async function layEntries(app: App, root: Group, entries: GalleryEntry[], aspect
         box.setFromObject(obj);
         if (box.isEmpty()) box.set(new Vector3(-0.05, -0.05, 0), new Vector3(0.05, 0.05, 0));
         box.getSize(size);
+        // A sky dome or a room-sized backdrop is not laid on the wall: it stays around the eye.
+        if (size.x > 4 || size.y > 4) continue;
         items.push({ name, obj, w: size.x, h: size.y, cx: (box.min.x + box.max.x) / 2, cy: (box.min.y + box.max.y) / 2, z: box.max.z });
       }
     }
@@ -255,7 +257,7 @@ async function layEntries(app: App, root: Group, entries: GalleryEntry[], aspect
     const rowTop = by - 0.035;
     for (const it of b.items) {
       it.obj.position.set(x + it.w / 2 - it.cx, rowTop - it.h / 2 - it.cy, -WALL - it.z);
-      labels.push({ text: it.name, at: new Vector3(x, rowTop - it.h - 0.006, -WALL), kind: 'state' });
+      labels.push({ text: it.name, at: new Vector3(x, rowTop - it.h - 0.006, -WALL), kind: 'state', w: it.w });
       x += it.w + GAP;
     }
   });
@@ -527,6 +529,7 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
     const w = slot.stage!.clientWidth;
     const h = slot.stage!.clientHeight;
     const p = new Vector3();
+    const q = new Vector3();
     const kids = layer.children;
     built.labels.forEach((l, i) => {
       let node = kids[i] as HTMLElement | undefined;
@@ -539,7 +542,16 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
       p.project(cam);
       const inside = p.z < 1 && Math.abs(p.x) <= 1.05 && Math.abs(p.y) <= 1.05;
       node.style.display = inside ? '' : 'none';
-      node.style.transform = `translate(${((p.x + 1) / 2) * w}px, ${((1 - p.y) / 2) * h}px)`;
+      const x0 = ((p.x + 1) / 2) * w;
+      node.style.transform = `translate(${x0}px, ${((1 - p.y) / 2) * h}px)`;
+      if (l.w) {
+        // A state's name never runs under its neighbour: it is cut to the width of its panel.
+        q.copy(l.at).setX(l.at.x + l.w);
+        roots.seat.localToWorld(q);
+        q.project(cam);
+        node.style.maxWidth = `${Math.max(24, ((q.x + 1) / 2) * w - x0)}px`;
+        node.title = l.text;
+      }
     });
   };
 

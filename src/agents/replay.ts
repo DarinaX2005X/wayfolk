@@ -1,6 +1,6 @@
 /**
- * The emergency path only (PLAN "Записанные ответы…"): when the engine threw on an
- * example, the view plays the saved copy of a run (content/runs/harbor-street.events.json)
+ * The emergency path only (PLAN "Записанные ответы…"): when the engine threw on a
+ * sample, the view plays the saved copy of a run (content/answers/<sample>.events.json)
  * with the caption "Showing a saved copy of this run. The checks could not start on this
  * device." Events go out at their recorded times; pause holds them, skip sends the rest.
  */
@@ -17,8 +17,7 @@ export function replayRun(events: readonly RunEvent[], opts: { timers?: Timers; 
   const end = list.find((e) => e.type === 'run-end');
   const record: RunRecord = {
     id: list[0]?.runId ?? 'replay',
-    job: start?.type === 'run-start' ? start.job : 'case',
-    ...(start?.type === 'run-start' && start.example ? { example: start.example } : {}),
+    ...(start?.type === 'run-start' && start.sample ? { sample: start.sample } : {}),
     projectId: '',
     scope: start?.type === 'run-start' ? start.scope : 'full',
     startedAt: new Date().toISOString(),

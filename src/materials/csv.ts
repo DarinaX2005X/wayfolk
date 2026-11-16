@@ -1,12 +1,8 @@
 /**
- * Guest lists for the seating (01.4.2): the first line holds the headers, the separator
- * is a comma or a semicolon, a byte-order mark is dropped. Columns name, party, side,
- * group, relation, age, needs, diet, notes; only name is required. A list pasted on the
- * phone with one name per line reads as a CSV of one column.
+ * Tables in CSV (any task): the first line holds the headers, the separator is a comma
+ * or a semicolon, a byte-order mark is dropped. Each row reads as one 'row' block
+ * "Header: value; Header: value", so a quote of a row names its columns.
  */
-export const GUEST_COLUMNS = ['name', 'party', 'side', 'group', 'relation', 'age', 'needs', 'diet', 'notes'] as const;
-export type GuestColumn = (typeof GUEST_COLUMNS)[number];
-export type GuestRow = Record<GuestColumn, string>;
 
 /** Rows of a CSV text: quoted fields may hold separators, quotes ("") and line breaks. */
 export function parseCsv(text: string, separator?: ',' | ';'): string[][] {
@@ -50,29 +46,16 @@ function guessSeparator(text: string): ',' | ';' {
   return (first.match(/;/g)?.length ?? 0) > (first.match(/,/g)?.length ?? 0) ? ';' : ',';
 }
 
-const ALIASES: Record<string, GuestColumn> = { guest: 'name', 'full name': 'name', family: 'party', invitation: 'party', dietary: 'diet' };
-
-export function readGuestRows(text: string): GuestRow[] {
+/** Rows of a table as "Header: value; Header: value" lines (empty cells left out). */
+export function readTableRows(text: string): string[] {
   const rows = parseCsv(text);
-  if (!rows.length) return [];
-  const header = rows[0].map((h) => h.toLowerCase().trim());
-  const cols = header.map((h) => ((GUEST_COLUMNS as readonly string[]).includes(h) ? (h as GuestColumn) : (ALIASES[h] ?? null)));
-  const body = cols.includes('name') ? rows.slice(1) : rows;
-  // Without a 'name' header the list is one name per line (a pasted list).
-  const pick = cols.includes('name') ? cols : (['name'] as (GuestColumn | null)[]);
-  return body
-    .map((r) => {
-      const g = Object.fromEntries(GUEST_COLUMNS.map((c) => [c, ''])) as GuestRow;
-      pick.forEach((c, i) => {
-        if (c) g[c] = r[i] ?? '';
-      });
-      if (!cols.includes('name')) g.name = r.join(' ').trim();
-      return g;
-    })
-    .filter((g) => g.name !== '');
-}
-
-/** A pasted list, one name per line: the same as a CSV of one column. */
-export function readPastedList(text: string): GuestRow[] {
-  return readGuestRows(text.split('\n').map((l) => l.replace(/[,;]/g, ' ').trim()).join('\n'));
+  if (rows.length === 0) return [];
+  if (rows.length === 1) return [rows[0].join('; ')];
+  const header = rows[0];
+  return rows.slice(1).map((r) =>
+    r
+      .map((cell, i) => (cell === '' ? '' : header[i] ? `${header[i]}: ${cell}` : cell))
+      .filter(Boolean)
+      .join('; '),
+  );
 }

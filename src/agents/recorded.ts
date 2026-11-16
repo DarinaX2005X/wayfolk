@@ -1,20 +1,19 @@
 /**
  * Recorded answers as a model client (PLAN "Записанные ответы, ключ ИИ, прокси и живой
- * прогон"). Only the model's answers are recorded; reading, checks, candidates and the
- * result are computed on every run, so a changed word on a page changes the numbers.
+ * прогон"). Only the model's answers are recorded; reading, checks and the result are
+ * computed on every run, so a changed word in the materials changes the numbers.
  *
- *   - a call is found by task, number and attempt and answered after ms × pace
- *     (pace 0: at once), with the provider of the record;
- *   - reconcile takes from the whole recording the verdicts for the pair keys of its
- *     request payload; a pair the recording never judged gets 'unjudged';
+ *   - a call is found by task, number, attempt and redo key, and answered after
+ *     ms × pace (pace 0: at once), with the provider of the record;
  *   - a recheck that was not recorded is not an error: the answer is an empty fix with
- *     `missing: true`, and the batch's claims are dropped as 'not-recorded';
- *   - any other missing call is agents-offline with need 'fixture'.
+ *     `missing: true`, and the units sent back are dropped as 'not-recorded';
+ *   - any other missing call is agents-offline with need 'fixture' (a redo with an
+ *     instruction nobody recorded ends here: "Your own instruction needs the live model").
  * pause(on) stops the waits and skip() ends them (and every later one) at once.
  */
 import { LlmError } from './llm-error';
 import type { Timers } from './queue';
-import type { AnswerSet, CallRecord, LlmClient, LlmResponse, LlmStatus, ReconcileAnswer } from './types';
+import type { AnswerSet, CallRecord, LlmClient, LlmResponse, LlmStatus } from './types';
 
 export type RecordedClient = LlmClient & {
   readonly kind: 'recorded';
@@ -36,13 +35,7 @@ export function recordedLlm(set: AnswerSet, opts: { pace?: number; timers?: Time
   const timers = opts.timers ?? defaultTimers;
   const now = opts.now ?? (() => (typeof performance !== 'undefined' ? performance.now() : Date.now()));
   const byKey = new Map<string, CallRecord>();
-  for (const c of set.calls) byKey.set(`${c.task}/${c.index}/${c.attempt}`, c);
-  // The dictionary of verdicts of the whole recording, by pair key.
-  const verdicts = new Map<string, ReconcileAnswer['verdicts'][number]>();
-  for (const c of set.calls) {
-    if (c.task !== 'reconcile' || !c.ok) continue;
-    for (const v of (c.json as Partial<ReconcileAnswer>)?.verdicts ?? []) if (v?.pairKey) verdicts.set(v.pairKey, v);
-  }
+  for (const c of set.calls) byKey.set(`${c.task}/${c.index}/${c.attempt}/${c.redo ?? ''}`, c);
   const model = set.model ?? (set.answers === 'scripted' ? 'scripted answers' : 'recorded answers');
   let paused = false;
   let skipping = false;
@@ -81,23 +74,14 @@ export function recordedLlm(set: AnswerSet, opts: { pace?: number; timers?: Time
     },
     async call(req, callOpts): Promise<LlmResponse> {
       if (callOpts?.signal?.aborted) throw new LlmError('timeout');
-      let record = byKey.get(`${req.task}/${req.index}/${req.attempt}`) ?? null;
+      const record = byKey.get(`${req.task}/${req.index}/${req.attempt}/${req.redo ?? ''}`) ?? null;
       let json: unknown;
       let missing = false;
-      if (req.task === 'reconcile') {
-        const pairs = ((req.payload as { pairs?: { key: string }[] })?.pairs ?? []).map((p) => p.key);
-        record = record ?? set.calls.find((c) => c.task === 'reconcile') ?? null;
-        json = {
-          verdicts: pairs.map(
-            (key) =>
-              verdicts.get(key) ?? { pairKey: key, verdict: 'unjudged', explanation: '', question: '', options: [] },
-          ),
-        };
-      } else if (record) {
+      if (record) {
         if (!record.ok) throw new LlmError('bad-output');
         json = structuredClone(record.json);
       } else if (req.task === 'recheck') {
-        json = { fixes: [], added: [] };
+        json = { fixes: [] };
         missing = true;
       } else {
         throw new LlmError('agents-offline', null, 'fixture');

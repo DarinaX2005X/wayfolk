@@ -4,7 +4,6 @@
  */
 export type MaterialErrorCode =
   | 'too-many-pages'
-  | 'too-many-essays'
   | 'too-big'
   | 'too-many-files'
   | 'scanned'
@@ -15,7 +14,6 @@ export type MaterialErrorCode =
 export const LIMITS = {
   /** Pages of one work. */
   pages: 400,
-  essays: 78,
   /** Bytes of one file. */
   fileBytes: 20 * 1024 * 1024,
   files: 10,
@@ -25,11 +23,10 @@ export const LIMITS = {
 
 const LINES: Record<MaterialErrorCode, string> = {
   'too-many-pages': `This is more than ${LIMITS.pages} pages. Split it into smaller works.`,
-  'too-many-essays': `This is more than ${LIMITS.essays} essays. Split the class into two works.`,
   'too-big': 'This file is larger than 20 MB.',
   'too-many-files': `Up to ${LIMITS.files} files at a time.`,
   scanned: 'This PDF is a scan without text. Export it with text, or run it through text recognition first.',
-  unsupported: 'This kind of file cannot be read. Use PDF, TXT or CSV.',
+  unsupported: 'This kind of file cannot be read. Use PDF, TXT, Markdown or CSV.',
   empty: 'There is no text in this file.',
   encrypted: 'This PDF is locked with a password. Save an unlocked copy and try again.',
 };

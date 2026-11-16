@@ -1,55 +1,58 @@
 /**
- * The shared domain contract of Groundwork (PLAN "Контракты"): projects and their
- * materials, runs and their events, the results of the three kinds of work, the island
- * and its notes, codes, sync messages of the seating for two, intents and settings.
+ * The shared domain contract of Groundwork (PLAN "Контракты", general engine).
+ *
+ * One kind of work: a task. A person gives a goal in words, optionally with files and
+ * links; the planner turns it into 4–12 steps from the step library; the runner executes
+ * them as a stream of events; code checks every unit it can before the person sees it;
+ * the result is a real deliverable (a site or web app, a document, a plan) and an object
+ * on the island.
  *
  * Types only, no code: the same file is read by the browser, by Node scripts and by the
  * server functions (api/_lib/contracts.ts re-exports the model exchange types from here).
- * Owner from package 01.4 on; a change of a shared type is described in a package report
- * and made by the integration package of the stage.
  *
- * The island and sync types (World, Plot, Note, Seat, Op, SyncMsg, ...) are part of the
- * same contract because Project, Intent and the API refer to them; src/world/types.ts
- * and src/social/types.ts re-export them from here instead of declaring their own.
+ * The section "Legacy" at the end keeps the types of the removed case, seating and essays
+ * pipelines that the view still imports. The engine no longer produces them; the view
+ * moves to TaskResult and the integration package deletes that section.
  */
 
-// ------------------------------------------------------------------ project and materials
+// ------------------------------------------------------------------ task, project, materials
 
-export type JobKind = 'case' | 'seating' | 'essays';
-export type ExampleId = 'harbor-street' | 'wedding' | 'class-9b';
+export type SampleId = 'bakery-site' | 'habit-tracker' | 'launch-plan';
+/** site: a site or a web app with a preview; document: sections; plan: dated items with owners. */
+export type DeliverableKind = 'site' | 'document' | 'plan';
 /** 'p_' + 12 base32 characters, for example 'p_k7qm2r9tz4vx'. */
 export type ProjectId = string;
 
+/** What the engine is given. files: already read into pages (src/materials/read.ts). */
+export type Task = { goal: string; files: Doc[]; links: string[] };
+export type TaskInput = { text: string; by: 'voice' | 'typed' | 'phone' | 'sample'; links: string[] };
+
 export type Project = {
   id: ProjectId;
-  kind: JobKind;
-  /** 'Harbor Street, Unit 4B' */
+  /** The planner's short project name ('Marlow Street Bakery'). */
   title: string;
-  /** 'Find where the stories don't match' */
-  goal: string;
-  example?: ExampleId;
-  sample: boolean;
-  /** 'harbor-street' */
+  task: TaskInput;
+  sample?: SampleId;
   slug: string;
-  /** ISO time. */
   createdAt: string;
   updatedAt: string;
   /** Grows with every edit. */
   rev: number;
-  /** "Review due" counts from here. */
   firstRunAt: string | null;
   visibility: 'private' | 'public';
-  status: 'draft' | 'running' | 'ready' | 'partial' | 'stale' | 'failed';
+  status: 'draft' | 'planning' | 'running' | 'ready' | 'partial' | 'stale' | 'failed' | 'declined';
   materials: MaterialRef[];
   /** sha256 of the normalized text of all pages. */
   materialHash: string;
   runId: string | null;
-  /** The first run and every later load of pages. */
   passes: number;
-  /** EssaysPublic only on a project made from a public copy (fromPublic). */
-  result: CaseResult | SeatingResult | EssaysResult | EssaysPublic | null;
+  result: TaskResult | LegacyResult | null;
   edits: Edit[];
   notes: Note[];
+  /** @deprecated legacy fields of the removed pipelines; the view moves to `task` and `sample`. */
+  kind?: JobKind;
+  goal?: string;
+  example?: ExampleId;
 };
 
 export type MaterialRef = {
@@ -59,14 +62,23 @@ export type MaterialRef = {
   bytes: number;
   pages?: number;
   sha256: string;
-  source: 'example' | 'drop' | 'late';
+  source: 'sample' | 'drop' | 'link' | 'added' | 'example' | 'late';
+  url?: string;
   addedAt: string;
   readAt: string | null;
 };
 
 export type DocKind =
-  | 'lease'
+  | 'notes'
+  | 'brief'
+  | 'table'
   | 'email'
+  | 'page'
+  | 'web'
+  | 'file'
+  | 'image'
+  // kinds of the removed case documents, still drawn by the material sheets
+  | 'lease'
   | 'messages'
   | 'log'
   | 'statement'
@@ -74,90 +86,186 @@ export type DocKind =
   | 'letter'
   | 'receipt'
   | 'notice'
-  | 'essay'
-  | 'file';
+  | 'essay';
 
-/** author: id of a party. */
-export type DocMeta = { id: string; title: string; kind: DocKind; from: number; to: number; date?: string; author?: string };
-export type Block = { k: 'head' | 'p' | 'msg' | 'row' | 'clause' | 'sig'; text: string; who?: string; at?: string };
-/** n counts from 1; text = blocks.map(blockText).join('\n') (src/materials/text.ts). */
-/** noText: a PDF page without a text layer (a scan). */
+export type DocMeta = { id: string; title: string; kind: DocKind; from: number; to: number; date?: string; url?: string; author?: string };
+export type Block = { k: 'head' | 'p' | 'msg' | 'row' | 'item' | 'clause' | 'sig'; text: string; who?: string; at?: string };
+/** n counts from 1 across the project; text = blocks.map(blockText).join('\n') (src/materials/text.ts). noText: a scanned PDF page. */
 export type Page = { docId: string; n: number; text: string; blocks?: Block[]; noText?: boolean };
-export type Doc = { meta: DocMeta; pages: Page[]; scanned?: boolean };
-
-export type ExampleMeta = {
-  id: ExampleId;
-  kind: JobKind;
-  title: string;
-  goal: string;
-  /** The two lines of the envelope label. */
-  label: [string, string];
-  materialHash: string;
-  /** materialHash of the pages read from the example's PDF by the same readFile. */
-  pdfTextHash?: string;
+/** asset: an image kept as a file; agents don't read pictures. */
+export type Doc = {
+  meta: DocMeta;
+  pages: Page[];
+  scanned?: boolean;
+  asset?: { mime: string; bytes: number; width: number; height: number; data: Blob | string };
 };
 
-export type Edit = {
+export type SampleMeta = {
+  id: SampleId;
+  title: string;
+  /** The goal as the person would say it. */
+  task: string;
+  /** Two lines of the mailbox envelope, each up to 25 characters. */
+  label: [string, string];
+  deliverable: DeliverableKind;
+  object: ObjectId;
+  materialHash: string;
+};
+
+// ------------------------------------------------------------------ step library and plan
+
+export type StepKind =
+  | 'ask'
+  | 'read'
+  | 'research'
+  | 'compare'
+  | 'decide'
+  | 'write-section'
+  | 'write-code'
+  | 'make-plan'
+  | 'review'
+  | 'check'
+  | 'assemble';
+/** Roles that call the model; the instruments of the view are drawn by role. */
+export type AgentRole = 'planner' | 'researcher' | 'analyst' | 'writer' | 'builder' | 'reviewer' | LegacyRole;
+/** What a step hands on. */
+export type OutputKind = 'answer' | 'pages' | 'findings' | 'table' | 'decision' | 'section' | 'files' | 'items' | 'critique' | 'checks' | 'deliverable';
+export type CheckName =
+  | 'quote'
+  | 'numbers'
+  | 'dates'
+  | 'sums'
+  | 'schema'
+  | 'parse'
+  | 'refs'
+  | 'required'
+  | 'links'
+  | 'plan-table'
+  | 'dedupe';
+export type MechanismKind = 'cutter' | 'gate' | 'assembly';
+
+export type StepSpec = {
+  kind: StepKind;
+  by: 'model' | 'code' | 'human';
+  role?: AgentRole;
+  mechanism?: MechanismKind;
+  /** Default title of the station sign, up to 14 characters. */
+  label: string;
+  /** One line for the planner. */
+  does: string;
+  output: OutputKind;
+  unit: UnitKind;
+  checks: CheckName[];
+};
+
+export type PlanColumn = { name: string; type: 'text' | 'date' | 'number' | 'money' | 'person' | 'duration' };
+export type StepArgs = {
+  focus?: string;
+  /** write-code: the files of this step; the first .html is index.html. */
+  files?: { path: string; purpose: string }[];
+  /** write-section: headings of the sections this step writes. */
+  sections?: string[];
+  /** make-plan: extra columns beyond task, owner, start, end, depends. */
+  columns?: PlanColumn[];
+  /** compare and decide. */
+  options?: string[];
+  criteria?: string[];
+  /** write-code: parts the page must have, as "what" and a CSS selector. */
+  required?: { what: string; selector: string }[];
+  /** ask. */
+  question?: { text: string; options: string[] };
+};
+export type PlanStep = {
+  /** s1 … s12 in order. */
   id: string;
-  at: string;
-  by: 'me' | 'guest';
-  source: 'hand' | 'voice' | 'gaze' | 'mouse' | 'phone' | 'calibration';
-} & (
-  | { kind: 'pair-review'; key: string; verdict: 'kept' | 'dismissed' | 'reopened' | 'cleared' } // cleared: "Undo"; reopened: opened again after a late page resolved it
-  | { kind: 'ask-answer'; askId: string; optionId: string }
-  | { kind: 'event-restore'; itemId: string } // a dropped item brought back: "Not verified, added by you"
-  | { kind: 'seat-move'; guestId: string; tableId: string; party: boolean }
-  | { kind: 'seat-lock'; guestId: string; locked: boolean }
-  | { kind: 'wish-add'; wish: Wish }
-  | { kind: 'wish-answer'; questionId: string; option: string }
-  | { kind: 'guest-coming'; guestId: string; coming: boolean }
-  | { kind: 'tag-price'; tagType: string; minor: number; major: number } // this mistake costs this much in the whole class
-  | { kind: 'tag-dismiss'; tagId: string } // this fragment is not a mistake
-  | { kind: 'score-override'; essayId: string; criterion: string; delta: number; reason: string } // one essay only
-  | { kind: 'anchor-marks'; essayId: string; marks: Record<string, number> } // the teacher's marks on an anchor essay
-);
+  kind: StepKind;
+  /** The station sign, up to 18 characters. */
+  title: string;
+  does: string;
+  /** Earlier step ids, or 'materials'. */
+  uses: string[];
+  args: StepArgs;
+  output: OutputKind;
+  checks: CheckName[];
+  /** Up to six acceptance points in the planner's words. */
+  done: string[];
+};
+/** The world kit's object kinds. */
+export type ObjectId = 'house' | 'folder' | 'globe' | 'ledger' | 'toolbox' | 'map' | 'letters' | 'lamp' | 'chart' | 'case-stack' | 'cake' | 'notebooks';
+export type Plan = {
+  understood: string;
+  /** Short project name, up to 40 characters. */
+  title: string;
+  deliverable: DeliverableKind;
+  fit: 'yes' | 'partly' | 'no' | 'unclear';
+  notDoable: string;
+  instead: string;
+  object: ObjectId;
+  objectWhy: string;
+  /** The window of a plan ('' when none was stated). */
+  window: { from: string; to: string } | null;
+  /** People named in the goal or the materials (owners of plan items). */
+  team: string[];
+  steps: PlanStep[];
+  /** Lines for the plan card: what code will check and what only an agent reads. */
+  checkable: string[];
+  agentOnly: string[];
+  /** Estimated model calls. */
+  calls: number;
+  tilesPlanned: number;
+};
 
 // ------------------------------------------------------------------ run and events
 
-/** Only the roles that call the model. */
-export type AgentRole = 'planner' | 'extractor' | 'reconciler' | 'wishes' | 'marker';
-export type StepKind = 'read' | 'extract' | 'verify' | 'reconcile' | 'assemble' | 'wishes' | 'solve' | 'mark' | 'calibrate';
-/**
- * case:     s1 read 'Read' code; s2 extract 'Extract' model extractor; s3 verify 'Check' code;
- *           s4 reconcile 'Reconcile' model reconciler; s5 assemble 'Assemble' code
- * seating:  s1 read 'Read'; s2 wishes 'Wishes' model wishes; s3 verify 'Check'; s4 solve 'Seat'
- * essays:   s1 read 'Read'; s2 mark 'Mark' model marker; s3 verify 'Check'; s4 calibrate 'Calibrate' code; s5 assemble 'Assemble'
- * late case pages: s1 read, s2 extract, s3 verify 'Check' (the reconcile call shows at s3)
- */
-export type Station = { id: string; step: StepKind; label: string; by: 'model' | 'code'; role?: AgentRole };
-export type LlmTask = 'plan' | 'extract' | 'recheck' | 'reconcile' | 'wishes' | 'mark' | 'intent';
+export type LlmTask = 'plan' | 'step' | 'recheck' | 'intent' | 'dictate' | LegacyLlmTask;
 export type Provider = 'openrouter' | 'gemini' | 'fixtures';
 export type Answers = 'live' | 'recorded' | 'scripted';
-export type TileRef = { kind: 'event' | 'guest' | 'tag'; id: string };
+export type UnitKind = 'answer' | 'page' | 'note' | 'row' | 'decision' | 'section' | 'file' | 'item' | 'issue' | 'element';
+export type TileRef = { kind: UnitKind | LegacyTileKind; id: string };
+/** id equals PlanStep.id; the planner on the parking is not a station. */
+export type Station = {
+  id: string;
+  step: StepKind | LegacyStepKind;
+  label: string;
+  by: 'model' | 'code' | 'human';
+  role?: AgentRole;
+  mechanism?: MechanismKind;
+  uses?: string[];
+  output?: OutputKind;
+};
+
+export type RunScope = 'full' | { redo: string; instruction: string; preset?: string } | { pages: number[] };
 
 /** t: ms from the start of the run. */
 export type RunEvent = { runId: string; seq: number; t: number } & (
   | {
       type: 'run-start';
-      job: JobKind;
-      example?: ExampleId;
-      scope: 'full' | 'late';
+      sample?: SampleId;
+      scope: RunScope;
       answers: Answers;
       provider: Provider | 'script' | null;
       model: string | null;
       recordedAt?: string;
+      /** Mistakes code planted into the recorded answers; seeded: fakes added to a live run. */
       planted: number;
       seeded: number;
+      /** The caption line under the run ("Recorded answers from a live run, checks run now"). */
+      label: string;
     }
-  | { type: 'plan'; stations: Station[]; budget: number; lines: string[]; tilesPlanned: number } // lines: lines of the plan board
-  | { type: 'step-start'; station: string }
   | {
-      type: 'progress';
-      station: string;
-      done: number;
-      total: number;
-      unit: 'pages' | 'batches' | 'claims' | 'pairs' | 'guests' | 'wishes' | 'swaps' | 'essays' | 'tags';
+      type: 'plan';
+      stations: Station[];
+      budget: number;
+      lines: string[];
+      tilesPlanned: number;
+      object: ObjectId;
+      title: string;
+      deliverable: DeliverableKind;
+      fit: Plan['fit'];
+      understood: string;
     }
+  | { type: 'step-start'; station: string }
+  | { type: 'progress'; station: string; done: number; total: number; unit: 'pages' | 'units' | 'files' | 'checks' | 'rows' | 'calls' }
   | {
       type: 'call-start';
       station: string;
@@ -166,63 +274,63 @@ export type RunEvent = { runId: string; seq: number; t: number } & (
       role: AgentRole;
       index: number;
       attempt: number;
+      /** What this call works on: a file path, a section heading, 'fix 2 items'. */
+      what?: string;
       pages?: [number, number];
       chars: number;
     }
   | { type: 'call-end'; station: string; callId: string; ms: number; ok: boolean; items?: number; code?: RunErrorCode }
   | { type: 'waiting'; station: string; callId?: string; reason: 'rate-limited' | 'provider-busy' | 'offline'; retryInMs: number }
   | { type: 'item'; station: string; item: CheckedItem }
-  | { type: 'tile'; station: string; i: number; ref: TileRef } // i: tile number in laying order, from zero
+  | { type: 'tile'; station: string; i: number; ref: TileRef }
+  | { type: 'card'; station: string; card: StepCard }
   | {
       type: 'ask';
       station: string;
       askId: string;
-      pair: [string, string];
       question: string;
       options: { id: string; label: string }[];
+      defaultId: string;
       timeoutMs: number;
     }
-  | { type: 'answer'; askId: string; optionId: string | null; by: 'hand' | 'voice' | 'gaze' | 'mouse' | 'timeout' }
-  | { type: 'note'; station: string; source: string; text: string; key?: boolean } // a caption line; key: never folded
+  | { type: 'answer'; askId: string; optionId: string | null; by: 'hand' | 'voice' | 'gaze' | 'mouse' | 'guest' | 'timeout' }
+  | { type: 'note'; station: string; source: string; text: string; key?: boolean }
   | { type: 'fallback'; to: 'recorded'; reason: RunErrorCode }
   | { type: 'step-end'; station: string; summary: Record<string, number> }
   | { type: 'error'; station: string; code: RunErrorCode; retryable: boolean; pages?: [number, number] }
-  | { type: 'run-end'; status: 'ready' | 'partial' | 'failed' | 'cancelled'; calls: number; stats: RunStats }
+  | { type: 'run-end'; status: 'ready' | 'partial' | 'failed' | 'cancelled' | 'declined'; calls: number; stats: RunStats }
 );
 
-export type RunErrorCode =
-  | 'agents-offline'
-  | 'provider-error'
-  | 'timeout'
-  | 'bad-output'
-  | 'budget'
-  | 'daily-cap'
-  | 'material'
-  | 'offline';
+export type RunErrorCode = 'agents-offline' | 'provider-error' | 'timeout' | 'bad-output' | 'budget' | 'daily-cap' | 'material' | 'offline';
 
 /**
- * First check of a claim: accepted | corrected | merged | rejected; after the second
- * look the same id: fixed | dropped. quote-wrong-page and quote-reworded give corrected;
- * quote-altered and quote-not-found give rejected.
+ * One decision of the gate about one unit. First check: accepted | corrected | merged |
+ * rejected; after the second look the same id: fixed | dropped.
  */
 export type CheckedItem = {
   id: string;
-  kind: 'claim' | 'fact' | 'pair' | 'guest' | 'wish' | 'tag' | 'score';
+  kind: UnitKind | LegacyItemKind;
+  station?: string;
   status: 'accepted' | 'corrected' | 'merged' | 'rejected' | 'fixed' | 'dropped';
   reason?: RejectReason;
+  /** All problems code found, readable: '"$4.75" isn't in the notes. They say $4.50.' */
+  problems?: string[];
   dropCause?: 'withdrawn' | 'failed-again' | 'budget' | 'not-recorded' | 'seeded';
   claim: string;
-  eventId?: string;
+  unitId?: string;
+  /** checked: code checked it; agent: nothing code can check ("Reviewed by an agent"). */
+  label?: 'checked' | 'agent';
+  checks?: CheckName[];
   batch?: number;
+  /** A mistake code planted into the recorded answers; seeded: a fake added to a live run. */
   planted?: boolean;
   seeded?: boolean;
-  ref?: { docId: string; page: number };
-  found?: { page: number; text: string };
-  /** The model's words, the nearest text of the page, numbers of the words that differ. */
+  ref?: { docId: string; page: number } | { file: string; line?: number } | { url: string };
+  found?: { text: string; page?: number };
   diff?: { claim: string; source: string; marks?: { claim: number[]; source: number[] } };
-  /** Where the quote stands on the page: for highlighting. */
   spans?: QuoteSpan[];
-  /** Only for kind 'pair'. */
+  /** @deprecated legacy case fields. */
+  eventId?: string;
   pairKey?: string;
   verdict?: 'contradiction' | 'explained' | 'unsure' | 'unjudged';
 };
@@ -238,56 +346,65 @@ export type RejectReason =
   | 'quote-too-short'
   | 'date-mismatch'
   | 'weekday-mismatch'
-  | 'date-out-of-range'
-  | 'unknown-actor'
   | 'duplicate'
-  | 'fact-not-in-quote'
-  | 'pair-unsupported'
-  | 'unknown-guest'
-  | 'ambiguous-guest'
-  | 'wish-source-not-found'
-  | 'wish-conflict'
-  | 'wish-impossible'
-  | 'tag-fragment-not-found'
-  | 'tag-type-unknown'
-  | 'score-sum-mismatch'
-  | 'score-out-of-range'
-  | 'points-without-sentence';
+  | 'number-not-in-source'
+  | 'sum-mismatch'
+  | 'schema-mismatch'
+  | 'parse-error'
+  | 'missing-file'
+  | 'missing-asset'
+  | 'element-missing'
+  | 'required-missing'
+  | 'broken-link'
+  | 'date-order'
+  | 'date-out-of-range'
+  | 'order-broken'
+  | 'owner-unknown'
+  | 'from-unknown'
+  | 'step-unknown'
+  | 'agent-redo'
+  | LegacyReason;
 
 /**
- * modelMs: sum of ms of all calls; caught and seeded as defined next to the equality of
- * numbers in PLAN; tiles: number of tile events. For seating and essays `claims` counts
- * wishes and tags, `events` counts accepted wishes and tags.
+ * The numbers of the gate and of the work sheet:
+ *   units    = matched + corrected + merged + sentBack
+ *   sentBack = fixed + dropped
+ *   kept     = matched + corrected + fixed
+ * Units of the agent only (nothing to check) are counted in `agentOnly`, inside `matched`.
  */
 export type RunStats = {
   pages: number;
-  pagesUnread: number[];
   calls: Partial<Record<LlmTask, number>>;
   modelMs: number;
   checkMs: number;
-  claims: number;
+  steps: number;
+  units: number;
   matched: number;
   corrected: number;
   merged: number;
   sentBack: number;
   fixed: number;
   dropped: number;
-  added: number;
-  events: number;
-  factsChecked: number;
-  factsRemoved: number;
-  pairs: number;
-  contradictions: number;
-  explained: number;
+  kept: number;
+  agentOnly: number;
+  checked: number;
+  files: number;
+  required: number;
+  requiredFound: number;
   asked: number;
   planted: number;
   seeded: number;
   caught: number;
   tiles: number;
-  coverage: { datedPassages: number; covered: number; pagesWithoutEvents: number[] };
+  redos: number;
+  /** @deprecated legacy case numbers, kept 0. */
+  pagesUnread?: number[];
+  claims?: number;
+  events?: number;
+  added?: number;
 };
 
-/** provider 'script': the answer was written by the author of the example. */
+/** provider 'script': written by hand. redo: the key of a ready redo ('s4:warmer'). */
 export type CallRecord = {
   callId: string;
   task: LlmTask;
@@ -299,41 +416,48 @@ export type CallRecord = {
   json: unknown;
   provider: Provider | 'script';
   model: string;
-  /** Indices of claims in json.events that the example's author planted on purpose. */
+  /** Indices (into the answer's list) of mistakes code planted into this answer. */
   planted?: number[];
-  /** Indices of claims in json.events that code seeded into a live recording. */
   seeded?: number[];
+  redo?: string;
+  /** USD of this call as the provider billed it (recordings only). */
+  usd?: number;
 };
 
+/** example: the sample id (the name is kept for the dev server's fixture reader). */
 export type AnswerSet = {
-  example: ExampleId;
+  example: SampleId | string;
   scope: 'full' | 'late';
   answers: 'scripted' | 'recorded';
   recordedAt?: string;
   model?: string;
   seeded?: number;
   materialHash: string;
+  /** Ready redos recorded with the set: step id, preset key and the instruction. */
+  redos?: { stepId: string; preset: string; instruction: string }[];
   calls: CallRecord[];
 };
 
 export type RunRecord = {
   id: string;
-  job: JobKind;
-  example?: ExampleId;
+  sample?: SampleId;
   projectId: ProjectId;
-  scope: 'full' | 'late';
+  scope: RunScope;
   startedAt: string;
   answers: Answers;
   provider: Provider | 'script' | null;
   model: string | null;
-  status: 'running' | 'ready' | 'partial' | 'failed' | 'cancelled';
+  status: 'running' | 'ready' | 'partial' | 'failed' | 'cancelled' | 'declined';
   calls: CallRecord[];
   events: RunEvent[];
-  /** Results of finished batches and steps by key. */
+  /** Results of finished steps by key (read on resume). */
   partial: Record<string, unknown>;
   asks: Record<string, string | null>;
-  result: CaseResult | SeatingResult | EssaysResult | null;
+  result: TaskResult | null;
   stats: RunStats | null;
+  /** @deprecated */
+  job?: JobKind;
+  example?: ExampleId;
 };
 
 export type ChatMessage = {
@@ -363,7 +487,7 @@ export type LlmStatus = {
 };
 
 /**
- * payload stays on the client (recordedLlm picks reconcile verdicts by it); everything
+ * payload and redo stay on the client (recordedLlm finds ready redos by redo); everything
  * else goes to the server. audio: base64 WAV without a data-URI prefix.
  */
 export type LlmRequest = {
@@ -376,12 +500,9 @@ export type LlmRequest = {
   audio?: string;
   fixture?: string;
   runId?: string;
+  redo?: string;
 };
 
-/**
- * planted and seeded travel with an answer of recordedLlm (copied from its CallRecord);
- * missing: recordedLlm had no record of this recheck call and answered with an empty fix.
- */
 export type LlmResponse = {
   json: unknown;
   provider: Provider | 'script';
@@ -408,7 +529,6 @@ export type RunStore = {
 /** acquire resolves null when another tab holds the lock. */
 export type LockManager = { acquire(name: string): Promise<(() => void) | null> };
 
-/** now and timers are replaced by frame-by-frame capture and by tests. */
 export type RunDeps = {
   llm: LlmClient;
   store: RunStore;
@@ -418,13 +538,21 @@ export type RunDeps = {
   timers?: { set(fn: () => void, ms: number): number; clear(id: number): void };
 };
 
+/**
+ * One run. answers: 'live' calls the model; an AnswerSet replays it. seed: a live run
+ * plants mistakes by code into fresh answers (recording of samples). previous: the result
+ * a redo starts from.
+ */
 export type RunSpec = {
   project: Project;
   docs: Doc[];
-  scope: 'full' | { pages: number[] };
+  scope: RunScope;
   answers: 'live' | AnswerSet;
   seed?: boolean;
   pace?: number;
+  previous?: TaskResult;
+  /** Today, for plans: 'YYYY-MM-DD' (default: the clock's date). */
+  today?: string;
 };
 
 export type RunHandle = {
@@ -441,280 +569,134 @@ export type RunHandle = {
   done: Promise<RunRecord>;
 };
 
-// ------------------------------------------------------------------ case result
+// ------------------------------------------------------------------ task result
 
-/** { id: 'mark', name: 'Mark Ellison', role: 'Tenant', aliases: ['Mr Ellison', 'the tenant'] } */
-export type Party = { id: string; name: string; role: string; aliases: string[] };
-/** { id: 'keys.returned_on', topic: 'keys', type: 'date', question: 'When were the keys returned?' } */
-export type FactField = { id: string; topic: string; type: 'date' | 'amount' | 'time' | 'yesno' | 'presence'; question: string };
-/** Values: ISO date, a number as a string, 'HH:MM', 'yes' | 'no', 'here' | 'away'. */
-export type Fact = {
-  field: string;
-  type: FactField['type'];
-  value: string;
-  basis: 'literal' | 'derived';
-  subject?: string;
-  from?: string;
-  to?: string;
-};
-/** The model's answer: empty strings instead of missing values. */
-export type ExtractedEvent = {
-  kind: 'record' | 'account';
-  date: string;
-  time: string;
-  actors: string[];
-  label: string;
-  summary: string;
-  quote: string;
-  page: number;
-  topic: string;
-  facts: Fact[];
-};
-/**
- * lane: id of the party on whose lane the event stands: the author of the document
- * (DocMeta.author) when that is a party of the case, otherwise the first actor.
- */
-export type CaseEvent = {
+/** A piece of a step's output that the gate decides about and that may become a tile. */
+export type Unit = {
   id: string;
-  kind: 'record' | 'account';
-  at: string | null;
-  precision: 'day' | 'minute';
-  saidAt: string;
-  actors: string[];
-  lane: string;
-  label: string;
-  summary: string;
-  quote: string;
-  source: { docId: string; docTitle: string; page: number };
-  topic: string;
-  facts: Fact[];
-  status: 'verified' | 'corrected' | 'fixed' | 'added' | 'restored';
-  pass: number;
-};
-/** key: the two event ids in alphabetical order joined by '|'. */
-export type Contradiction = {
-  key: string;
-  a: string;
-  b: string;
-  topic: string;
-  field: string;
-  label: string;
-  kind: 'direct' | 'judgment';
-  values: [string, string];
-  explanation: string;
-  origin: 'agents' | 'you' | 'late-pages';
-  state: 'open' | 'resolved';
-  resolvedBy?: { docId: string; page: number };
-  supports: { eventId: string; side: 'a' | 'b' }[];
-  review: 'open' | 'kept' | 'dismissed';
-};
-export type Explained = { key: string; a: string; b: string; reason: string; by: 'agents' | 'you' };
-export type OpenAsk = { askId: string; pair: [string, string]; question: string; options: { id: string; label: string }[] };
-export type Deadline = { id: string; kind: 'document' | 'review'; date: string; label: string; source?: { docId: string; page: number } };
-export type CaseResult = {
-  parties: Party[];
-  topics: string[];
-  fields: FactField[];
-  docs: DocMeta[];
-  events: CaseEvent[];
-  contradictions: Contradiction[];
-  explained: Explained[];
-  open: OpenAsk[];
-  /** Everything that was not simply accepted: corrected, merged, fixed, dropped, removed facts. */
-  audit: CheckedItem[];
-  /** The part of audit that ended dropped; only these can be restored by an event-restore edit. */
-  rejected: CheckedItem[];
-  window: { from: string; to: string };
-  deadlines: Deadline[];
-  stats: RunStats;
-  /** Last call numbers used, so later pages continue them (extract/12, reconcile/3). */
-  indices?: { batch: number; reconcile: number };
-  /** sha256 of the normalized text of every page read, by page number: a page read again changes nothing. */
-  pageHashes?: Record<string, string>;
-  /** The claims of dropped items by item id, so an event-restore edit can bring one back. */
-  restorable?: Record<string, ExtractedEvent>;
-};
-/** The planner's answer and the plan of a case (flat in the model schema). */
-export type CasePlan = { parties: Party[]; topics: string[]; fields: FactField[] };
-/** extract: the model's answer for one batch. Facts carry '' for a missing subject, from or to. */
-export type CaseExtractAnswer = { events: ExtractedEvent[] };
-export type TimelineFilter = { parties?: string[]; from?: string; to?: string; contradictionsOnly?: boolean; topic?: string };
-
-// ------------------------------------------------------------------ seating result
-
-export type Guest = {
-  id: string;
-  name: string;
-  party: string;
-  side: 'bride' | 'groom' | 'both';
-  group: string;
-  relation: string;
-  age: 'child' | 'adult' | 'senior';
-  needs: string[];
-  diet: string[];
-  notes: string;
-  coming: boolean;
-};
-/** Round tables; metres from the far left corner. */
-export type Table = { id: string; label: string; seats: number; x: number; y: number; row: number };
-export type Rect = { x: number; y: number; w: number; d: number };
-export type Hall = {
-  width: number;
-  depth: number;
-  tables: Table[];
-  stage: Rect;
-  exit: { x: number; y: number };
-  dance: Rect;
-  /** Tables right in front of the stage, in the example ['t2', 't3']. */
-  frontTables: string[];
-};
-export type Who =
-  | { ref: 'name'; text: string }
-  | { ref: 'group'; group: string }
-  | { ref: 'side'; side: string }
-  | { ref: 'age'; age: string };
-export type Wish = {
-  id: string;
-  kind: 'apart' | 'together' | 'near' | 'far' | 'at-table';
-  who: Who[];
-  guests: string[];
-  target?: 'exit' | 'stage' | 'dance' | { row: number } | { tables: string[] };
-  strength: 'must' | 'prefer';
-  source: { kind: 'letter' | 'note' | 'voice' | 'hand' | 'phone'; text: string };
-  status: 'met' | 'partly' | 'broken' | 'needs-you' | 'impossible' | 'replaced';
-  reason?: string;
-};
-export type Question = { id: string; wishId: string; text: string; options: string[] };
-export type Seating = { assign: Record<string, { table: string; seat: number }>; locked: string[]; cost: number; iters: number };
-export type SeatingResult = {
-  guests: Guest[];
-  hall: Hall;
-  wishes: Wish[];
-  questions: Question[];
-  aliases: Record<string, string>;
-  seating: Seating;
-  rejected: CheckedItem[];
-  stats: RunStats;
-};
-/** maxIters 40000 in the product; solveSeating is pure and deterministic by seed and maxIters. */
-export type SolveInput = {
-  guests: Guest[];
-  hall: Hall;
-  wishes: Wish[];
-  locked: string[];
-  previous?: Seating;
-  seed: number;
-  maxIters: number;
-};
-
-// ------------------------------------------------------------------ essays result
-
-/** { id: 'evidence', name: 'Evidence', max: 6, ... } */
-export type Criterion = { id: string; name: string; max: number; descriptors: string[] };
-/** { type: 'evidence-vague', criterion: 'evidence', label: 'Vague evidence', price: { minor: 1, major: 2 } } */
-export type TagSpec = { type: string; criterion: string; label: string; price: { minor: number; major: number } };
-/** alias 'Student 07': only the alias goes to the model. Sentence ids look like 'e07.s12'. */
-export type Essay = {
-  id: string;
-  student: string;
-  alias: string;
-  words: number;
-  tooShort: boolean;
-  sentences: { id: string; text: string }[];
-};
-export type ErrorTag = {
-  id: string;
-  essayId: string;
-  type: string;
-  severity: 'minor' | 'major';
-  sentenceIds: string[];
-  quote: string;
-  note: string;
-  status: 'active' | 'dismissed' | 'rejected';
-};
-export type EssayScore = {
-  essayId: string;
-  total: number;
-  max: number;
-  review: ('no-evidence' | 'sum-fixed' | 'similar' | 'too-short')[];
-  byCriterion: Record<string, { score: number; max: number; modelSaid: number | null; override: number }>;
-};
-export type Feedback = { essayId: string; strength: { sentenceId: string; text: string }; revise: { tagId: string; advice: string }[] };
-export type SimilarPair = { a: string; b: string; shared: [string, string][]; overlap: number };
-/** The teacher's marks by criterion. */
-export type Anchor = { essayId: string; marks: Record<string, number> };
-/** essays and points: how many essays and points the rule changed. */
-export type PriceRule = {
-  tagType: string;
-  minor: number;
-  major: number;
-  source: 'calibration' | 'hand' | 'voice';
-  essays: number;
-  points: number;
-  editId: string;
-};
-export type EssaysResult = {
+  stepId: string;
+  kind: UnitKind;
   title: string;
-  rubric: Criterion[];
-  specs: TagSpec[];
-  essays: Essay[];
-  tags: ErrorTag[];
-  scores: EssayScore[];
-  feedback: Feedback[];
-  similar: SimilarPair[];
-  anchors: Anchor[];
-  rules: PriceRule[];
-  classErrors: { type: string; label: string; essays: number }[];
+  body: string;
+  quote?: { text: string; source: { docId: string; docTitle: string; page: number } | { url: string } };
+  /** Units this one rests on (fact ids of a section, rows a row depends on). */
+  from?: string[];
+  /** Numbers and dates that passed the numbers check. */
+  values?: { label: string; value: string }[];
+  /** File units: the path. Row units: the cells. */
+  path?: string;
+  cells?: Record<string, string>;
+  status: 'checked' | 'corrected' | 'fixed' | 'agent' | 'restored' | 'edited';
+  checks: CheckName[];
+  version: number;
+};
+
+export type StepCard = {
+  stepId: string;
+  kind: StepKind;
+  title: string;
+  state: 'waiting' | 'running' | 'done' | 'redoing' | 'stale' | 'failed' | 'skipped';
+  review: 'none' | 'approved' | 'redo';
+  /** A line from the counters: '9 facts from 1 file'. */
+  summary: string;
+  /** Lines of the two columns "Checked by code" and "Reviewed by an agent". */
+  checked: string[];
+  agentOnly: string[];
+  counts: { units: number; checked: number; agent: number; sentBack: number; fixed: number; dropped: number };
+  calls: number;
+  ms: number;
+  instruction?: string;
+  version: number;
+};
+
+export type SiteFile = { path: string; mime: string; text: string; bytes: number; checks: CheckName[]; ok: boolean };
+export type LoadReport = {
+  ok: boolean;
+  errors: { kind: 'parse-error' | 'element-missing' | 'missing-asset' | 'missing-file' | 'broken-link' | 'required-missing'; text: string; file?: string; line?: number }[];
+  required: { what: string; selector: string; found: boolean }[];
+};
+export type PlanItem = {
+  id: string;
+  task: string;
+  owner: string;
+  start: string;
+  end: string;
+  depends: string[];
+  cells: Record<string, string>;
+  units: string[];
+};
+export type Deliverable =
+  | {
+      kind: 'site';
+      title: string;
+      entry: 'index.html';
+      files: SiteFile[];
+      load: LoadReport;
+      /** sampleUrl: '/samples/<id>/' for a sample; code: the short code of an uploaded live project. */
+      preview: { code: string | null; sampleUrl: string | null };
+      version: number;
+    }
+  | { kind: 'document'; title: string; sections: { id: string; heading: string; text: string; units: string[]; sources: string[] }[]; version: number }
+  | {
+      kind: 'plan';
+      title: string;
+      columns: PlanColumn[];
+      items: PlanItem[];
+      totals: { column: string; value: string; stated: string; ok: boolean }[];
+      window: { from: string; to: string } | null;
+      team: string[];
+      version: number;
+    };
+export type OpenAsk = { askId: string; question: string; options: { id: string; label: string }[]; defaultId?: string; pair?: [string, string] };
+/** What a finished step handed on: kept so a redo can tell what changed downstream. */
+export type StepResult = { stepId: string; hash: string; units: string[]; text: string; files?: SiteFile[] };
+export type TaskResult = {
+  plan: Plan;
+  cards: StepCard[];
+  units: Unit[];
+  deliverable: Deliverable | null;
+  open: OpenAsk[];
+  /** Everything that was not simply accepted. */
+  audit: CheckedItem[];
+  /** The part of audit that ended dropped; a unit-restore edit can bring one back. */
   rejected: CheckedItem[];
+  /** Agent-only critique of review steps. */
+  reviews: { stepId: string; text: string; severity: 'minor' | 'major' }[];
+  outputs: Record<string, StepResult>;
+  /** Answers to asks, by ask id. */
+  answers: Record<string, string>;
+  /** The caption of the run: "Recorded answers from a live run, checks run now". */
+  label: string;
   stats: RunStats;
+  version: number;
 };
 
-// ------------------------------------------------------------------ model answer shapes (flat schemas)
-
-/** wishes: the model's answer to one call. target.value: '', '1' or 't2,t3'. */
-export type WishesAnswer = {
-  wishes: {
-    kind: 'apart' | 'together' | 'near' | 'far' | 'at-table';
-    strength: 'must' | 'prefer';
-    sourceText: string;
-    who: { ref: 'name' | 'group' | 'side' | 'age'; value: string }[];
-    target: { kind: 'none' | 'exit' | 'stage' | 'dance' | 'row' | 'tables'; value: string };
-  }[];
-};
-/** mark: the model's answer to one call (one or two essays). */
-export type MarkAnswer = {
-  essays: {
-    essayId: string;
-    tags: { type: string; severity: 'minor' | 'major'; sentenceIds: string[]; quote: string; note: string }[];
-    modelScores: { criterion: string; score: number }[];
-    strength: { sentenceId: string };
-    advice: { tagIndex: number; advice: string }[];
-  }[];
-};
-/** recheck of essays. */
-export type EssaysRecheckAnswer = {
-  fixes: { tagRef: string; action: 'fix' | 'withdraw'; sentenceIds: string[]; quote: string }[];
-};
-/** recheck of the case. */
-export type CaseRecheckAnswer = {
-  fixes: { claimId: string; action: 'fix' | 'withdraw'; quote: string; page: number; date: string; actors: string[] }[];
-  added: ExtractedEvent[];
-};
-/** reconcile: verdicts joined to candidates by pairKey. */
-/** question and options are filled only for 'unsure' (empty otherwise); options: two answers, conflict first. */
-export type ReconcileAnswer = {
-  verdicts: {
-    pairKey: string;
-    verdict: 'contradiction' | 'explained' | 'unsure';
-    explanation: string;
-    question?: string;
-    options?: string[];
-  }[];
-};
-/** baseline.ts: the single comparison request to a chat. */
-export type BaselineAnswer = {
-  contradictions: { topic: string; a: { quote: string; page: number }; b: { quote: string; page: number } }[];
-};
+export type Edit = {
+  id: string;
+  at: string;
+  by: 'me' | 'guest';
+  byName?: string;
+  source: 'hand' | 'voice' | 'gaze' | 'mouse' | 'phone' | 'calibration';
+} & (
+  | { kind: 'step-review'; stepId: string; verdict: 'approved' | 'cleared' }
+  | { kind: 'step-redo'; stepId: string; instruction: string; preset?: string; runId: string }
+  | { kind: 'ask-answer'; askId: string; optionId: string }
+  | { kind: 'unit-restore'; itemId: string }
+  | { kind: 'unit-edit'; unitId: string; text: string }
+  | { kind: 'row-edit'; rowId: string; column: string; value: string }
+  // legacy edits of the removed pipelines
+  | { kind: 'pair-review'; key: string; verdict: 'kept' | 'dismissed' | 'reopened' | 'cleared' }
+  | { kind: 'event-restore'; itemId: string }
+  | { kind: 'seat-move'; guestId: string; tableId: string; party: boolean }
+  | { kind: 'seat-lock'; guestId: string; locked: boolean }
+  | { kind: 'wish-add'; wish: Wish }
+  | { kind: 'wish-answer'; questionId: string; option: string }
+  | { kind: 'guest-coming'; guestId: string; coming: boolean }
+  | { kind: 'tag-price'; tagType: string; minor: number; major: number }
+  | { kind: 'tag-dismiss'; tagId: string }
+  | { kind: 'score-override'; essayId: string; criterion: string; delta: number; reason: string }
+  | { kind: 'anchor-marks'; essayId: string; marks: Record<string, number> }
+);
 
 // ------------------------------------------------------------------ island, notes, codes
 
@@ -742,7 +724,7 @@ export type Plot = {
   total: number;
   flag: 'none' | 'pages' | 'deadline' | 'guest' | 'question' | 'stale';
 };
-/** notebooks.review: how many notebooks carry a clip. */
+/** The kit's own shapes; the library kinds (house, folder, …) are LibrarySpec of src/kit/world/objects/library.ts. */
 export type ObjectSpec =
   | { kind: 'case-stack'; pages: number; open: number; closed: number }
   | { kind: 'cake'; rows: number; tablesPerRow: number[] }
@@ -751,8 +733,8 @@ export type Note = {
   id: string;
   projectId: ProjectId;
   at: string;
-  by: 'late-pages' | 'deadline' | 'guest';
-  kind: 'pages-arrived' | 'pages-read' | 'deadline' | 'guest-changes';
+  by: 'late-pages' | 'deadline' | 'guest' | 'agents';
+  kind: 'pages-arrived' | 'pages-read' | 'deadline' | 'guest-changes' | 'redo-done';
   text: string;
   read: boolean;
   diff?: { events: string[]; contradictions: string[]; resolved: string[]; rejected: number; pages: number };
@@ -762,10 +744,8 @@ export type PublicWorld = {
   name: string;
   title: string;
   rev: number;
-  plots: (Pick<Plot, 'slot' | 'kind' | 'visibility' | 'tiles' | 'seed'> &
-    Partial<Pick<Plot, 'slug' | 'title' | 'object' | 'doneAt' | 'sample'>>)[];
+  plots: (Pick<Plot, 'slot' | 'kind' | 'visibility' | 'tiles' | 'seed'> & Partial<Pick<Plot, 'slug' | 'title' | 'object' | 'doneAt' | 'sample'>>)[];
 };
-/** Seating: names replaced by initials, no wishes. */
 export type PublicProject = {
   world: string;
   slug: string;
@@ -773,43 +753,29 @@ export type PublicProject = {
   title: string;
   updatedAt: string;
   rev: number;
-  result: CaseResult | SeatingResult | EssaysPublic;
+  result: TaskResult | CaseResult | SeatingResult | EssaysPublic;
   pages?: Page[];
 };
-export type EssaysPublic = {
-  title: string;
-  rubric: Criterion[];
-  distribution: { total: number; essays: number }[];
-  classErrors: EssaysResult['classErrors'];
-  essays: number;
-};
 
-/** First letter of a code: D, F, W, X; J codes live only in PeerJS. */
+/** First letter of a code: D, F, W, X, R (a site preview); J codes live only in PeerJS. */
 export type CodeKind = 'drop' | 'files' | 'visit' | 'export';
-/**
- * A code is a kind letter and 4 characters from 'ABCDEFGHJKMNPQRSTVWXYZ23456789',
- * for example 'X4KM7'.
- */
 export type CodeRecord = {
   code: string;
   kind: CodeKind;
   createdAt: string;
   expiresAt: string;
   closed: boolean;
-  /** visit: '<world>' or '<world>/<slug>'; files: the title of the case for the page. */
   target?: string;
-  /** job: the kind of work chosen as the goal on the phone. */
   job?: JobKind;
   goal?: string;
   title?: string;
   summary?: ExportSummary;
-  /** export: address of the Blob object with files { name, mime, base64 }[]. */
   bundleUrl?: string;
-  /** text: a guest list pasted on the phone. */
   files: { name: string; mime: string; bytes: number; url?: string; text?: string }[];
 };
 export type SummarySide = { who: string; date: string; quote: string; doc: string; page: number };
 export type ExportSummary =
+  | { kind: 'task'; headline: string; deliverable: DeliverableKind; lines: string[] }
   | {
       kind: 'case';
       headline: string;
@@ -827,43 +793,11 @@ export type EnvelopeSpec = {
   id: string;
   kind: 'sample' | 'files' | 'late' | 'code';
   lines: [string, string];
+  sample?: SampleId;
   example?: ExampleId;
   projectId?: ProjectId;
   job?: JobKind;
 };
-
-// ------------------------------------------------------------------ seating for two
-
-/** name up to 12 characters, 'Guest' by default. */
-export type Seat = { role: 'owner' | 'guest'; device: 'headset' | 'desktop' | 'phone'; name: string };
-export type Op =
-  | { kind: 'seat-move'; guestId: string; tableId: string; party: boolean }
-  | { kind: 'seat-lock'; guestId: string; locked: boolean }
-  | { kind: 'wish-add'; wish: Wish }
-  | { kind: 'wish-answer'; questionId: string; option: string }
-  | { kind: 'guest-coming'; guestId: string; coming: boolean }
-  | { kind: 'undo' };
-export type SyncMsg =
-  | { t: 'hello'; seat: Seat; rev: number }
-  | { t: 'state'; project: Project; rev: number }
-  | { t: 'op'; id: string; base: number; op: Op } // guest to owner
-  | {
-      t: 'applied';
-      id: string;
-      rev: number;
-      op: Op;
-      by: Seat['role'];
-      changes: Record<string, { table: string; seat: number }>;
-      wishes: Record<string, Wish['status']>;
-      text: string; // owner to everyone; text for captions
-    }
-  | { t: 'rejected'; id: string; reason: 'stale' | 'locked' | 'held' | 'invalid'; text: string }
-  | { t: 'hold'; guestId: string; on: boolean }
-  | { t: 'focus'; itemId: string | null }
-  | { t: 'ray'; origin: number[]; dir: number[] }
-  | { t: 'away' }
-  | { t: 'back' }
-  | { t: 'bye' };
 
 // ------------------------------------------------------------------ settings, modes, views
 
@@ -878,12 +812,47 @@ export type Settings = {
 };
 /** desk: an ordinary browser without a session. */
 export type Mode = 'desk' | 'void' | 'room';
-export type View = 'home' | 'run' | 'timeline' | 'seating' | 'essays' | 'visit';
+export type View = 'home' | 'run' | 'result' | 'timeline' | 'seating' | 'essays' | 'visit';
 export type InputKind = 'hand' | 'ray' | 'gaze' | 'dwell' | 'mouse';
+
+// ------------------------------------------------------------------ seating for two (sync)
+
+/** name up to 12 characters, 'Guest' by default. */
+export type Seat = { role: 'owner' | 'guest'; device: 'headset' | 'desktop' | 'phone'; name: string };
+export type Op =
+  | { kind: 'seat-move'; guestId: string; tableId: string; party: boolean }
+  | { kind: 'seat-lock'; guestId: string; locked: boolean }
+  | { kind: 'wish-add'; wish: Wish }
+  | { kind: 'wish-answer'; questionId: string; option: string }
+  | { kind: 'guest-coming'; guestId: string; coming: boolean }
+  | { kind: 'undo' };
+export type SyncMsg =
+  | { t: 'hello'; seat: Seat; rev: number }
+  | { t: 'state'; project: Project; rev: number }
+  | { t: 'op'; id: string; base: number; op: Op }
+  | {
+      t: 'applied';
+      id: string;
+      rev: number;
+      op: Op;
+      by: Seat['role'];
+      changes: Record<string, { table: string; seat: number }>;
+      wishes: Record<string, Wish['status']>;
+      text: string;
+    }
+  | { t: 'rejected'; id: string; reason: 'stale' | 'locked' | 'held' | 'invalid'; text: string }
+  | { t: 'hold'; guestId: string; on: boolean }
+  | { t: 'focus'; itemId: string | null }
+  | { t: 'ray'; origin: number[]; dir: number[] }
+  | { t: 'away' }
+  | { t: 'back' }
+  | { t: 'bye' };
 
 // ------------------------------------------------------------------ intents and commands
 
 export type Intent =
+  | { kind: 'step-approve'; stepId?: string }
+  | { kind: 'step-redo'; stepId?: string; instruction: string }
   | { kind: 'timeline-filter'; filter: TimelineFilter }
   | { kind: 'timeline-reset' }
   | { kind: 'open-page'; page: number }
@@ -892,7 +861,7 @@ export type Intent =
   | { kind: 'pair-review'; verdict: 'kept' | 'dismissed' }
   | { kind: 'run'; action: 'stop' | 'skip' | 'live' | 'explain-last' }
   | { kind: 'answer'; optionId: string }
-  | { kind: 'summary' } // "what is this case about": a line from the counters
+  | { kind: 'summary' }
   | { kind: 'seat-wish'; wish: Omit<Wish, 'id' | 'status' | 'guests'> }
   | { kind: 'seat-move'; guest: string; table: string }
   | { kind: 'seat-explain'; guest: string }
@@ -909,12 +878,12 @@ export type Intent =
   | { kind: 'recenter' }
   | { kind: 'setting'; key: keyof Settings; value: boolean | number }
   | { kind: 'onboarding'; action: 'skip' | 'again' }
-  | { kind: 'clarify'; question: string; options: string[] } // "Which Rosa?"
-  | { kind: 'none'; reply: string }; // off topic: what this view can do
+  | { kind: 'clarify'; question: string; options: string[] }
+  | { kind: 'none'; reply: string };
 
-/** Student names stay on the device: only the alias goes to the model. */
 export type VoiceContext = {
   view: View;
+  steps?: { id: string; title: string }[];
   parties?: Party[];
   topics?: string[];
   window?: { from: string; to: string };
@@ -927,15 +896,203 @@ export type VoiceContext = {
   ask?: OpenAsk;
 };
 
-/**
- * apply returns a caption line or a clarification; after the person picks, the
- * dispatcher calls apply again with pick. commands(): buttons of the fan; say goes
- * through parseCommand.
- */
 export type IntentHandler = {
   view: View | '*';
   kinds: Intent['kind'][];
   context(): VoiceContext;
   commands(): { label: string; say: string }[];
   apply(intent: Intent, pick?: string): Promise<string | { clarify: { question: string; options: string[] } }>;
+};
+
+// ------------------------------------------------------------------ Legacy
+// Types of the removed case, seating and essays pipelines. Nothing in src/agents produces
+// them any more; they stay only while the view still imports them.
+
+/** @deprecated the general engine has one kind of work: 'task'. */
+export type JobKind = 'task' | 'case' | 'seating' | 'essays';
+/** @deprecated use SampleId. */
+export type ExampleId = SampleId | 'harbor-street' | 'wedding' | 'class-9b';
+export type LegacyRole = 'extractor' | 'reconciler' | 'wishes' | 'marker';
+export type LegacyStepKind = 'extract' | 'verify' | 'reconcile' | 'wishes' | 'solve' | 'mark' | 'calibrate';
+export type LegacyLlmTask = 'extract' | 'reconcile' | 'wishes' | 'mark';
+export type LegacyTileKind = 'event' | 'guest' | 'tag';
+export type LegacyItemKind = 'claim' | 'fact' | 'pair' | 'guest' | 'wish' | 'tag' | 'score';
+export type LegacyReason =
+  | 'unknown-actor'
+  | 'fact-not-in-quote'
+  | 'pair-unsupported'
+  | 'unknown-guest'
+  | 'ambiguous-guest'
+  | 'wish-source-not-found'
+  | 'wish-conflict'
+  | 'wish-impossible'
+  | 'tag-fragment-not-found'
+  | 'tag-type-unknown'
+  | 'score-sum-mismatch'
+  | 'score-out-of-range'
+  | 'points-without-sentence';
+export type LegacyResult = CaseResult | SeatingResult | EssaysResult | EssaysPublic;
+export type ExampleMeta = {
+  id: ExampleId;
+  kind: JobKind;
+  title: string;
+  goal: string;
+  label: [string, string];
+  materialHash: string;
+  pdfTextHash?: string;
+};
+
+export type Party = { id: string; name: string; role: string; aliases: string[] };
+export type FactField = { id: string; topic: string; type: 'date' | 'amount' | 'time' | 'yesno' | 'presence'; question: string };
+export type Fact = { field: string; type: FactField['type']; value: string; basis: 'literal' | 'derived'; subject?: string; from?: string; to?: string };
+export type ExtractedEvent = {
+  kind: 'record' | 'account';
+  date: string;
+  time: string;
+  actors: string[];
+  label: string;
+  summary: string;
+  quote: string;
+  page: number;
+  topic: string;
+  facts: Fact[];
+};
+export type CaseEvent = {
+  id: string;
+  kind: 'record' | 'account';
+  at: string | null;
+  precision: 'day' | 'minute';
+  saidAt: string;
+  actors: string[];
+  lane: string;
+  label: string;
+  summary: string;
+  quote: string;
+  source: { docId: string; docTitle: string; page: number };
+  topic: string;
+  facts: Fact[];
+  status: 'verified' | 'corrected' | 'fixed' | 'added' | 'restored';
+  pass: number;
+};
+export type Contradiction = {
+  key: string;
+  a: string;
+  b: string;
+  topic: string;
+  field: string;
+  label: string;
+  kind: 'direct' | 'judgment';
+  values: [string, string];
+  explanation: string;
+  origin: 'agents' | 'you' | 'late-pages';
+  state: 'open' | 'resolved';
+  resolvedBy?: { docId: string; page: number };
+  supports: { eventId: string; side: 'a' | 'b' }[];
+  review: 'open' | 'kept' | 'dismissed';
+};
+export type Explained = { key: string; a: string; b: string; reason: string; by: 'agents' | 'you' };
+export type Deadline = { id: string; kind: 'document' | 'review'; date: string; label: string; source?: { docId: string; page: number } };
+export type CaseResult = {
+  parties: Party[];
+  topics: string[];
+  fields: FactField[];
+  docs: DocMeta[];
+  events: CaseEvent[];
+  contradictions: Contradiction[];
+  explained: Explained[];
+  open: OpenAsk[];
+  audit: CheckedItem[];
+  rejected: CheckedItem[];
+  window: { from: string; to: string };
+  deadlines: Deadline[];
+  stats: RunStats;
+};
+export type TimelineFilter = { parties?: string[]; from?: string; to?: string; contradictionsOnly?: boolean; topic?: string };
+
+export type Guest = {
+  id: string;
+  name: string;
+  party: string;
+  side: 'bride' | 'groom' | 'both';
+  group: string;
+  relation: string;
+  age: 'child' | 'adult' | 'senior';
+  needs: string[];
+  diet: string[];
+  notes: string;
+  coming: boolean;
+};
+export type Table = { id: string; label: string; seats: number; x: number; y: number; row: number };
+export type Rect = { x: number; y: number; w: number; d: number };
+export type Hall = { width: number; depth: number; tables: Table[]; stage: Rect; exit: { x: number; y: number }; dance: Rect; frontTables: string[] };
+export type Who = { ref: 'name'; text: string } | { ref: 'group'; group: string } | { ref: 'side'; side: string } | { ref: 'age'; age: string };
+export type Wish = {
+  id: string;
+  kind: 'apart' | 'together' | 'near' | 'far' | 'at-table';
+  who: Who[];
+  guests: string[];
+  target?: 'exit' | 'stage' | 'dance' | { row: number } | { tables: string[] };
+  strength: 'must' | 'prefer';
+  source: { kind: 'letter' | 'note' | 'voice' | 'hand' | 'phone'; text: string };
+  status: 'met' | 'partly' | 'broken' | 'needs-you' | 'impossible' | 'replaced';
+  reason?: string;
+};
+export type Question = { id: string; wishId: string; text: string; options: string[] };
+export type Seating = { assign: Record<string, { table: string; seat: number }>; locked: string[]; cost: number; iters: number };
+export type SeatingResult = {
+  guests: Guest[];
+  hall: Hall;
+  wishes: Wish[];
+  questions: Question[];
+  aliases: Record<string, string>;
+  seating: Seating;
+  rejected: CheckedItem[];
+  stats: RunStats;
+};
+
+export type Criterion = { id: string; name: string; max: number; descriptors: string[] };
+export type TagSpec = { type: string; criterion: string; label: string; price: { minor: number; major: number } };
+export type Essay = { id: string; student: string; alias: string; words: number; tooShort: boolean; sentences: { id: string; text: string }[] };
+export type ErrorTag = {
+  id: string;
+  essayId: string;
+  type: string;
+  severity: 'minor' | 'major';
+  sentenceIds: string[];
+  quote: string;
+  note: string;
+  status: 'active' | 'dismissed' | 'rejected';
+};
+export type EssayScore = {
+  essayId: string;
+  total: number;
+  max: number;
+  review: ('no-evidence' | 'sum-fixed' | 'similar' | 'too-short')[];
+  byCriterion: Record<string, { score: number; max: number; modelSaid: number | null; override: number }>;
+};
+export type Feedback = { essayId: string; strength: { sentenceId: string; text: string }; revise: { tagId: string; advice: string }[] };
+export type SimilarPair = { a: string; b: string; shared: [string, string][]; overlap: number };
+export type Anchor = { essayId: string; marks: Record<string, number> };
+export type PriceRule = { tagType: string; minor: number; major: number; source: 'calibration' | 'hand' | 'voice'; essays: number; points: number; editId: string };
+export type EssaysResult = {
+  title: string;
+  rubric: Criterion[];
+  specs: TagSpec[];
+  essays: Essay[];
+  tags: ErrorTag[];
+  scores: EssayScore[];
+  feedback: Feedback[];
+  similar: SimilarPair[];
+  anchors: Anchor[];
+  rules: PriceRule[];
+  classErrors: { type: string; label: string; essays: number }[];
+  rejected: CheckedItem[];
+  stats: RunStats;
+};
+export type EssaysPublic = {
+  title: string;
+  rubric: Criterion[];
+  distribution: { total: number; essays: number }[];
+  classErrors: EssaysResult['classErrors'];
+  essays: number;
 };

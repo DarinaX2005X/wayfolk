@@ -1,5 +1,5 @@
 /**
- * The runner (PLAN "Трудный механизм", 01.4.1): one run of a job as a stream of events.
+ * The runner (PLAN "Трудный механизм"): one run of the task job as a stream of events.
  *
  *   - startRun waits for the project lock and for a stored running run; a run of the
  *     project already going in this tab is returned as is, one going in another tab
@@ -20,7 +20,7 @@
  */
 import type { AskSpec, CallResult, CallSpec, EventBody, JobCtx, StoredSpec } from './job';
 import { findJob } from './job';
-import './jobs/case/install';
+import './engine/task';
 import { CancelledError, classifyError, LlmError, RunLockedError } from './llm-error';
 import { defaultLocks } from './locks';
 import { createLlmQueue, type LlmQueue, type Timers } from './queue';
@@ -30,6 +30,7 @@ import { emptyStats } from './checks/counters';
 import { mulberry32 } from './checks/seed';
 import { numberPages } from '../materials/pages';
 import type {
+  Answers,
   AnswerSet,
   CallRecord,
   LlmClient,
@@ -50,7 +51,7 @@ export const ASK_TIMEOUT_MS = 20_000;
 export const ASK_SELF_START_MS = 5_000;
 export const CALL_BUDGET = 30;
 
-const TASK_ORDER: Record<LlmTask, number> = { plan: 0, extract: 1, wishes: 1, mark: 1, recheck: 2, reconcile: 3, intent: 4 };
+const TASK_ORDER: Record<LlmTask, number> = { plan: 0, step: 1, recheck: 2, intent: 4, dictate: 4, extract: 1, wishes: 1, mark: 1, reconcile: 3 };
 
 /** Runs of this page by project, so a second start returns the same handle. */
 const active = new Map<ProjectId, Run>();
@@ -78,6 +79,8 @@ export async function startRun(spec: RunSpec, deps: RunDeps): Promise<RunHandle>
       seed: Boolean(spec.seed) && spec.answers === 'live',
       pace: spec.pace ?? 1,
       answerSet: set,
+      previous: spec.previous ?? null,
+      today: spec.today ?? new Date().toISOString().slice(0, 10),
     };
     const record = newRecord(stored);
     const run = new Run(record, stored, deps, release, false);
@@ -124,10 +127,9 @@ function newRecord(spec: StoredSpec): RunRecord {
   const set = spec.answerSet;
   return {
     id: newId(),
-    job: spec.project.kind,
-    ...(spec.project.example ? { example: spec.project.example } : {}),
+    ...(spec.project.sample ? { sample: spec.project.sample } : {}),
     projectId: spec.project.id,
-    scope: spec.scope === 'full' ? 'full' : 'late',
+    scope: spec.scope,
     startedAt: new Date().toISOString(),
     answers: set ? set.answers : 'live',
     provider: set ? (set.calls[0]?.provider ?? 'script') : null,
@@ -260,7 +262,7 @@ class Run {
       timers: this.timers,
       rng: this.rng,
       onWaiting: ({ tag, reason, retryInMs }) => this.emit({ type: 'waiting', station: tag.station, callId: tag.callId, reason, retryInMs }),
-      onTwoStreams: () => this.emit({ type: 'note', station: 's2', source: 'Queue', text: 'The model asked us to slow down. Two calls at a time from now on.' }),
+      onTwoStreams: () => this.emit({ type: 'note', station: 'planner', source: 'Queue', text: 'The model asked us to slow down. Two calls at a time from now on.' }),
     });
     this.done = new Promise((r) => (this.resolveDone = r));
     this.stopped = new Promise<never>((_, reject) => (this.stop = reject));
@@ -294,23 +296,22 @@ class Run {
       const set = this.spec.answerSet;
       this.emit({
         type: 'run-start',
-        job: this.record.job,
-        ...(this.record.example ? { example: this.record.example } : {}),
+        ...(this.record.sample ? { sample: this.record.sample } : {}),
         scope: this.record.scope,
         answers: this.record.answers,
         provider: this.record.provider,
         model: this.record.model,
         ...(set?.recordedAt ? { recordedAt: set.recordedAt } : {}),
-        planted: set ? set.calls.reduce((n, c) => n + (c.planted?.length ?? 0), 0) : 0,
-        seeded: set ? (set.seeded ?? set.calls.reduce((n, c) => n + (c.seeded?.length ?? 0), 0)) : this.spec.seed ? 5 : 0,
+        planted: set ? set.calls.filter((c) => !c.redo).reduce((n, c) => n + (c.planted?.length ?? 0), 0) : 0,
+        seeded: set ? (set.seeded ?? 0) : 0,
+        label: runLabel(this.record.answers, set),
       });
     }
     void this.execute();
   }
 
   private async execute(): Promise<void> {
-    const scope = this.spec.scope === 'full' ? 'full' : 'late';
-    const job = findJob(this.record.job, scope);
+    const job = findJob();
     let status: RunRecord['status'] = 'failed';
     let stats: RunStats = this.record.stats ?? emptyStats(this.ctx.pages.length);
     try {
@@ -326,7 +327,7 @@ class Run {
         if (!(error instanceof LlmError)) console.error('engine: the job stopped', error);
         this.emit({
           type: 'error',
-          station: 's1',
+          station: 'planner',
           code: code === 'rate-limited' || code === 'provider-busy' ? 'provider-error' : code,
           retryable: false,
         });
@@ -427,7 +428,7 @@ class Run {
     const first = attempt;
     for (;;) {
       this.throwIfCancelled();
-      const callId = `${spec.task}/${spec.index}/${attempt}`;
+      const callId = `${spec.task}/${spec.index}/${attempt}${spec.redo ? '/' + spec.redo : ''}`;
       const cached = this.callCache.get(callId);
       if (cached?.ok) {
         const problems = (spec.validate ?? ((j) => schemaProblems(j, spec.schema)))(cached.json);
@@ -445,6 +446,7 @@ class Run {
         messages: spec.messages,
         schema: spec.schema,
         runId: this.record.id,
+        ...(spec.redo ? { redo: spec.redo } : {}),
       };
       this.callsUsed++;
       this.byTask[spec.task] = (this.byTask[spec.task] ?? 0) + 1;
@@ -465,6 +467,7 @@ class Run {
               role: spec.role,
               index: spec.index,
               attempt,
+              ...(spec.what ? { what: spec.what } : {}),
               ...(spec.pages ? { pages: spec.pages } : {}),
               chars,
             }),
@@ -491,7 +494,7 @@ class Run {
       const problems = (spec.validate ?? ((j) => schemaProblems(j, spec.schema)))(response.json);
       if (!problems.length && spec.transform) {
         const changed = spec.transform(response.json);
-        response = { ...response, json: changed.json, ...(changed.seeded?.length ? { seeded: changed.seeded } : {}) };
+        response = { ...response, json: changed.json, ...(changed.planted?.length ? { planted: changed.planted } : {}) };
       }
       const record: CallRecord = {
         callId,
@@ -506,6 +509,7 @@ class Run {
         model: response.model,
         ...(response.planted ? { planted: response.planted } : {}),
         ...(response.seeded ? { seeded: response.seeded } : {}),
+        ...(spec.redo ? { redo: spec.redo } : {}),
       };
       this.callCache.set(callId, record);
       const i = this.record.calls.findIndex((c) => c.callId === callId);
@@ -540,7 +544,7 @@ class Run {
   // ---------------------------------------------------------------- asks
 
   private ask(station: string, spec: AskSpec): { askId: string; answer: Promise<string | null> } {
-    const askId = 'ask:' + spec.pair.join('|');
+    const askId = 'ask:' + spec.key;
     const known = this.record.asks[askId];
     if (typeof known === 'string') return { askId, answer: Promise.resolve(known) };
     if (this.record.events.some((e) => e.type === 'answer' && e.askId === askId)) return { askId, answer: Promise.resolve(null) };
@@ -554,7 +558,7 @@ class Run {
       };
       this.asks.set(askId, pending);
       this.record.asks[askId] = null;
-      this.emit({ type: 'ask', station, askId, pair: spec.pair, question: spec.question, options: spec.options, timeoutMs: ASK_TIMEOUT_MS });
+      this.emit({ type: 'ask', station, askId, question: spec.question, options: spec.options, defaultId: spec.defaultId, timeoutMs: ASK_TIMEOUT_MS });
       pending.self.start(ASK_SELF_START_MS, () => this.startCountdown(askId), this.paused);
     });
     return { askId, answer };
@@ -701,11 +705,20 @@ class Run {
 
 const ROLE_NAMES: Record<string, string> = {
   planner: 'Planner',
-  extractor: 'Extractor',
-  reconciler: 'Reconciler',
-  wishes: 'Wish reader',
-  marker: 'Marker',
+  researcher: 'Researcher',
+  analyst: 'Analyst',
+  writer: 'Writer',
+  builder: 'Builder',
+  reviewer: 'Reviewer',
 };
+
+/** The caption of a run: what answered and what ran now. */
+export function runLabel(answers: Answers, set: AnswerSet | null): string {
+  if (answers === 'recorded') return 'Recorded answers from a live run, checks run now';
+  if (answers === 'scripted') return 'Sample run with written answers, checks run now';
+  void set;
+  return 'Live run: the model answers now, code checks every answer';
+}
 const roleName = (role: string) => ROLE_NAMES[role] ?? role;
 
 /** Length of the first list in an answer: events, fixes, verdicts. */
