@@ -5,7 +5,7 @@
  * (./shadow.ts). Low quality turns the long shadows off.
  */
 import { DirectionalLight, HemisphereLight, Object3D, type World } from '@iwsdk/core';
-import { LIGHT, QUALITY } from '../../tokens/tokens';
+import { LIGHT } from '../../tokens/tokens';
 import { animate, easeInOut, installKit, now, progress, setKitQuality, type KitQuality } from './time';
 
 export type LightRig = {
@@ -59,7 +59,6 @@ export function createLight(world: World | null): LightRig {
     setQuality(level) {
       quality = level;
       setKitQuality(level);
-      void QUALITY[level];
     },
     update(t) {
       key.intensity = from + (to - from) * easeInOut(progress(t, start, ms));

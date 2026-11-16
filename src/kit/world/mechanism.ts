@@ -205,7 +205,6 @@ export function createMechanism(kind: MechanismKind): Mechanism {
       animateParts(t, last, lessMotion());
     },
   };
-  void sphere;
   animate(mech);
   return mech;
 }

@@ -22,7 +22,6 @@ import {
   MeshBasicMaterial,
   PlaneGeometry,
   SRGBColorSpace,
-  Vector3,
   type Object3D,
 } from '@iwsdk/core';
 import { COLOR, TEXT, textSizeFor, type TextRole } from '../../tokens/tokens';
@@ -84,8 +83,8 @@ function material(doubleSided = false): MeshBasicMaterial {
   const make = (side: boolean): MeshBasicMaterial => {
     const m = new MeshBasicMaterial({ map: atlas().texture, transparent: true, depthWrite: false, toneMapped: false, side: side ? DoubleSide : undefined });
     m.polygonOffset = true;
-    m.polygonOffsetFactor = -2;
-    m.polygonOffsetUnits = -2;
+    m.polygonOffsetFactor = -1;
+    m.polygonOffsetUnits = -1;
     m.name = 'kit:label';
     return m;
   };
@@ -321,7 +320,6 @@ export type LabelInstances = {
 };
 
 const m4 = new Matrix4();
-const scaleM = new Matrix4();
 
 /** One instanced mesh drawing every label under `root` from the shared atlas. */
 export function createLabelInstances(root: Object3D): LabelInstances {
@@ -390,12 +388,9 @@ export function createLabelInstances(root: Object3D): LabelInstances {
         let shown = true;
         for (let o: Object3D | null = label; o && o !== root; o = o.parent) if (!o.visible) shown = false;
         if (!shown) continue;
-        const [w, h] = label.userData.labelSize as [number, number];
         const r = label.userData.labelRect as [number, number, number, number];
         m4.multiplyMatrices(inv, label.matrixWorld);
         // The label's own scale is its size already; the unit plane takes it from the matrix.
-        void w;
-        void h;
         mesh.setMatrixAt(n, m4);
         rect.setXYZW(n, r[0], r[1], r[2], r[3]);
         n += 1;
@@ -420,5 +415,3 @@ export function createLabelInstances(root: Object3D): LabelInstances {
   };
 }
 
-void scaleM;
-void Vector3;

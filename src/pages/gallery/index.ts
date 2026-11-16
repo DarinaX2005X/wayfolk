@@ -18,6 +18,7 @@
 import { Box3, DirectionalLight, Group, HemisphereLight, MathUtils, Vector3, type Object3D } from '@iwsdk/core';
 import type { App } from '../../app/boot/world';
 import { store } from '../../app/store';
+import { registerDebug } from '../../app/debug';
 import { BUDGET, COLOR, CONTRAST, LIGHT, QUALITY, SEAT, TEXT, WEB_TYPE, textSizeFor, type TextRole } from '../../tokens/tokens';
 import { uiGallery } from '../../kit/ui/gallery';
 import { setUiOverride, type UiOverride } from '../../kit/ui/theme';
@@ -170,67 +171,100 @@ const WIDTH = 3.4;
 /** Waits a few frames so uikit has laid out what was just built. */
 const frames = (n: number): Promise<void> =>
   new Promise((resolve) => {
-    const step = (k: number): void => (k <= 0 ? resolve() : void requestAnimationFrame(() => step(k - 1)));
+    // Timers, not requestAnimationFrame: the window's frames stop while an XR session runs.
+    const step = (k: number): void => (k <= 0 ? resolve() : void setTimeout(() => step(k - 1), 20));
     step(n);
   });
 
-async function layEntries(app: App, root: Group, entries: GalleryEntry[], width = WIDTH): Promise<Built> {
+async function layEntries(app: App, root: Group, entries: GalleryEntry[], aspect = 1.85): Promise<Built> {
   const labels: Label[] = [];
   const box = new Box3();
   const size = new Vector3();
-  const built: { entry: GalleryEntry; items: { name: string; obj: Object3D }[] }[] = [];
+  type Item = { name: string; obj: Object3D; w: number; h: number; cx: number; cy: number; z: number };
+  const blocks: { entry: GalleryEntry; items: Item[]; w: number; h: number }[] = [];
+  const made: { entry: GalleryEntry; list: { name: string; obj: Object3D; inner: Object3D }[] }[] = [];
   for (const entry of entries) {
-    const items: { name: string; obj: Object3D }[] = [];
+    const list: { name: string; obj: Object3D; inner: Object3D }[] = [];
     for (const state of entry.states) {
       try {
-        const made = state.build({ world: app.world, app });
-        if (made instanceof HTMLElement) continue;
+        const m = state.build({ world: app.world, app });
+        if (m instanceof HTMLElement) continue;
         const holder = new Group();
-        holder.add(made);
+        holder.add(m);
         root.add(holder);
-        mountGalleryObject(app, made);
-        items.push({ name: state.name, obj: holder });
+        mountGalleryObject(app, m);
+        list.push({ name: state.name, obj: holder, inner: m });
       } catch (error) {
         console.error(`[gw] gallery: ${entry.id} / ${state.name} failed`, error);
       }
     }
-    built.push({ entry, items });
+    made.push({ entry, list });
   }
   await frames(4);
-  let y = 0;
-  const all = new Box3();
-  for (const { entry, items } of built) {
-    let x = -width / 2;
+  // Sizes: panels say theirs (uikit roots are centred on their origin); objects are measured.
+  for (const { entry, list } of made) {
+    const items: Item[] = [];
+    for (const { name, obj, inner } of list) {
+      const known = inner.userData.size as [number, number] | undefined;
+      if (known) items.push({ name, obj, w: known[0], h: known[1], cx: 0, cy: 0, z: 0 });
+      else {
+        obj.updateWorldMatrix(true, true);
+        box.setFromObject(obj);
+        if (box.isEmpty()) box.set(new Vector3(-0.05, -0.05, 0), new Vector3(0.05, 0.05, 0));
+        box.getSize(size);
+        items.push({ name, obj, w: size.x, h: size.y, cx: (box.min.x + box.max.x) / 2, cy: (box.min.y + box.max.y) / 2, z: box.max.z });
+      }
+    }
+    const w = items.reduce((s, i) => s + i.w, 0) + GAP * Math.max(0, items.length - 1);
+    const h = Math.max(0.02, ...items.map((i) => i.h)) + 0.09;
+    blocks.push({ entry, items, w, h });
+  }
+  // Shelf-pack the blocks; pick the width whose result is closest to the stage's shape.
+  const pack = (width: number): { places: { x: number; y: number }[]; w: number; h: number } => {
+    const places: { x: number; y: number }[] = [];
+    let x = 0;
+    let y = 0;
     let rowH = 0;
-    const rowTop = y;
-    labels.push({ text: entry.title, at: new Vector3(-width / 2, y + 0.02, -WALL), kind: 'entry' });
-    y -= 0.07;
-    for (const { name, obj } of items) {
-      obj.position.set(0, 0, 0);
-      obj.updateWorldMatrix(true, true);
-      box.setFromObject(obj);
-      if (box.isEmpty()) box.set(new Vector3(-0.05, -0.05, 0), new Vector3(0.05, 0.05, 0));
-      box.getSize(size);
-      const cx = (box.min.x + box.max.x) / 2;
-      const top = box.max.y;
-      if (x + size.x > width / 2 && x > -width / 2) {
-        x = -width / 2;
-        y -= rowH + ROW_GAP;
+    let maxW = 0;
+    for (const b of blocks) {
+      if (x > 0 && x + b.w > width) {
+        x = 0;
+        y += rowH + ROW_GAP;
         rowH = 0;
       }
-      obj.position.set(x + size.x / 2 - cx, y - top, -WALL - box.max.z);
-      labels.push({ text: name, at: new Vector3(x, y - size.y - 0.012, -WALL), kind: 'state' });
-      x += size.x + GAP;
-      rowH = Math.max(rowH, size.y);
+      places.push({ x, y });
+      x += b.w + 0.12;
+      maxW = Math.max(maxW, x - 0.12);
+      rowH = Math.max(rowH, b.h);
     }
-    y -= rowH + ROW_GAP + 0.06;
-    void rowTop;
+    return { places, w: maxW, h: y + rowH };
+  };
+  const widest = Math.max(...blocks.map((b) => b.w), 0.3);
+  let best = pack(widest);
+  for (let k = 1; k <= 30; k++) {
+    const p = pack(widest * (1 + k * 0.25));
+    if (Math.abs(Math.log(p.w / p.h / aspect)) < Math.abs(Math.log(best.w / best.h / aspect))) best = p;
   }
-  root.updateWorldMatrix(true, true);
-  all.setFromObject(root);
+  const left = -best.w / 2;
+  const top = best.h / 2;
+  blocks.forEach((b, i) => {
+    const bx = left + best.places[i].x;
+    const by = top - best.places[i].y;
+    labels.push({ text: b.entry.title, at: new Vector3(bx, by, -WALL), kind: 'entry' });
+    let x = bx;
+    const rowTop = by - 0.035;
+    for (const it of b.items) {
+      it.obj.position.set(x + it.w / 2 - it.cx, rowTop - it.h / 2 - it.cy, -WALL - it.z);
+      labels.push({ text: it.name, at: new Vector3(x, rowTop - it.h - 0.006, -WALL), kind: 'state' });
+      x += it.w + GAP;
+    }
+  });
+  const bounds = new Box3(new Vector3(left - 0.05, -best.h / 2 - 0.08, -WALL), new Vector3(left + best.w + 0.05, top + 0.06, -WALL));
+  // The bounds live in the seated frame; the camera works in world space.
+  bounds.applyMatrix4(app.roots.seat.matrixWorld);
   return {
     labels,
-    bounds: all,
+    bounds,
     dispose: () => {
       releaseGalleryObjects(app);
       root.clear();
@@ -300,19 +334,23 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
     return wrap;
   };
 
+  const pick = params.query.get('entry');
+  const only = (list: GalleryEntry[]): GalleryEntry[] => (pick ? list.filter((e) => e.id === pick) : list);
+
   const sections: Section[] = [
     { id: 'tokens', title: 'Tokens', kind: '2d', render: tokensSection },
     { id: 'type', title: 'Type', kind: '2d', render: typeSection },
     { id: 'web', title: 'Browser controls', kind: '2d', render: webSection },
     { id: 'sounds', title: 'Sounds', kind: '2d', render: soundSection },
-    { id: 'panels', title: 'Panels', kind: '3d', build: (a, r) => layEntries(a, r, uiGallery()) },
+    // `?entry=<id>` narrows the panel sections to one component, for a close look.
+    { id: 'panels', title: 'Panels', kind: '3d', build: (a, r) => layEntries(a, r, only(uiGallery())) },
     {
       id: 'panels-hc',
       title: 'Panels in high contrast',
       kind: '3d',
       build: async (a, r) => {
         setUiOverride({ ...override, highContrast: true });
-        return layEntries(a, r, uiGallery());
+        return layEntries(a, r, only(uiGallery()));
       },
     },
     {
@@ -321,7 +359,7 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
       kind: '3d',
       build: async (a, r) => {
         setUiOverride({ ...override, largeText: true });
-        return layEntries(a, r, uiGallery(), 4.2);
+        return layEntries(a, r, only(uiGallery()));
       },
     },
     {
@@ -411,6 +449,36 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   roots.seat.add(light);
   (window as unknown as { __gw?: Record<string, unknown> }).__gw &&
     Object.assign((window as unknown as { __gw: Record<string, unknown> }).__gw, { gallery: { active: () => active?.section.id ?? null, ready: () => ready } });
+
+  // Draw calls of the bench panels (task 01.3.2: at most 12): the panels a run shows at
+  // once go into the real roots of the app, the gallery's own content is hidden, and the
+  // frame measure counts the zone. Scenarios call window.__gw.benchPanels().
+  registerDebug('benchPanels', async () => {
+    const { RunCard, AskCard } = await import('../../kit/ui/cards');
+    const { StepCard } = await import('../../kit/ui/step');
+    const { SettingsPanel } = await import('../../kit/ui/tools');
+    const { CaptionRail } = await import('../../kit/ui/boards');
+    const { mountPanel } = await import('../../kit/ui/root');
+    stageRoot.visible = false;
+    for (const r of [roots.ui.desk, roots.ui.hand, roots.ui.side]) r.visible = true;
+    const failed: string[] = [];
+    const tryMount = (name: string, fn: () => void): void => {
+      try {
+        fn();
+      } catch (error) {
+        failed.push(`${name}: ${String(error)}`);
+      }
+    };
+    tryMount('RunCard', () => mountPanel('desk', new RunCard({ lines: ['Recorded live, 16 Nov', 'Checked on this device'], skip: { label: 'Skip to the result' }, live: { label: 'Run it live', note: '3 live runs left today for everyone.' } }), { x: -0.07, y: -0.15 }));
+    tryMount('CaptionRail', () => mountPanel('rail', new CaptionRail({ lines: [{ source: 'Check', text: 'Quote not found on page 23' }] }), { x: 0, y: 0 }));
+    tryMount('StepCard', () => mountPanel('hand', new StepCard({ id: 'b', title: 'Find the dates in the lease', role: 'Extractor', seconds: 6.8, status: 'review', preview: { kind: 'table', columns: ['Date', 'Amount'], rows: [['3 Jan 2026', '$1,450']] } }), { x: -0.2, y: 0 }));
+    tryMount('AskCard', () => mountPanel('hand', new AskCard({ question: 'Are these the same keys?', options: [{ label: 'Same keys' }, { label: 'Different keys' }] }), { x: 0.2, y: 0 }));
+    tryMount('SettingsPanel', () => mountPanel('side', new SettingsPanel({ settings: store.settings.peek() }), { x: 0, y: 0 }));
+    await frames(6);
+    const perf = (window as unknown as { __gw: { perf: { info(): { zones: Record<string, number> } } } }).__gw.perf.info();
+    if (failed.length) throw new Error(failed.join('; '));
+    return perf.zones['bench-panels'] ?? 0;
+  });
 
   let active: { section: Section; built: Built | null } | null = null;
   let ready = false;

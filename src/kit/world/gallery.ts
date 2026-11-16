@@ -26,6 +26,8 @@ import { createMechanism } from './mechanism';
 import { createModeSwitch } from './mode-switch';
 import { createNotebookFan } from './notebook-fan';
 import { createObject } from './objects/object';
+import { LIBRARY_KINDS, type LibraryKind } from './objects/library';
+import { createStepCard } from './step-card';
 import { createPairTags } from './pair-tags';
 import { createPath, arcPoint, SHELF } from './path';
 import { createSector, surfaceY } from './sector';
@@ -83,6 +85,9 @@ const CASE: Station[] = [
   { id: 's4', step: 'reconcile', label: 'Reconcile', by: 'model', role: 'reconciler' },
   { id: 's5', step: 'assemble', label: 'Assemble', by: 'code' },
 ];
+
+/** A generic plan of n steps (any task runs through one engine). */
+const plan = (n: number): Station[] => Array.from({ length: n }, (_, i) => ({ id: `p${i + 1}`, step: i % 3 === 1 ? 'extract' : 'read', label: `Step ${i + 1}`, by: i % 3 === 1 ? 'model' : 'code' }));
 
 const ENVELOPES: EnvelopeSpec[] = [
   { id: 'harbor', kind: 'sample', lines: ['Harbor Street, Unit 4B', '64 pages, 12 documents'], example: 'harbor-street', job: 'case' },
@@ -338,6 +343,13 @@ function pathEntry(): GalleryEntry {
           CASE.forEach((st) => path.setStation(st.id, 'done'));
         }),
       ),
+      s('eight stations', (path) => past(() => path.setPlan(plan(8)))),
+      s('twelve stations', (path) =>
+        past(() => {
+          path.setPlan(plan(12));
+          plan(12).forEach((st, i) => path.setStation(st.id, i < 5 ? 'done' : i === 5 ? 'active' : 'pending'));
+        }),
+      ),
       s('four stations', (path) => past(() => path.setPlan(CASE.slice(0, 4)))),
       s('three stations', (path) => past(() => path.setPlan(CASE.slice(0, 3)))),
       s('retracting', (path, g) =>
@@ -421,6 +433,78 @@ function objectEntry(): GalleryEntry {
     },
   );
   return { id: 'objects', title: 'Objects of the three jobs', states };
+}
+
+function libraryEntry(): GalleryEntry {
+  const at = new Vector3(0, surfaceY(1.7) - 0.008, -1.7);
+  const one = (kind: LibraryKind, units: number, open: number) => ({
+    name: `${kind}, ${units} units, ${open} open`,
+    build() {
+      const g = group(`library-${kind}-${units}`);
+      const o = createObject({ kind, units, open });
+      o.root.position.copy(at);
+      g.add(o.root);
+      return framed(g, [at.x, at.y + 0.12, at.z], 0.85);
+    },
+  });
+  return {
+    id: 'library',
+    title: 'Objects chosen by meaning',
+    states: [
+      ...LIBRARY_KINDS.map((k) => one(k, 60, 2)),
+      ...LIBRARY_KINDS.map((k) => one(k, 300, 0)),
+      {
+        name: 'all on the ring',
+        build() {
+          const g = group('library-ring');
+          LIBRARY_KINDS.forEach((kind, i) => {
+            const o = createObject({ kind, units: 80, open: i % 3 });
+            const a = ((-60 + i * 15) * Math.PI) / 180;
+            o.root.position.set(1.7 * Math.sin(a), surfaceY(1.7), -1.7 * Math.cos(a));
+            o.root.rotation.y = -a;
+            g.add(o.root);
+          });
+          return framed(g, [0, -0.3, -1.7], 0, [0, 0, 0], 80);
+        },
+      },
+    ],
+  };
+}
+
+function stepCardEntry(): GalleryEntry {
+  return {
+    id: 'step-card',
+    title: 'Step card on its way to a tile',
+    states: [
+      {
+        name: 'flying to the plot',
+        build() {
+          const g = group('step-card');
+          const sector = createSector({ slot: 0, seed: 5 });
+          g.add(sector.root);
+          past(() => {
+            sector.setOutline(true);
+            sector.setGrid(60);
+            sector.layRow(0, 9);
+          });
+          const cards = [0, 1, 2].map((i) => {
+            const c = createStepCard(['Keys returned', 'Rent paid', 'Notice served'][i]);
+            g.add(c.root);
+            return c;
+          });
+          loop(g, 1800, (start) => {
+            cards.forEach((c, i) =>
+              atTime(start + i * 160, () => {
+                const to = sector.tilePosition(10 + i);
+                c.send(arcPoint(0, LAYOUT.arc.rows.inner).setY(-0.42), to);
+              }),
+            );
+          });
+          return framed(g, [0, -0.42, -1.5], 0, [0, 0, 0], 50);
+        },
+      },
+    ],
+  };
 }
 
 export function worldGallery(): GalleryEntry[] {
@@ -676,6 +760,8 @@ export function worldGallery(): GalleryEntry[] {
     },
     instrumentEntry(),
     objectEntry(),
+    libraryEntry(),
+    stepCardEntry(),
     {
       id: 'island',
       title: 'Island of eight plots',

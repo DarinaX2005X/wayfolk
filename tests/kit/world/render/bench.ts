@@ -229,6 +229,46 @@ function build(): void {
     camera.updateProjectionMatrix();
     return;
   }
+  if (view === 'perf') {
+    // Six walking instruments: mean cost of one pool update and of one rendered frame.
+    seatCamera();
+    const path = createPath();
+    seat.add(path.root);
+    atTime(T - 20_000, () => path.setPlan(CASE));
+    const pool = createInstruments(null);
+    seat.add(pool.root);
+    const kinds = ['page', 'cards', 'spool', 'slips', 'pencil', 'page'] as const;
+    const all = kinds.map((k, i) => atTime(T, () => pool.spawn('extractor', `p${i}`)));
+    all.forEach((it, i) => atTime(T, () => {
+      it.carry(kinds[i], i === 0 ? '1–6' : undefined);
+      it.moveTo(i % 2 ? path.spot('s4', i % 4) : path.spot('s2', i % 4));
+    }));
+    const n = 600;
+    let t0 = performance.now();
+    for (let i = 0; i < n; i++) pool.update(T + i * 2);
+    const updateMs = (performance.now() - t0) / n;
+    const frames = (withPool: boolean): number => {
+      pool.root.visible = withPool;
+      const gl = renderer.getContext();
+      const start = performance.now();
+      for (let i = 0; i < 120; i++) {
+        pool.update(T + i * 11);
+        renderer.render(scene, camera);
+      }
+      gl.finish();
+      return (performance.now() - start) / 120;
+    };
+    const hide = params.get('hide');
+    if (hide) pool.root.traverse((o) => { if (o.name.includes(hide)) o.visible = false; });
+    frames(true);
+    frames(true);
+    const without = frames(false);
+    const withPool = frames(true);
+    t0 = 0;
+    renderer.render(scene, camera);
+    (window as unknown as { __perf: unknown }).__perf = { updateMs, frameWithout: without, frameWith: withPool, added: withPool - without, calls: renderer.info.render.calls };
+    return;
+  }
   if (view === 'gallery') {
     seatCamera();
     const entry = worldGallery().find((e) => e.id === params.get('entry'));
@@ -283,7 +323,7 @@ async function main(): Promise<void> {
     if (want) scene.traverse((o) => {
       if (o.name.includes(want)) probe.push(`${o.name} vis=${o.visible} world=${o.getWorldPosition(new Vector3()).toArray().map((v) => v.toFixed(3))} mat=${((o as Mesh).material as { name?: string } | undefined)?.name}`);
     });
-    window.__info = { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, probe };
+    window.__info = { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, probe, perf: (window as unknown as { __perf?: unknown }).__perf };
     window.__ready = true;
   } catch (error) {
     window.__error = String((error as Error)?.stack ?? error);

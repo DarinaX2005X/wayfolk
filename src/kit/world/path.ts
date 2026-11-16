@@ -111,6 +111,26 @@ export function parkingPlace(i: number, target = new Vector3()): Vector3 {
   return arcPoint(ARC.parking.to - 0.9 - col * step, r, target);
 }
 
+/** Plans of 1 to 12 steps; the arc keeps its span from −31° to +31°. */
+export const MAX_STATIONS = 12;
+
+/**
+ * Azimuths of the stations of a plan of n steps: the layout's angles for 3, 4 and 5
+ * (DESIGN "Станции"), otherwise evenly over −29°…+29° (at 12 steps about 5.3° apart).
+ */
+export function stationAngles(n: number): number[] {
+  const k = Math.max(1, Math.min(MAX_STATIONS, Math.floor(n)));
+  if (k === 3 || k === 4 || k === 5) return [...ARC.stations[k]];
+  if (k === 1) return [0];
+  if (k === 2) return [-6.5, 6.5];
+  return Array.from({ length: k }, (_, i) => -29 + (58 * i) / (k - 1));
+}
+
+/** How much lower the board of station i hangs: from 8 steps on every second one drops 7.5 cm. */
+export function boardDrop(i: number, n: number): number {
+  return n > 7 && i % 2 === 1 ? 0.075 : 0;
+}
+
 type StakeNode = { id: string; angle: number; stake: Object3D; collar: ReturnType<typeof part>; rod: ReturnType<typeof part>; state: StationState; progress: number };
 
 export function createPath(): PathView {
@@ -160,8 +180,7 @@ export function createPath(): PathView {
         retractAt = now();
       }
       stationsNow = stations;
-      const n = Math.min(5, Math.max(3, stations.length)) as 3 | 4 | 5;
-      const angles = ARC.stations[n];
+      const angles = stationAngles(stations.length);
       const t0 = now();
       planAt = leaving.length ? t0 + 200 : t0;
       if (!shelfRoot.visible) shownAt = t0;
@@ -173,7 +192,7 @@ export function createPath(): PathView {
         start.y += PLATE.h + STAKE.h;
         start.z += -PLATE.d / 2 + 0.014;
       }
-      stakes = stations.slice(0, 5).map((s, i) => {
+      stakes = stations.slice(0, MAX_STATIONS).map((s, i) => {
         const node = new Object3D();
         node.name = `stake:${s.id}`;
         arcPoint(angles[i], STAKE_R, node.position);
@@ -184,6 +203,10 @@ export function createPath(): PathView {
         node.add(stake);
         const rod = part(rodGeo, 'slate', `rod:${s.id}`);
         arcPoint(angles[i], ROD_R, rod.position);
+        // A long plan staggers its boards: every second rod is shorter.
+        const low = boardDrop(i, stations.length);
+        rod.userData.drop = low;
+        rod.userData.len = 1 - low / (ROD_TOP - SHELF.y);
         root.add(node, rod);
         return { id: s.id, angle: angles[i], stake: node, collar, rod, state: 'pending' as StationState, progress: 0 };
       });
@@ -194,7 +217,7 @@ export function createPath(): PathView {
       s.state = state;
       s.progress = clamp01(progressValue);
       setMat(s.collar, STATE_KEY[state]);
-      return arcPoint(s.angle, ROD_R).setY(ROD_TOP);
+      return arcPoint(s.angle, ROD_R).setY(ROD_TOP - (s.rod.userData.drop as number));
     },
     retract() {
       leaving = stakes;
@@ -219,8 +242,7 @@ export function createPath(): PathView {
       const s = stakes.find((x) => x.id === stationId);
       if (s) return s.angle;
       const i = stationsNow.findIndex((x) => x.id === stationId);
-      const n = Math.min(5, Math.max(3, stationsNow.length)) as 3 | 4 | 5;
-      return i >= 0 ? ARC.stations[n][i] : 0;
+      return i >= 0 ? stationAngles(stationsNow.length)[i] : 0;
     },
     stake(stationId) {
       return stakeTop(path.angle(stationId));
@@ -245,12 +267,12 @@ export function createPath(): PathView {
         s.stake.scale.set(1, Math.max(0.001, h), 1);
         s.stake.visible = k > 0;
         s.rod.visible = k > 0;
-        s.rod.scale.set(1, Math.max(0.001, easeOut(k)), 1);
+        s.rod.scale.set(1, Math.max(0.001, easeOut(k) * ((s.rod.userData.len as number) ?? 1)), 1);
       });
       leaving.forEach((s, i) => {
         const k = reduced ? 1 : progress(t, retractAt + (leaving.length - 1 - i) * 80, 260);
         s.stake.scale.set(1, Math.max(0.001, 1 - easeInOut(k)), 1);
-        s.rod.scale.set(1, Math.max(0.001, 1 - easeInOut(k)), 1);
+        s.rod.scale.set(1, Math.max(0.001, (1 - easeInOut(k)) * ((s.rod.userData.len as number) ?? 1)), 1);
         if (k >= 1) {
           s.stake.removeFromParent();
           s.rod.removeFromParent();

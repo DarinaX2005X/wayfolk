@@ -24,7 +24,7 @@ export const SIZE = {
     hLarge: mm(PANEL.stationBoard.large.h),
     rim: 4,
     pad: 8,
-    padLarge: 7,
+    padLarge: 6.5,
     gap: 2.5,
     progress: 6,
     /** The plan board holds six lines and no counter: it grows 2 cm (2.8 cm in large text). */
@@ -38,17 +38,21 @@ export const SIZE = {
     w: mm(PANEL.runCard.size.w),
     pad: 6,
     gap: 4,
-    /** DESIGN gives 13 cm (14.5 in large text) for two lines and the buttons; the line under "Run it live" adds a row. */
-    h: 150,
-    hLarge: 172,
+    /**
+     * DESIGN gives 13 cm (14.5 in large text) for two lines and the buttons; the line
+     * under "Run it live" adds a row, so the card is 15.6 cm (17.6 in large text).
+     * The buttons are set in `read`, which keeps both in one row in large text too.
+     */
+    h: 156,
+    hLarge: 176,
   },
   callCard: { eye: HAND_EYE, w: 260, h: 90, pad: 8 },
   askCard: { eye: PANEL.askCard.eyeDist, w: mm(PANEL.askCard.size.w), h: mm(PANEL.askCard.size.h), hLarge: mm(PANEL.askCard.large.h), pad: 10, strip: 6, bar: 4 },
   confirmCard: { eye: 0.55, w: 300, h: 120, pad: 10 },
   codeCard: { eye: PANEL.codeCard.eyeDist, w: mm(PANEL.codeCard.size.w), h: mm(PANEL.codeCard.size.h), pad: 8 },
-  slipSheet: { eye: TEXT.HELD, w: mm(PANEL.slipSheet.size.w), h: mm(PANEL.slipSheet.size.h), hLarge: mm(PANEL.slipSheet.large.h), pad: 6 },
-  workSheet: { eye: PANEL.workSheet.eyeDist, w: mm(PANEL.workSheet.size.w), h: mm(PANEL.workSheet.size.h), wLarge: mm(PANEL.workSheet.large.w), hLarge: mm(PANEL.workSheet.large.h), pad: 8 },
-  sourcePage: { eye: PANEL.sourcePage.eyeDist, w: mm(PANEL.sourcePage.size.w), h: mm(PANEL.sourcePage.size.h), pad: 12 },
+  slipSheet: { eye: TEXT.HELD, w: mm(PANEL.slipSheet.size.w), h: mm(PANEL.slipSheet.size.h), hLarge: mm(PANEL.slipSheet.large.h), pad: 5 },
+  workSheet: { eye: PANEL.workSheet.eyeDist, w: mm(PANEL.workSheet.size.w), h: mm(PANEL.workSheet.size.h), wLarge: mm(PANEL.workSheet.large.w), hLarge: mm(PANEL.workSheet.large.h), pad: 5 },
+  sourcePage: { eye: PANEL.sourcePage.eyeDist, w: mm(PANEL.sourcePage.size.w), h: mm(PANEL.sourcePage.size.h), pad: 10, nav: 54 },
   reading: { eye: PANEL.readingLine.eyeDist, w: mm(PANEL.readingLine.size.w), h: mm(PANEL.readingLine.size.h), hLarge: mm(PANEL.readingLine.large.h), pad: 8 },
   note: { eye: 0.45, w: 180, pad: 10 },
   pair: { eye: 0.6, w: 380, pad: 10 },
@@ -56,7 +60,7 @@ export const SIZE = {
   wish: { eye: 0.55, w: 300, pad: 8 },
   settings: { eye: 0.55, w: 280, pad: 10 },
   pad: { eye: 0.5, key: 44, gap: 4, pad: 10 },
-  essay: { eye: PANEL.sourcePage.eyeDist, w: mm(PANEL.sourcePage.size.w), h: mm(PANEL.sourcePage.size.h), pad: 12 },
+  essay: { eye: PANEL.sourcePage.eyeDist, w: mm(PANEL.sourcePage.size.w), h: mm(PANEL.sourcePage.size.h), pad: 10, nav: 54 },
   bars: { eye: 0.65, w: 260, pad: 10 },
   rules: { eye: 0.6, w: 300, pad: 10 },
   classErrors: { eye: 0.6, w: 360, pad: 10 },

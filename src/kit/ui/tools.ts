@@ -15,6 +15,7 @@ import { DWELL_MS } from '../../app/store';
 import { CATEGORY_SHAPE, COLOR, type Category } from '../../tokens/tokens';
 import { type UiTheme } from './theme';
 import { typeMm } from './text';
+import { LEADING } from './text';
 import { UiPanel, faceStyle, toggleRow, type Composed } from './panel';
 import { SIZE } from './sizes';
 
@@ -46,7 +47,7 @@ export class CodePad extends UiPanel<PadSpec> {
         alignItems: 'center',
         justifyContent: 'center',
       } as never);
-      cell.add(new Text({ text: ch, fontSize: count.fontSize, lineHeight: count.lineHeight, fontWeight: 700, color: t.text } as never));
+      cell.add(new Text({ text: ch, fontSize: count.fontSize, lineHeight: LEADING, fontWeight: 700, color: t.text } as never));
       cells.add(cell);
     }
     cells.add(this.button(t, { label: 'Clear', eye: c.eye, variant: 'text', target: 'pad:clear', onSelect: () => this.type('') }));

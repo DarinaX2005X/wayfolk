@@ -12,7 +12,7 @@ import { followHandle } from './grabbable';
 import { createLabel, setLabelText } from './label';
 import { part } from './materials';
 import { attachShadow } from './shadow';
-import { animate, bump, lessMotion, now, progress, rand, easeOut } from './time';
+import { animate, lessMotion, now, progress, rand, easeOut } from './time';
 import type { Slip, Tray } from './types';
 
 const W = LAYOUT.traySent.w;
@@ -20,7 +20,7 @@ const D = LAYOUT.traySent.d;
 const RIM = 0.008;
 const FLOOR = 0.003;
 const WALL = 0.004;
-const SLIP_T = 0.0016;
+const SLIP_T = 0.003;
 const STAMP_MS = 90;
 const LAND_MS = 260;
 
@@ -127,7 +127,6 @@ export function createTray(kind: 'sent-back' | 'fool'): Tray {
         head.position.y = FLOOR + 0.03 - 0.015 * (reduced ? 0 : Math.max(0, Math.min(1, down)) * (k < 1 ? 1 : 0));
         if (stamped && k >= STAMP_MS / (STAMP_MS + 150) && !stamped.marks.has('hole')) stamped.mark('hole');
       }
-      void bump;
     },
   };
   animate(tray);

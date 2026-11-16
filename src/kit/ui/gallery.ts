@@ -14,6 +14,7 @@ import { AskCard, CallCard, CodeCard, ConfirmCard, NoteSheet, PairStrip, RunCard
 import { EssaySheet, RunSlip, SlipSheet, SourceSheet } from './sheets';
 import { ClassErrors, CodePad, CriterionBars, RulesList, SettingsPanel, TableCard, WishStrip } from './tools';
 import { SIZE } from './sizes';
+import { StepCard } from './step';
 
 const noop = (): void => undefined;
 
@@ -25,7 +26,9 @@ function st(name: string, make: () => PanelLike & { at?: (s: number) => void }):
       const panel = make();
       const root: Container = asRoot(panel);
       root.name = `gallery:${name}`;
-      if (panel.at) (root as unknown as Object3D).userData.at = (t: number) => panel.at?.(t);
+      const obj = root as unknown as Object3D;
+      obj.userData.size = [panel.width / 1000, panel.height / 1000];
+      if (panel.at) obj.userData.at = (t: number) => panel.at?.(t);
       return root as unknown as Object3D;
     },
   };
@@ -52,6 +55,10 @@ const gate = (patch: Partial<BoardSpec>): BoardSpec => ({
   ...patch,
 });
 
+const TEXT_SAMPLE =
+  'The tenancy starts on 1 March 2025 and runs for twelve months. The tenant gives back all keys to the office no later than the last day of the tenancy, 28 February 2026. The deposit is returned within 14 days of the final inspection.';
+const QUOTE = [{ start: 63, end: 166 }];
+
 const SLIP = {
   claim: 'Mark says the keys were returned to the office on 27 February, before the inspection',
   source: 'Keys returned to the office on 6 March, after the inspection was booked',
@@ -59,6 +66,60 @@ const SLIP = {
 
 export function uiGallery(): GalleryEntry[] {
   return [
+    {
+      id: 'step-card',
+      title: 'Step card of the agent engine',
+      states: [
+        st('running, text', () => new StepCard({ id: 's2', title: 'Find the dates in the lease', role: 'Extractor', status: 'running', preview: { kind: 'text', source: 'Lease, page 4', text: TEXT_SAMPLE, quote: QUOTE } })),
+        st('needs you, text', () => new StepCard({ id: 's2', title: 'Find the dates in the lease', role: 'Extractor', seconds: 6.8, status: 'review', preview: { kind: 'text', source: 'Lease, page 4', text: TEXT_SAMPLE, quote: QUOTE }, onApprove: noop, onReject: noop, onRedo: noop })),
+        st('needs you, code', () =>
+          new StepCard({
+            id: 's3',
+            title: 'Fix the date parser',
+            role: 'Coder',
+            seconds: 12.4,
+            status: 'review',
+            preview: {
+              kind: 'code',
+              file: 'src/materials/date.ts',
+              start: 41,
+              lines: ['export function parseDay(text: string): Day | null {', "  const m = /(\d{1,2}) (\w+) (\d{4})/.exec(text);", '  if (!m) return null;', '  const month = MONTHS.indexOf(m[2].toLowerCase());', '  return month < 0 ? null : day(+m[3], month, +m[1]);', '}'],
+              changed: [42, 44],
+            },
+            onApprove: noop,
+            onReject: noop,
+            onRedo: noop,
+          }),
+        ),
+        st('needs you, table', () =>
+          new StepCard({
+            id: 's4',
+            title: 'Sum the rent payments',
+            role: 'Analyst',
+            seconds: 4.1,
+            status: 'review',
+            preview: { kind: 'table', caption: 'Payments, from the bank statement', columns: ['Date', 'Payee', 'Amount'], rows: [['3 Jan 2026', 'Pierline', '$1,450'], ['2 Feb 2026', 'Pierline', '$1,450'], ['4 Mar 2026', 'Pierline', '$1,450'], ['1 Apr 2026', 'Pierline', '$1,200'], ['2 May 2026', 'Pierline', '$1,450']] },
+            onApprove: noop,
+            onReject: noop,
+            onRedo: noop,
+          }),
+        ),
+        st('redo, instruction', () =>
+          new StepCard({
+            id: 's4',
+            title: 'Sum the rent payments',
+            role: 'Analyst',
+            seconds: 4.1,
+            status: 'review',
+            preview: { kind: 'table', columns: ['Month', 'Paid'], rows: [['January', '$1,450'], ['February', '$1,450']] },
+            redo: { open: true, instruction: 'Count only payments to Pierline', suggestions: ['Count only payments to Pierline', 'Include the deposit'] },
+            onRedo: noop,
+          }),
+        ),
+        st('approved', () => new StepCard({ id: 's2', title: 'Find the dates in the lease', role: 'Extractor', seconds: 6.8, status: 'approved', preview: { kind: 'text', source: 'Lease, page 4', text: TEXT_SAMPLE, quote: QUOTE } })),
+        st('failed', () => new StepCard({ id: 's5', title: 'Read the scanned receipts', role: 'Reader', status: 'failed', note: "Pages 31–36 couldn't be read. The scan has no text layer." })),
+      ],
+    },
     button('primary', 'Run it live'),
     button('secondary', 'Skip to the result'),
     button('text', 'Next pair'),

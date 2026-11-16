@@ -49,7 +49,7 @@ export const RING = {
   slotDeg: 360 / LAYOUT.ring.slots,
 };
 export const MAX_CELLS = 392;
-const TILE_H = 0.012;
+const TILE_H = 0.008;
 const COURSE_W = 0.05;
 const OUTLINE_MS = MOTION.stake.outlineMs;
 const REGRID_MS = 300;
@@ -117,7 +117,6 @@ function baseGeometry(): BufferGeometry {
     const p: number[] = [];
     const pt = (r: number, a: number, y: number): Vector3 => new Vector3(r * Math.sin(a), y, -r * Math.cos(a));
     const steps = 24;
-    const sides: number[] = [];
     for (let s = 0; s < steps; s++) {
       const a0 = -SPAN / 2 + (SPAN * s) / steps;
       const a1 = -SPAN / 2 + (SPAN * (s + 1)) / steps;
@@ -128,7 +127,6 @@ function baseGeometry(): BufferGeometry {
       // bottom
       pushQuad(p, pt(r0, a1, top(r0) - depth), pt(r0, a0, top(r0) - depth), pt(r1, a0, top(r1) - depth), pt(r1, a1, top(r1) - depth));
     }
-    const sideStart = p.length;
     for (const [a, flip] of [
       [-SPAN / 2, false],
       [SPAN / 2, true],
@@ -137,7 +135,6 @@ function baseGeometry(): BufferGeometry {
       if (flip) pushQuad(p, q[0], q[1], q[2], q[3]);
       else pushQuad(p, q[3], q[2], q[1], q[0]);
     }
-    void sides;
     const topStart = p.length;
     for (let s = 0; s < steps; s++) {
       const a0 = -SPAN / 2 + (SPAN * s) / steps;
@@ -156,12 +153,11 @@ function baseGeometry(): BufferGeometry {
       colors[i + 1] = cc.g;
       colors[i + 2] = cc.b;
     }
-    void sideStart;
     g.setAttribute('color', new BufferAttribute(colors, 3));
     parts.push(prep(g));
   };
   const cut = MATERIAL.plot.cut;
-  prism(RING.inner, RING.outer, (r) => surfaceY(r) - 0.0005, cut - 0.0005, COLOR.ground.cut, COLOR.ground.cut);
+  prism(RING.inner, RING.outer, (r) => surfaceY(r) - 0.0005, cut - 0.0005, COLOR.ground.cut, COLOR.slateEdge);
   const inset = MATERIAL.plot.keelInset;
   prism(RING.inner + inset, RING.outer - inset, (r) => surfaceY(r) - cut, MATERIAL.plot.keel, COLOR.ground.keel, COLOR.ground.keel);
   return merge(parts);
@@ -171,7 +167,7 @@ let baseGeo: BufferGeometry | null = null;
 /** A tile whose inner edge (+z, toward the person) is `inner` wide and outer edge `outer` wide. */
 function trapezoidTile(inner: number, outer: number, depth: number): BufferGeometry {
   const shape = new Shape();
-  const b = MATERIAL.tile.bevel;
+  const b = Math.min(MATERIAL.tile.bevel, TILE_H / 4);
   const hi = inner / 2 - b;
   const ho = outer / 2 - b;
   const hd = depth / 2 - b;
@@ -186,7 +182,7 @@ function trapezoidTile(inner: number, outer: number, depth: number): BufferGeome
 
 /** Tile geometry for a grid: sized to the middle cell, base on y = 0. */
 function tileGeometry(sx: number, sz: number): BufferGeometry {
-  return bevelBox(sx, TILE_H, sz, MATERIAL.tile.bevel, 0.002);
+  return bevelBox(sx, TILE_H, sz, Math.min(MATERIAL.tile.bevel, TILE_H / 4), 0.002);
 }
 
 type Pose = { pos: Vector3; q: Quaternion; sx: number; sz: number };

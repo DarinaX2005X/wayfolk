@@ -13,7 +13,7 @@ import { Object3D, Shape, Vector3, type BufferGeometry, type Mesh } from '@iwsdk
 import type { ObjectSpec } from '../../../agents/types';
 import { COLOR, MOTION } from '../../../tokens/tokens';
 import { bevelBox, cylinder, flatRing, merge, placed, slab, tint, torusArc } from '../geom';
-import { createLabel, measureLabel, setLabelText } from '../label';
+import { createLabel, measureLabel } from '../label';
 import { part } from '../materials';
 import { attachShadow, setShadowHeight } from '../shadow';
 import { animate, easeBack, lessMotion, now, progress, clamp01 } from '../time';
@@ -21,11 +21,18 @@ import type { ObjectFlag, ObjectState, ProjectObject } from '../types';
 import { caseStackGeometry, STACK } from './case-stack';
 import { cakeGeometry } from './cake';
 import { notebooksGeometry, NOTEBOOK } from './notebooks';
+import { LIBRARY_KINDS, libraryGeometry, type LibrarySpec } from './library';
 
 const GROW_MS = MOTION.bloom.growMs;
 const RING_R = 0.2;
 
-function footprint(spec: ObjectSpec): [number, number] {
+/** An object spec of the shared types or of the library chosen by meaning. */
+export type KitObjectSpec = ObjectSpec | LibrarySpec;
+
+const CERAMIC: readonly string[] = ['house', 'globe', 'lamp', 'toolbox', 'letters', 'cake'];
+
+function footprint(spec: KitObjectSpec): [number, number] {
+  if (isLibrary(spec)) return libraryGeometry(spec).footprint;
   if (spec.kind === 'case-stack') return [STACK.w, STACK.d];
   if (spec.kind === 'notebooks') return [NOTEBOOK.w, NOTEBOOK.d];
   return [0.26, 0.26];
@@ -71,7 +78,11 @@ function flagShape(flag: ObjectFlag | 'stale'): BufferGeometry | null {
   return g;
 }
 
-export function createObject(spec: ObjectSpec, opts: { seed?: number } = {}): ProjectObject {
+export function isLibrary(spec: KitObjectSpec): spec is LibrarySpec {
+  return (LIBRARY_KINDS as readonly string[]).includes(spec.kind);
+}
+
+export function createObject(spec: KitObjectSpec, opts: { seed?: number } = {}): ProjectObject {
   const root = new Object3D();
   root.name = `kit:object:${spec.kind}`;
   const body = new Object3D();
@@ -80,7 +91,12 @@ export function createObject(spec: ObjectSpec, opts: { seed?: number } = {}): Pr
   let numberAt: { at: [number, number, number]; count: number } | null = null;
   let geometry: BufferGeometry;
   let key: 'vcMatte' | 'vcCeramic' = 'vcMatte';
-  if (spec.kind === 'case-stack') {
+  if (isLibrary(spec)) {
+    const r = libraryGeometry(spec, opts.seed ?? 1);
+    geometry = r.geometry;
+    height = r.height;
+    key = CERAMIC.includes(spec.kind) ? 'vcCeramic' : 'vcMatte';
+  } else if (spec.kind === 'case-stack') {
     const r = caseStackGeometry(spec, opts.seed ?? 1);
     geometry = r.geometry;
     height = r.height;
@@ -111,7 +127,8 @@ export function createObject(spec: ObjectSpec, opts: { seed?: number } = {}): Pr
   const tag = new Object3D();
   tag.name = 'object:tag';
   const tagBody = part(merge([tint(bevelBox(0.06, 0.0015, 0.09, 0.0004, 0.004), COLOR.paper), tint(placed(flatRing(0.0035, 0.0008, 12), [0, 0.0015, -0.036]), COLOR.edge)]), 'vcMatte', 'object:tag');
-  tagBody.rotation.x = -1.3;
+  // Lying almost flat on the tiles in front, so the light falls on the paper.
+  tagBody.rotation.x = -0.22;
   tag.add(tagBody);
   tag.position.set(-fw / 2 + 0.04, 0.002, fd / 2 + 0.025);
   root.add(tag);
@@ -124,6 +141,7 @@ export function createObject(spec: ObjectSpec, opts: { seed?: number } = {}): Pr
   const buttonsRoot = new Object3D();
   root.add(buttonsRoot);
   let buttons: { id: string; node: Object3D }[] = [];
+  let points: Vector3[] = [];
 
   // The flag on its pin, at the back right.
   const flagRoot = new Object3D();
@@ -179,30 +197,38 @@ export function createObject(spec: ObjectSpec, opts: { seed?: number } = {}): Pr
     },
     setButtons(list) {
       buttonsRoot.clear();
+      const widths = list.slice(0, 4).map((b) => Math.max(0.1, measureLabel(b.label, { role: 'label', eyeDist: 1.6, weight: 700 }) + 0.024));
+      const total = widths.reduce((s, w) => s + w, 0) + 0.015 * Math.max(0, widths.length - 1);
+      let x = -total / 2;
+      points = widths.map((w) => {
+        const p = new Vector3(x + w / 2, 0.06, fd / 2 + 0.1);
+        x += w + 0.015;
+        // The ends bend back toward the object a little.
+        p.z -= Math.abs(p.x) * 0.12;
+        return p;
+      });
       buttons = list.slice(0, 4).map((b, i) => {
         const node = new Object3D();
         node.name = `object-button:${b.id}`;
         node.userData.target = `object-button:${b.id}`;
         // A button 60 mm high for a ray at this distance, as wide as its label needs.
-        const textW = measureLabel(b.label, { role: 'label', eyeDist: 1.6, weight: 700 });
-        const w = Math.max(0.1, textW + 0.024);
+        const w = widths[i];
         const plate = part(bevelBox(w, 0.06, 0.008, 0.002, 0.012), 'bone', 'object:button');
         plate.position.y = -0.03;
         node.add(plate);
         const label = createLabel(b.label, { role: 'label', width: w - 0.012, eyeDist: 1.6, lines: 1, align: 'center', color: COLOR.cobaltText, weight: 700 });
         label.position.set(0, 0, 0.0085);
         node.add(label);
-        const p = obj.buttonPoints()[i];
-        node.position.copy(p);
+        node.position.copy(points[i]);
         node.rotation.x = -0.35;
         buttonsRoot.add(node);
         return { id: b.id, node };
       });
-      void setLabelText;
     },
     buttonPoints() {
-      // A row in front of the object, toward the person, 15 cm apart, curving back at the ends.
-      return [-1.5, -0.5, 0.5, 1.5].map((k) => new Vector3(k * 0.15, 0.06, fd / 2 + 0.1 - Math.abs(k) * 0.025));
+      // Where the buttons stand; before setButtons, four places 15 cm apart in front of the object.
+      if (points.length) return points.map((p) => p.clone());
+      return [-1.5, -0.5, 0.5, 1.5].map((k) => new Vector3(k * 0.15, 0.06, fd / 2 + 0.1 - Math.abs(k) * 0.02));
     },
     update(t) {
       const reduced = lessMotion();
@@ -216,7 +242,6 @@ export function createObject(spec: ObjectSpec, opts: { seed?: number } = {}): Pr
       ring.scale.setScalar(selected ? 0.9 + 0.1 * ks : 1);
       buttonsRoot.visible = selected && buttons.length > 0;
       buttonsRoot.position.y = selected && !reduced ? -0.02 * (1 - ks) : 0;
-      void stale;
     },
   };
   animate(obj);

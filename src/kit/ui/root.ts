@@ -7,6 +7,7 @@
  *          confirm card, code pad
  *   side   the service column and the work view: settings, table card, wishes, essay
  *          sheet, pair pages, reading line
+ *   rail   the caption rail on the far edge of the slab
  *
  * and each station board of the arc has a root of its own (`board:<stationId>`). A root
  * with both weights costs three calls, with one weight two (DESIGN "Бюджет отрисовки").
@@ -108,7 +109,7 @@ export function asRoot(panel: PanelLike): Container {
 
 // ---------------------------------------------------------------- the named roots
 
-export type RootName = 'desk' | 'hand' | 'side' | `board:${string}`;
+export type RootName = 'desk' | 'hand' | 'side' | 'rail' | `board:${string}`;
 
 /** Where a panel goes inside its root: metres in the root's plane, x right, y up from the root's centre. */
 export type At = { x: number; y: number };
@@ -117,7 +118,7 @@ type Named = { root: Container; holder: Object3D; w: number; h: number; panels: 
 const named = new Map<string, Named>();
 
 /** Planes of the three bench roots (DESIGN "Пространство в шлеме"). */
-const PLANES: Record<'desk' | 'hand' | 'side', { w: number; h: number; zone: Zone; place(holder: Object3D): void }> = {
+const PLANES: Record<'desk' | 'hand' | 'side' | 'rail', { w: number; h: number; zone: Zone; place(holder: Object3D): void }> = {
   desk: {
     // The slab plane, 1 mm above the top, x right and y forward.
     w: 1.0,
@@ -139,6 +140,18 @@ const PLANES: Record<'desk' | 'hand' | 'side', { w: number; h: number; zone: Zon
       o.lookAt(0, 0, 0);
     },
   },
+  rail: {
+    // The caption rail stands on the far edge of the slab, leaning away at 60° to it.
+    w: LAYOUT.captionRail.w,
+    h: LAYOUT.captionRail.hLarge,
+    zone: 'bench-panels',
+    place: (o) => {
+      const tilt = (LAYOUT.captionRail.tiltDeg * Math.PI) / 180;
+      const h = LAYOUT.captionRail.hLarge;
+      o.position.set(0, -SEAT.benchBelowEyes + (Math.sin(tilt) * h) / 2, -LAYOUT.captionRail.dist - (Math.cos(tilt) * h) / 2);
+      o.rotation.set(-(Math.PI / 2 - tilt), 0, 0);
+    },
+  },
   side: {
     // The service column right of the bench, facing the eyes.
     w: 0.6,
@@ -155,7 +168,7 @@ const PLANES: Record<'desk' | 'hand' | 'side', { w: number; h: number; zone: Zon
 function namedRoot(app: App, name: RootName, standalone?: { position: Vector3; w: number; h: number }): Named {
   let r = named.get(name);
   if (r) return r;
-  const plane = name.startsWith('board:') ? null : PLANES[name as 'desk' | 'hand' | 'side'];
+  const plane = name.startsWith('board:') ? null : PLANES[name as 'desk' | 'hand' | 'side' | 'rail'];
   const w = plane?.w ?? standalone?.w ?? 0.5;
   const h = plane?.h ?? standalone?.h ?? 0.4;
   const holder = zone(new Group(), plane?.zone ?? 'boards');
@@ -163,7 +176,7 @@ function namedRoot(app: App, name: RootName, standalone?: { position: Vector3; w
   const root = new Container({ ...rootProps(w * 1000, h * 1000), alignItems: 'stretch' } as never);
   root.name = `ui:${name}`;
   holder.add(root);
-  const parent = name === 'desk' ? app.roots.ui.desk : name === 'hand' ? app.roots.ui.hand : name === 'side' ? app.roots.ui.side : app.roots.arc;
+  const parent = name === 'desk' || name === 'rail' ? app.roots.ui.desk : name === 'hand' ? app.roots.ui.hand : name === 'side' ? app.roots.ui.side : app.roots.arc;
   if (plane) plane.place(holder);
   else if (standalone) {
     holder.position.copy(standalone.position);

@@ -17,6 +17,9 @@ import { TEXT, charsPerLine, lineHeightFor, textSizeFor, type TextRole } from '.
 import { uiTheme, type UiTheme } from './theme';
 
 /** How many lines `text` takes when wrapped at words into lines of `chars` characters. */
+/** uikit takes line height as a multiple of the font size. */
+export const LEADING = TEXT.lineHeight;
+
 export function wrapLines(text: string, chars: number): number {
   if (chars <= 0) return Infinity;
   let lines = 0;
@@ -100,7 +103,7 @@ export function richText(
       borderColor: theme.danger,
     } as never);
     const color = quote ? (theme.hc ? '#111513' : theme.text) : (opts.color ?? theme.text);
-    cell.add(new Text({ text: w.text, fontSize, lineHeight, fontWeight: w.mark === 'bold' ? 700 : 400, color } as never));
+    cell.add(new Text({ text: w.text, fontSize, lineHeight: LEADING, fontWeight: w.mark === 'bold' ? 700 : 400, color } as never));
     box.add(cell);
   });
   return box;

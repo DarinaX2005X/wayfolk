@@ -16,6 +16,7 @@ import { Container, Text, type Component } from '@pmndrs/uikit';
 import { store, type CaptionLine } from '../../app/store';
 import { radiusMm, type UiTheme } from './theme';
 import { typeMm, richText } from './text';
+import { LEADING } from './text';
 import { Counter, UiPanel, chip, faceStyle, rimmed, type Composed } from './panel';
 import { SIZE } from './sizes';
 
@@ -39,7 +40,8 @@ export type BoardSpec = {
 };
 
 export class StationBoard extends UiPanel<BoardSpec> {
-  private counter: Counter | null = null;
+  // `declare`: composed during super(), so no field initialiser may reset it afterwards.
+  declare private counter: Counter | null;
 
   /** Sets the counter value: the figure rolls toward it, never faster than 20 a second. */
   count(value: number): void {
@@ -118,7 +120,7 @@ export class StationBoard extends UiPanel<BoardSpec> {
     } as never);
     if (s.state === 'done') face.add(new Container({ width: fontSize * 0.6, height: fontSize * 0.6, borderRadius: fontSize * 0.3, backgroundColor: t.ok } as never));
     // One weight on a chip: it costs one call less.
-    face.add(new Text({ text, fontSize, lineHeight, fontWeight: 400, color: s.state === 'future' ? t.soft : s.state === 'waiting' ? '#1E2421' : t.text } as never));
+    face.add(new Text({ text, fontSize, lineHeight: LEADING, fontWeight: 400, color: s.state === 'future' ? t.soft : s.state === 'waiting' ? '#1E2421' : t.text } as never));
     body.add(face);
     return { w, h, children: [body] };
   }

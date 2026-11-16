@@ -184,7 +184,8 @@ export type ObjectState = 'growing' | 'ready' | 'selected' | 'stale';
 export type ObjectFlag = 'pages' | 'deadline' | 'guest' | 'question' | 'none';
 export type ProjectObject = Updates & {
   root: Object3D;
-  spec: ObjectSpec;
+  /** ObjectSpec of the shared types, or a library kind chosen by meaning (./objects/library.ts). */
+  spec: ObjectSpec | { kind: string; units?: number; open?: number };
   setState(state: ObjectState, on?: boolean): void;
   setFlag(flag: ObjectFlag | 'stale', urgent?: boolean): void;
   setButtons(buttons: { id: string; label: string }[]): void;

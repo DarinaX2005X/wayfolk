@@ -19,8 +19,8 @@ import { Container } from '@pmndrs/uikit';
 import type { Block, DocKind, QuoteSpan } from '../../agents/types';
 import { charsPerLine } from '../../tokens/tokens';
 import { type UiTheme } from './theme';
-import { richText, typeMm, type Word } from './text';
-import { UiPanel, chip, faceStyle, type Composed } from './panel';
+import { richText, typeMm, wrapLines, type Word } from './text';
+import { UiPanel, faceStyle, type Composed } from './panel';
 import { SIZE } from './sizes';
 
 // ---------------------------------------------------------------- the window around a difference
@@ -84,17 +84,20 @@ export class SlipSheet extends UiPanel<SlipSpec> {
     const chars = charsPerLine('read', inner / 1000, c.eye, t.large);
     const face = new Container({ ...faceStyle(t, c.w, { padding: c.pad, gap: 0, paper: true }), width: c.w, height: h } as never);
     const caption = (text: string): Container => {
-      const row = new Container({ flexDirection: 'row', justifyContent: 'space-between', width: inner } as never);
+      // The outcome chip goes beside the caption, or under it in large text when the row is full.
+      const row = new Container({ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', width: inner, gapRow: 1 } as never);
       row.add(this.text(text, 'read', c.eye, t, { weight: 700, color: t.soft }));
       return row;
     };
     const said = caption('Model said');
-    if (s.outcome) said.add(chip(t, s.outcome, c.eye, s.outcome.startsWith('Fixed') ? 'ok' : 'plain'));
+    // The outcome is a word in its own colour beside the caption; in large text it drops under it.
+    if (s.outcome) said.add(this.text(s.outcome, 'label', c.eye, t, { weight: 700, color: s.outcome.startsWith('Fixed') ? t.okText : t.dangerText }));
     face.add(said);
     const model = windowWords(s.claim.split(/\s+/).filter(Boolean), s.marks?.claim ?? [], chars, 3);
     face.add(richText(model.words, 'read', inner, { eyeDistance: c.eye, theme: t }));
     face.add(caption(s.page === null ? 'Nearest on the page' : `On page ${s.page}`));
-    const page = windowWords(s.source.split(/\s+/).filter(Boolean), s.marks?.source ?? [], chars, 4);
+    // Four lines of the page; three in large text, where the reason may take a third line.
+    const page = windowWords(s.source.split(/\s+/).filter(Boolean), s.marks?.source ?? [], chars, t.large ? 3 : 4);
     face.add(richText(page.words, 'read', inner, { eyeDistance: c.eye, theme: t }));
     face.add(caption('Why'));
     face.add(this.text(s.reason, 'read', c.eye, t, { width: inner, color: t.dangerText }));
@@ -179,66 +182,72 @@ export function markedWords(text: string, spans: { start: number; end: number }[
   return out;
 }
 
+/** Lines a text takes wrapped at words into lines of `chars`. */
+function linesOf(text: string, chars: number): number {
+  return wrapLines(text, chars);
+}
+
 export class SourceSheet extends UiPanel<SourceSpec> {
   protected compose(t: UiTheme): Composed {
     const c = SIZE.sourcePage;
     const s = this.state;
     const inner = c.w - 2 * c.pad;
-    const read = typeMm('read', c.eye, t.large);
-    const label = typeMm('label', c.eye, t.large);
     const chars = charsPerLine('read', inner / 1000, c.eye, t.large);
-    const budget = t.large ? 16 : 20;
-    const face = new Container({ ...faceStyle(t, c.w, { padding: c.pad, gap: 4, paper: true }), width: c.w, height: c.h } as never);
-    const head = new Container({ flexDirection: 'row', justifyContent: 'space-between', width: inner } as never);
+    const label = typeMm('label', c.eye, t.large);
+    const read = typeMm('read', c.eye, t.large);
+    // 20 lines of 44 on the sheet (16 of 35 in large text); the page buttons hang under it.
+    const budget = Math.floor((c.h - 2 * c.pad - label.lineHeight - 4) / read.lineHeight);
+    const sheet = new Container({ ...faceStyle(t, c.w, { padding: c.pad, gap: 0, paper: true }), width: c.w, height: c.h } as never);
+    const head = new Container({ flexDirection: 'row', justifyContent: 'space-between', width: inner, marginBottom: 4 } as never);
     head.add(this.text(s.title, 'label', c.eye, t, { weight: 700, color: t.soft }));
     head.add(this.text(`p. ${s.n}`, 'label', c.eye, t, { color: t.soft }));
-    face.add(head);
-    let lines = 1;
+    sheet.add(head);
+    let lines = 0;
     const from = Math.max(0, Math.min(s.from ?? 0, s.blocks.length - 1));
+    let last = from;
     for (let i = from; i < s.blocks.length; i++) {
       const b = s.blocks[i];
       const spans = (s.spans ?? []).filter((sp) => sp.blockIndex === i);
       const words = markedWords(b.text, spans);
-      const need = Math.ceil(b.text.length / chars) + (b.who || b.at ? 1 : 0);
+      const width = b.k === 'msg' ? Math.floor(chars * 0.8) : chars;
+      const need = linesOf(b.text, width) + (b.k === 'msg' && (b.who || b.at) ? 1 : 0);
       if (lines + need > budget && i > from) break;
       lines += need;
+      last = i;
       if (b.k === 'head') {
-        face.add(this.text(b.text, 'read', c.eye, t, { color: t.soft, width: inner }));
+        sheet.add(this.text(b.text, 'read', c.eye, t, { color: t.soft, width: inner }));
       } else if (b.k === 'msg') {
         const mine = s.self !== undefined && b.who === s.self;
         const bubble = new Container({
           flexDirection: 'column',
-          maxWidth: inner * 0.82,
+          maxWidth: inner * 0.84,
           alignSelf: mine ? 'flex-end' : 'flex-start',
           backgroundColor: mine ? t.face : t.quiet,
           borderWidth: 1,
           borderColor: t.edge,
           borderRadius: 10,
-          padding: 6,
+          paddingX: 5,
+          marginY: 1,
         } as never);
         if (b.who || b.at) bubble.add(this.text([b.who, b.at].filter(Boolean).join(', '), 'label', c.eye, t, { color: t.soft }));
-        bubble.add(richText(words, 'read', inner * 0.82 - 12, { eyeDistance: c.eye, theme: t }));
-        face.add(bubble);
+        bubble.add(richText(words, 'read', inner * 0.84 - 12, { eyeDistance: c.eye, theme: t }));
+        sheet.add(bubble);
       } else if (b.k === 'row') {
-        const row = new Container({ flexDirection: 'row', gap: 8, width: inner, borderBottomWidth: 1, borderColor: t.edge, paddingY: 2 } as never);
+        const row = new Container({ flexDirection: 'row', gap: 8, width: inner, borderBottomWidth: 1, borderColor: t.edge } as never);
         if (b.at) row.add(this.text(b.at, 'label', c.eye, t, { color: t.soft, width: inner * 0.3 }));
         row.add(richText(words, 'read', b.at ? inner * 0.7 - 8 : inner, { eyeDistance: c.eye, theme: t }));
-        face.add(row);
+        sheet.add(row);
       } else {
-        if (b.who && b.k !== 'p') face.add(this.text(b.who, 'label', c.eye, t, { color: t.soft }));
-        face.add(richText(words, 'read', inner, { eyeDistance: c.eye, theme: t }));
+        sheet.add(richText(words, 'read', inner, { eyeDistance: c.eye, theme: t }));
       }
     }
-    void read;
-    void label;
-    const nav = new Container({ flexDirection: 'row', gap: 6, marginTop: 'auto', alignItems: 'center', width: inner } as never);
-    nav.add(this.button(t, { label: 'Up', eye: c.eye, target: 'sheet:up', disabled: from === 0 ? 'At the top' : null, onSelect: () => this.set({ from: Math.max(0, from - 3) }) }));
-    nav.add(this.button(t, { label: 'Down', eye: c.eye, target: 'sheet:down', onSelect: () => this.set({ from: Math.min(s.blocks.length - 1, from + 3) }) }));
-    nav.add(this.button(t, { label: 'Previous page', eye: c.eye, target: 'sheet:prev', onSelect: () => s.onPage?.(-1) }));
-    nav.add(this.button(t, { label: 'Next page', eye: c.eye, target: 'sheet:next', onSelect: () => s.onPage?.(1) }));
-    face.add(nav);
-    face.add(this.text(`${s.page} of ${s.pages}`, 'label', c.eye, t, { color: t.soft, width: inner, align: 'center' }));
-    return { w: c.w, h: c.h, children: [face] };
+    const nav = new Container({ flexDirection: 'row', gap: 6, alignItems: 'center', width: c.w, height: c.nav, paddingTop: 8 } as never);
+    nav.add(this.button(t, { label: 'Up', eye: c.eye, target: 'sheet:up', look: from === 0 ? 'disabled' : undefined, onSelect: () => this.set({ from: Math.max(0, from - 3) }) }));
+    nav.add(this.button(t, { label: 'Down', eye: c.eye, target: 'sheet:down', look: last >= s.blocks.length - 1 ? 'disabled' : undefined, onSelect: () => this.set({ from: Math.min(s.blocks.length - 1, from + 3) }) }));
+    nav.add(this.button(t, { label: 'Previous page', eye: c.eye, target: 'sheet:prev', look: s.page <= 1 ? 'disabled' : undefined, onSelect: () => s.onPage?.(-1) }));
+    nav.add(this.button(t, { label: 'Next page', eye: c.eye, target: 'sheet:next', look: s.page >= s.pages ? 'disabled' : undefined, onSelect: () => s.onPage?.(1) }));
+    nav.add(this.text(`${s.page} of ${s.pages}`, 'label', c.eye, t, { color: t.soft }));
+    return { w: c.w, h: c.h + c.nav, children: [sheet, nav] };
   }
 }
 

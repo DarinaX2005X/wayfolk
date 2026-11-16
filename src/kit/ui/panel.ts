@@ -21,6 +21,7 @@ import { onSelect } from '../../interact/select';
 import { target as nameTarget } from '../../interact/targets';
 import { buttonMm, radiusMm, uiTheme, type UiTheme } from './theme';
 import { typeMm } from './text';
+import { LEADING } from './text';
 import { uiTicker, type PanelLike } from './root';
 
 // ---------------------------------------------------------------- panels
@@ -117,7 +118,7 @@ export abstract class UiPanel<S extends object> implements PanelLike {
     return new Text({
       text: s,
       fontSize,
-      lineHeight,
+      lineHeight: LEADING,
       fontWeight: o.weight ?? 400,
       color: o.color ?? t.text,
       width: o.width,
@@ -145,7 +146,6 @@ export function faceStyle(t: UiTheme, widthMm: number, o: { padding?: number; ga
     gap: o.gap ?? 6,
     flexDirection: 'column',
     alignItems: 'stretch',
-    overflow: 'hidden',
   };
 }
 
@@ -201,22 +201,15 @@ export function makeButton(t: UiTheme, b: ButtonSpec): { el: Container; off?: ()
   const lift = MOTION.spring.press;
 
   const wrap = new Container({ flexDirection: 'column', alignItems: 'stretch', gap: 3, flexShrink: 0, flexGrow: b.grow ? 1 : 0, width: b.width } as never);
-  // The focus ring: 3 mm of cobalt, 2 mm away from the button.
-  const ring = new Container({
-    padding: 2,
-    borderWidth: 3,
-    borderRadius: 12,
-    borderColor: look === 'focus' ? t.accent : 'transparent',
-    flexDirection: 'column',
-    alignItems: 'stretch',
-  } as never);
+  // The focus ring: 3 mm of cobalt drawn on the button's own edge, so focus never moves the layout.
+  const ring = new Container({ flexDirection: 'column', alignItems: 'stretch' } as never);
   const face = new Container({
     height,
     paddingX: Math.max(8, fontSize * 0.7),
     borderRadius: 8,
     backgroundColor: bg === 'transparent' ? undefined : bg,
-    borderWidth: variant === 'secondary' ? 1.5 : 0,
-    borderColor: t.edge,
+    borderWidth: look === 'focus' ? 3 : variant === 'secondary' ? 1.5 : 0,
+    borderColor: look === 'focus' ? (variant === 'primary' ? t.onAccent : t.accent) : t.edge,
     borderBend: variant === 'text' ? 0 : 0.5,
     flexDirection: 'row',
     alignItems: 'center',
@@ -225,12 +218,11 @@ export function makeButton(t: UiTheme, b: ButtonSpec): { el: Container; off?: ()
     transformTranslateZ: look === 'hover' ? 4 : 0,
     transformScaleX: look === 'pressed' ? lift : 1,
     transformScaleY: look === 'pressed' ? lift : 1,
-    cursor: disabled ? undefined : 'pointer',
-    hover: disabled ? undefined : { transformTranslateZ: 4 },
-    active: disabled ? undefined : { transformScaleX: lift, transformScaleY: lift },
+    // uikit cannot take `hover: undefined`: a disabled button simply has no conditional styles.
+    ...(disabled ? {} : { cursor: 'pointer', hover: { transformTranslateZ: 4 }, active: { transformScaleX: lift, transformScaleY: lift } }),
     positionType: 'relative',
   } as never);
-  face.add(new Text({ text: b.label, fontSize, lineHeight, fontWeight: 700, color: fg } as never));
+  face.add(new Text({ text: b.label, fontSize, lineHeight: LEADING, fontWeight: 700, color: fg } as never));
   if (look === 'dwell') {
     // Dwell fills a bar along the bottom of the button for the gallery state.
     face.add(
@@ -248,7 +240,7 @@ export function makeButton(t: UiTheme, b: ButtonSpec): { el: Container; off?: ()
   wrap.add(ring);
   if (b.disabled) {
     const reason = typeMm('label', b.eye, t.large);
-    wrap.add(new Text({ text: b.disabled, fontSize: reason.fontSize, lineHeight: reason.lineHeight, color: t.soft } as never));
+    wrap.add(new Text({ text: b.disabled, fontSize: reason.fontSize, lineHeight: LEADING, color: t.soft } as never));
   }
   if (b.target) nameTarget(b.target, face);
   if (!b.onSelect || disabled) return { el: wrap };
@@ -262,7 +254,7 @@ export class Button extends UiPanel<ButtonSpec> {
     const { fontSize } = typeMm(this.state.role ?? 'read', this.state.eye, t.large);
     const w = this.state.width ?? Math.ceil(this.state.label.length * fontSize * 0.55 + fontSize * 1.6 + 10);
     const reason = this.state.disabled ? typeMm('label', this.state.eye, t.large).lineHeight + 3 : 0;
-    return { w, h: buttonMm(this.state.eye) + 10 + reason, children: [this.button(t, { ...this.state, width: w })] };
+    return { w, h: buttonMm(this.state.eye) + reason, children: [this.button(t, { ...this.state, width: w })] };
   }
 }
 
@@ -284,7 +276,7 @@ export function chip(t: UiTheme, label: string, eye: number, tone: ChipTone = 'p
     alignItems: 'center',
     flexShrink: 0,
   } as never);
-  c.add(new Text({ text: label, fontSize, lineHeight, fontWeight: 700, color: fg } as never));
+  c.add(new Text({ text: label, fontSize, lineHeight: LEADING, fontWeight: 700, color: fg } as never));
   return c;
 }
 
@@ -316,7 +308,7 @@ export function toggleRow(t: UiTheme, s: ToggleSpec, width: number): { el: Conta
     cursor: 'pointer',
     flexShrink: 0,
   } as never);
-  row.add(new Text({ text: s.label, fontSize, lineHeight, color: t.text } as never));
+  row.add(new Text({ text: s.label, fontSize, lineHeight: LEADING, color: t.text } as never));
   const track = new Container({
     width: h * 0.9,
     height: h * 0.5,
@@ -397,9 +389,9 @@ export class Counter extends UiPanel<{ value: number; unit?: string; eye: number
     const big = typeMm(role, this.state.eye, t.large);
     const small = typeMm(this.state.unitRole ?? 'read', this.state.eye, t.large);
     const row = new Container({ flexDirection: 'row', alignItems: 'baseline', gap: small.fontSize * 0.35 } as never);
-    this.figure = new Text({ text: String(Math.round(this.shownValue ?? this.state.value)), fontSize: big.fontSize, lineHeight: big.lineHeight, fontWeight: 700, color: t.text } as never);
+    this.figure = new Text({ text: String(Math.round(this.shownValue ?? this.state.value)), fontSize: big.fontSize, lineHeight: LEADING, fontWeight: 700, color: t.text } as never);
     row.add(this.figure);
-    if (this.state.unit) row.add(new Text({ text: this.state.unit, fontSize: small.fontSize, lineHeight: small.lineHeight, color: t.soft } as never));
+    if (this.state.unit) row.add(new Text({ text: this.state.unit, fontSize: small.fontSize, lineHeight: LEADING, color: t.soft } as never));
     const w = Math.ceil(4 * big.fontSize * 0.6 + (this.state.unit ? this.state.unit.length * small.fontSize * 0.55 + small.fontSize : 0));
     return { w, h: big.lineHeight, children: [row] };
   }

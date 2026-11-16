@@ -16,6 +16,7 @@ import type { InputKind } from '../../agents/types';
 import { COLOR, MOTION } from '../../tokens/tokens';
 import { type UiTheme } from './theme';
 import { typeMm } from './text';
+import { LEADING } from './text';
 import { UiPanel, faceStyle, type Composed } from './panel';
 import { uiTicker } from './root';
 import { SIZE } from './sizes';
@@ -39,8 +40,8 @@ export class RunCard extends UiPanel<RunCardSpec> {
     const face = new Container({ ...faceStyle(t, c.w, { padding: c.pad, gap: c.gap }), width: c.w, height: h } as never);
     for (const line of this.state.lines) face.add(this.text(line, 'flat', c.eye, t, { weight: 700, width: inner }));
     const row = new Container({ flexDirection: 'row', gap: 6, alignItems: 'flex-start', width: inner } as never);
-    row.add(this.button(t, { ...this.state.skip, eye: c.eye, role: 'body', variant: 'secondary', grow: true, target: this.state.skip.target ?? 'skip' }));
-    row.add(this.button(t, { ...this.state.live, eye: c.eye, role: 'body', variant: 'primary', target: this.state.live.target ?? 'run-live' }));
+    row.add(this.button(t, { ...this.state.skip, eye: c.eye, role: 'read', variant: 'secondary', grow: true, target: this.state.skip.target ?? 'skip' }));
+    row.add(this.button(t, { ...this.state.live, eye: c.eye, role: 'read', variant: 'primary', target: this.state.live.target ?? 'run-live' }));
     face.add(row);
     face.add(this.text(this.state.live.note, 'label', c.eye, t, { color: t.soft, width: inner, align: 'right' }));
     return { w: c.w, h, children: [face] };
@@ -85,10 +86,11 @@ export type AskSpec = {
 };
 
 export class AskCard extends UiPanel<AskSpec> {
-  private startedAt: number | null = null;
-  private bar: Container | null = null;
-  private elapsed = 0;
-  private stopTick: (() => void) | null = null;
+  // `declare`: set during super()'s first composition, so no field initialisers here.
+  declare private startedAt: number | null;
+  declare private bar: Container | null;
+  declare private elapsed: number;
+  declare private stopTick: (() => void) | null;
 
   /** The card has landed: the countdown starts now. */
   shown(): void {
@@ -111,7 +113,7 @@ export class AskCard extends UiPanel<AskSpec> {
 
   private paint(): void {
     const total = this.state.timeoutMs ?? MOTION.ask.countdownMs;
-    const left = this.state.left ?? Math.max(0, 1 - this.elapsed / total);
+    const left = this.state.left ?? Math.max(0, 1 - (this.elapsed ?? 0) / total);
     this.bar?.setProperties({ width: `${Math.round(left * 1000) / 10}%` } as never);
   }
 
@@ -179,7 +181,7 @@ export class CodeCard extends UiPanel<CodeSpec> {
     const h = Math.max(c.h, Math.ceil(count.lineHeight + addressLines * read.lineHeight + (this.state.note ? label.lineHeight : 0) + 2 * c.pad + 8));
     const face = new Container({ ...faceStyle(t, c.w, { padding: c.pad, gap: 2 }), width: c.w, height: h, alignItems: 'center' } as never);
     const cells = new Container({ flexDirection: 'row', gap: count.fontSize * 0.18 } as never);
-    for (const ch of this.state.code.split('')) cells.add(new Text({ text: ch, fontSize: count.fontSize, lineHeight: count.lineHeight, fontWeight: 700, color: t.text } as never));
+    for (const ch of this.state.code.split('')) cells.add(new Text({ text: ch, fontSize: count.fontSize, lineHeight: LEADING, fontWeight: 700, color: t.text } as never));
     face.add(cells);
     face.add(this.text(this.state.address, 'read', c.eye, t, { width: inner, align: 'center' }));
     if (this.state.note) face.add(this.text(this.state.note, 'label', c.eye, t, { width: inner, align: 'center', color: t.soft }));

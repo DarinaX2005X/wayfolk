@@ -48,11 +48,10 @@ export function caseStackGeometry(spec: { pages: number; open: number; closed: n
   // Tags of open contradictions on short strings around the top edge of the stack.
   const open = Math.max(0, spec.open);
   const shown = Math.min(open, STACK.tags);
-  const ring = (k: number, n: number): { x: number; z: number; yaw: number } => {
+  const ring = (k: number): { x: number; z: number; yaw: number } => {
     // Around the perimeter, front and sides first (the person sees the front).
     const order = [0.5, 0.3, 0.7, 0.15, 0.85, 0.05, 0.95, 0.4, 0.6, 0.22, 0.78, 0.1];
     const u = order[k % order.length] + Math.floor(k / order.length) * 0.03;
-    void n;
     // u 0..1 runs left side → front → right side.
     if (u < 0.2) return { x: -STACK.w / 2 - 0.004, z: -STACK.d / 2 + (u / 0.2) * STACK.d, yaw: Math.PI / 2 };
     if (u > 0.8) return { x: STACK.w / 2 + 0.004, z: STACK.d / 2 - ((u - 0.8) / 0.2) * STACK.d, yaw: -Math.PI / 2 };
@@ -60,7 +59,7 @@ export function caseStackGeometry(spec: { pages: number; open: number; closed: n
   };
   let numberTag: { at: [number, number, number]; count: number } | null = null;
   for (let k = 0; k < shown; k++) {
-    const p = ring(k, shown);
+    const p = ring(k);
     const y = height - 0.012 - (k % 3) * 0.006;
     parts.push(tint(placed(box(0.0012, 0.012, 0.0012), [p.x, y, p.z]), red));
     const tag = placed(bevelBox(0.022, 0.03, 0.0016, 0.0005, 0.002), [p.x + Math.sin(p.yaw) * 0.001, y - 0.03, p.z + Math.cos(p.yaw) * 0.001], [0.05 * (rnd() - 0.5), p.yaw, 0.12 * (rnd() - 0.5)]);

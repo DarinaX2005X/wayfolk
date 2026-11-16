@@ -5,7 +5,7 @@
  * `nudge()` lifts it by 1 cm once: the first session points at it this way.
  */
 import { Object3D } from '@iwsdk/core';
-import { cylinder, flatRing, lathe, sphere } from './geom';
+import { flatRing, lathe, sphere } from './geom';
 import { part, setMat } from './materials';
 import { attachShadow } from './shadow';
 import { animate, bump, clamp01, lessMotion, now, progress, wobble } from './time';
@@ -44,7 +44,6 @@ export function createVoiceStone(): VoiceStone {
   holder.add(stone);
   root.add(holder);
   attachShadow(stand, { height: 0.035, size: [0.056, 0.056], rest: 0 });
-  void cylinder;
 
   let state: VoiceStoneState = 'idle';
   let level = 0;
