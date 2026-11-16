@@ -11,7 +11,7 @@
  *   - Pointer events on objects come from @pmndrs/pointer-events: `pointerdown`,
  *     `pointerup`, `click`, `pointerenter`, `pointerleave`, with `pointerId` and
  *     `pointerType` ('ray' for hand and controller rays and gaze, 'grab' near a hand,
- *     'touch' for the fingertip, 'mouse' on the canvas).
+ *     'touch' for the fingertip, 'screen-mouse' / 'screen-touch' from the canvas).
  *   - The hand of a pointer: its id equals `world.input.xr.multiPointers[hand]
  *     .getPointer(kind).id`; gaze has `world.input.xr.gazePointer.pointer.id`.
  *   - The wrist of that hand: `world.player.raySpaces[hand]` (the ray starts at the hand
@@ -190,7 +190,8 @@ export type Source = { kind: InputKind; hand: Hand | null };
 export function sourceOf(e: PointerEventLike): Source {
   const b = bound;
   const type = e.pointerType ?? '';
-  if (type === 'mouse' || type === 'pen' || (type === 'touch' && !b?.world.session)) return { kind: 'mouse', hand: null };
+  // Canvas input is forwarded into the scene as "screen-mouse", "screen-touch", "screen-pen".
+  if (type.startsWith('screen-') || type.startsWith('forward-') || type === 'mouse' || type === 'pen') return { kind: 'mouse', hand: null };
   if (!b) return { kind: 'ray', hand: null };
   const xr = b.world.input.xr;
   const id = e.pointerId;

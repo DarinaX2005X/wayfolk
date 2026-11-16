@@ -28,6 +28,9 @@ const MSG_DATED = /^([\p{Lu}][\p{L}'’.-]*(?:\s+[\p{Lu}][\p{L}'’.-]*){0,3}),\
 const MSG_TIMED = /^\[(\d{1,2}:\d{2}(?:\s*[ap]\.?m\.?)?)\]\s+([^:]{1,40}):\s+(.*)$/i;
 const CLAUSE = /^(\d+\.(?:\d+\.?)*|\d+\.\d+(?:\.\d+)*|\([a-z]\)|\([ivx]+\))\s+\S/;
 const SIG = /^(Signed|Signature)\b/i;
+/** Essays in one text: a line of three hyphens between them, a "Name: …" line at the top of each. */
+const SEPARATOR = /^-{3,}$/;
+const NAME = /^Name:\s*\S/i;
 
 /** Splits a line into cells by tabs, pipes or runs of three spaces. */
 export function splitCells(text: string): string[] {
@@ -59,6 +62,16 @@ export function detectBlocks(lines: readonly RawLine[]): Block[] {
       continue;
     }
     if (line.gapBefore) close();
+    if (SEPARATOR.test(text)) {
+      start({ k: 'p', text });
+      close();
+      continue;
+    }
+    if (NAME.test(text)) {
+      start({ k: 'head', text });
+      close();
+      continue;
+    }
     const dates = findDates(text);
     const own = dates.find((d) => d.year !== null);
     const prev: Block | null = cur ?? out[out.length - 1] ?? null;

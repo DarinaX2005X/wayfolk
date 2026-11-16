@@ -165,6 +165,12 @@ function measure(text: string, fontSize: number, weight: number): number {
   return (c.measureText(text).width / px) * fontSize;
 }
 
+/** Width in metres of one line of `text` set in a role at a distance. */
+export function measureLabel(text: string, opts: Pick<LabelOpts, 'role' | 'eyeDist' | 'large' | 'weight'>): number {
+  const { fontSize } = labelMetrics({ ...opts, width: 1 });
+  return measure(text, fontSize, opts.weight ?? 400);
+}
+
 /** Wraps `text` into lines of `width` at most `lines` lines; cuts at a word with "…". */
 export function layoutLabel(text: string, opts: LabelOpts): LabelLayout {
   const { fontSize, lineHeight } = labelMetrics(opts);
@@ -331,7 +337,7 @@ export function createLabelInstances(root: Object3D): LabelInstances {
   };
   let mesh = make();
   const tracked = new Map<Mesh, { seen: number; index: number }>();
-  let order: Mesh[] = [];
+  const order: Mesh[] = [];
 
   function make(): InstancedMesh {
     const m = new InstancedMesh(unit, mat, capacity);
@@ -370,7 +376,8 @@ export function createLabelInstances(root: Object3D): LabelInstances {
           restore(label);
         }
       }
-      order = [...tracked.keys()];
+      order.length = 0;
+      for (const label of tracked.keys()) order.push(label);
       if (order.length > capacity) {
         capacity = Math.max(order.length, capacity * 2);
         mesh.removeFromParent();

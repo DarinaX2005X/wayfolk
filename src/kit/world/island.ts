@@ -47,7 +47,7 @@ function slotDashes(slot: number, out: Matrix4[]): void {
   const add = (r: number, a: number, along: 'r' | 'a'): void => {
     const pos = new Vector3(r * Math.sin(a), surfaceY(r) + 0.002, -r * Math.cos(a)).applyQuaternion(rot);
     const q = new Quaternion().setFromEuler(new Euler(TILT, -a, 0, 'YXZ')).premultiply(rot);
-    const s = along === 'a' ? new Vector3(0.03, 1, 1) : new Vector3(1, 1, 0.03);
+    const s = along === 'a' ? new Vector3(0.03, 1, 0.005) : new Vector3(0.005, 1, 0.03);
     out.push(new Matrix4().compose(pos, q, s));
   };
   const step = 0.05;
@@ -76,7 +76,7 @@ export function createIsland(scale = 1, opts: { visitor?: boolean } = {}): Islan
   const batch = createBatch(ring);
   const visitor = opts.visitor ?? false;
 
-  const dashGeo = prep(box(1, 0.002, 0.005));
+  const dashGeo = prep(box(1, 0.002, 1));
   const empty = new InstancedMesh(dashGeo, mat('outline'), 8 * 120);
   empty.name = 'island:empty';
   empty.frustumCulled = false;

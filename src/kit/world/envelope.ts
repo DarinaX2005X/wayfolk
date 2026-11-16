@@ -10,10 +10,10 @@
  * Local frame of the body: the envelope lies flat, front up, x across (18 cm), z in depth
  * (12 cm, the label edge at +z, toward the person), origin at the centre of its underside.
  */
-import { Object3D } from '@iwsdk/core';
+import { Object3D, Shape } from '@iwsdk/core';
 import type { EnvelopeSpec } from '../../agents/types';
 import { COLOR, MOTION, PANEL } from '../../tokens/tokens';
-import { bevelBox, box, merge, placed, tint } from './geom';
+import { bevelBox, box, merge, placed, slab, tint } from './geom';
 import { makeGrabbable } from './grabbable';
 import { createLabel } from './label';
 import { part } from './materials';
@@ -29,16 +29,14 @@ let sheetGeo: ReturnType<typeof bevelBox> | null = null;
 
 function geometries(): { paper: ReturnType<typeof bevelBox>; flap: ReturnType<typeof merge>; sheet: ReturnType<typeof bevelBox> } {
   paperGeo ??= bevelBox(ENVELOPE.w, ENVELOPE.h, ENVELOPE.d, 0.001, 0.003);
-  // The flap on the back: a shallow triangle of thin paper, hinge at the top edge (z = 0 of the flap).
+  // The flap on the back: a shallow triangle of thin paper, hinge along z = 0, apex at +z.
   if (!flapGeo) {
-    const strips = [];
-    const n = 8;
-    for (let i = 0; i < n; i++) {
-      const z0 = (i / n) * 0.07;
-      const w = ENVELOPE.w * (1 - (i + 0.5) / n) * 0.98;
-      strips.push(placed(box(w, 0.0008, 0.07 / n), [0, 0, z0 + 0.07 / n / 2]));
-    }
-    flapGeo = merge(strips.map((g) => tint(g, COLOR.paper)));
+    const shape = new Shape();
+    shape.moveTo(-ENVELOPE.w / 2 + 0.002, 0);
+    shape.lineTo(ENVELOPE.w / 2 - 0.002, 0);
+    shape.lineTo(0, -0.075);
+    shape.lineTo(-ENVELOPE.w / 2 + 0.002, 0);
+    flapGeo = tint(slab(shape, 0.0008), COLOR.paper);
   }
   sheetGeo ??= bevelBox(0.16, 0.0012, 0.1, 0.0004, 0.002);
   return { paper: paperGeo, flap: flapGeo, sheet: sheetGeo };
@@ -55,8 +53,7 @@ export function createEnvelope(spec: EnvelopeSpec, opts: { large?: boolean } = {
   const hinge = new Object3D();
   hinge.position.set(0, 0, -ENVELOPE.d / 2);
   const flap = part(g.flap, 'paperShade', 'envelope:flap');
-  flap.rotation.x = Math.PI; // under the envelope, pointing toward +z
-  flap.position.y = -0.0002;
+  flap.position.y = -0.001; // under the envelope, pointing toward +z
   hinge.add(flap);
   body.add(hinge);
 
@@ -148,11 +145,12 @@ export function createEnvelope(spec: EnvelopeSpec, opts: { large?: boolean } = {
       const flapK = easeOut(clamp01(kOpen / 0.5));
       hinge.rotation.x = -Math.PI * 0.92 * flapK;
       const fanK = easeOut(clamp01((kOpen - 0.4) / 0.6));
+      // The sheets slide out over the far edge and stand up in a fan, toward the cutter.
       sheets.forEach((sheet, i) => {
         sheet.visible = kOpen > 0.4;
-        const spread = (i - 1) * 0.16 * fanK;
-        sheet.position.set(spread * 0.08, ENVELOPE.h / 2 + 0.002 * i, -0.06 * fanK - 0.01 * i * fanK);
-        sheet.rotation.set(0, spread, 0);
+        const spread = (i - 1) * 0.22 * fanK;
+        sheet.position.set(spread * 0.05, ENVELOPE.h / 2 + 0.002 * i + 0.03 * fanK, -0.05 * fanK - 0.004 * i);
+        sheet.rotation.set(-1.0 * fanK, spread, 0, 'YXZ');
       });
       label.visible = true;
     },

@@ -14,7 +14,8 @@ export type PdfPage = { n: number; lines: RawLine[]; noText: boolean };
 type TextItem = { str: string; transform: number[]; width: number; height: number; hasEOL?: boolean };
 type PdfJs = {
   getDocument(src: { data: Uint8Array; isEvalSupported?: boolean; useSystemFonts?: boolean; verbosity?: number; disableFontFace?: boolean }): {
-    promise: Promise<{ numPages: number; getPage(n: number): Promise<{ getTextContent(): Promise<{ items: unknown[] }> }>; destroy(): Promise<void> }>;
+    promise: Promise<{ numPages: number; getPage(n: number): Promise<{ getTextContent(): Promise<{ items: unknown[] }> }> }>;
+    destroy(): Promise<void>;
   };
   GlobalWorkerOptions: { workerSrc: string };
 };
@@ -28,7 +29,9 @@ async function pdfjs(): Promise<PdfJs> {
   if (!loading) {
     loading = (async () => {
       const inBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
-      if (!inBrowser) return (await import('pdfjs-dist/legacy/build/pdf.mjs')) as unknown as PdfJs;
+      // The Node build stays out of the browser bundle: its name is not visible to the bundler.
+      const legacy = 'pdfjs-dist/legacy/build/pdf.mjs';
+      if (!inBrowser) return (await import(/* @vite-ignore */ legacy)) as unknown as PdfJs;
       const lib = (await import('pdfjs-dist')) as unknown as PdfJs;
       const worker = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
       lib.GlobalWorkerOptions.workerSrc = worker.default;
@@ -41,10 +44,12 @@ async function pdfjs(): Promise<PdfJs> {
 
 export async function readPdf(bytes: Uint8Array, name = ''): Promise<{ pages: PdfPage[]; scanned: boolean }> {
   const lib = await pdfjs();
+  const task = lib.getDocument({ data: bytes, isEvalSupported: false, useSystemFonts: false, verbosity: 0, disableFontFace: true });
   let doc;
   try {
-    doc = await lib.getDocument({ data: bytes, isEvalSupported: false, useSystemFonts: false, verbosity: 0, disableFontFace: true }).promise;
+    doc = await task.promise;
   } catch (error) {
+    await task.destroy();
     const n = (error as { name?: string })?.name ?? '';
     if (n === 'PasswordException') throw new MaterialError('encrypted', name);
     throw new MaterialError('unsupported', name);
@@ -62,7 +67,7 @@ export async function readPdf(bytes: Uint8Array, name = ''): Promise<{ pages: Pd
     const without = pages.filter((p) => p.noText).length;
     return { pages, scanned: pages.length > 0 && without > pages.length / 2 };
   } finally {
-    await doc.destroy();
+    await task.destroy();
   }
 }
 
@@ -74,7 +79,8 @@ export async function readPdf(bytes: Uint8Array, name = ''): Promise<{ pages: Pd
  */
 export function buildLines(items: readonly TextItem[]): RawLine[] {
   const pieces = items
-    .filter((it) => it.str.length > 0)
+    // Space pieces carry no position worth keeping (pdf.js may stretch one over a column gap); gaps decide spaces.
+    .filter((it) => it.str.trim().length > 0)
     .map((it) => ({ str: it.str, x: it.transform[4], y: it.transform[5], w: it.width, size: Math.abs(it.transform[3]) || it.height || 10 }));
   pieces.sort((a, b) => b.y - a.y || a.x - b.x);
   const rows: (typeof pieces)[] = [];
@@ -86,7 +92,9 @@ export function buildLines(items: readonly TextItem[]): RawLine[] {
   rows.sort((a, b) => b[0].y - a[0].y);
   const spacings: number[] = [];
   for (let i = 1; i < rows.length; i++) spacings.push(rows[i - 1][0].y - rows[i][0].y);
-  const typical = median(spacings) || 14;
+  // The leading of the body text: the tightest spacing between lines (a short page has too few gaps for a median).
+  const lineGaps = spacings.filter((d) => d > 2);
+  const typical = lineGaps.length ? Math.min(...lineGaps) : 14;
   const out: RawLine[] = [];
   rows.forEach((row, i) => {
     row.sort((a, b) => a.x - b.x);
@@ -115,10 +123,4 @@ export function buildLines(items: readonly TextItem[]): RawLine[] {
     if (line.text.trim()) out.push(line);
   });
   return out;
-}
-
-function median(xs: number[]): number {
-  if (!xs.length) return 0;
-  const s = [...xs].sort((a, b) => a - b);
-  return s[Math.floor(s.length / 2)];
 }

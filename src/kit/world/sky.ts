@@ -10,7 +10,7 @@
  * environment intensity; `setMode('void')` brings both back.
  */
 import { BackSide, Color, IBLGradient, Mesh, Object3D, ShaderMaterial, SphereGeometry, type World } from '@iwsdk/core';
-import { COLOR, SKY } from '../../tokens/tokens';
+import { LIGHT, SKY } from '../../tokens/tokens';
 import { zone } from '../../app/perf/zone';
 import { animate, easeInOut, installKit, now, progress, lessMotion } from './time';
 
@@ -48,14 +48,15 @@ void main() {
   for (int i = 0; i < 4; i++) {
     if (el <= uEl[i] && el >= uEl[i + 1]) {
       float k = (el - uEl[i + 1]) / (uEl[i] - uEl[i + 1]);
-      k = k * k * (3.0 - 2.0 * k);
+      // Above +12° the sky deepens quickly toward the dark zenith; elsewhere a smooth step.
+      k = i == 0 ? pow(k, 0.45) : k * k * (3.0 - 2.0 * k);
       c = mix(uStops[i + 1], uStops[i], k);
     }
   }
   if (el > uEl[0]) c = uStops[0];
   float a = degrees(acos(clamp(dot(d, uSun), -1.0, 1.0)));
-  float patch = exp(-(a * a) / (2.0 * pow(uSunRadius * 0.5, 2.0)));
-  c = mix(c, uSunColor, patch * 0.62);
+  float glow = exp(-(a * a) / (2.0 * pow(uSunRadius * 0.5, 2.0)));
+  c = mix(c, uSunColor, glow * 0.55);
   gl_FragColor = vec4(c, uOpacity);
   #include <colorspace_fragment>
 }`;
@@ -74,7 +75,7 @@ export function createDomeMesh(): Mesh {
       uStops: { value: stops },
       uEl: { value: SKY.stops.map((s) => s.el) },
       uSun: { value: dirFrom(SKY.sun.az, SKY.sun.el) },
-      uSunColor: { value: new Color(COLOR.paper) },
+      uSunColor: { value: new Color(LIGHT.key.color) },
       uSunRadius: { value: SKY.sun.radiusDeg },
       uOpacity: { value: 1 },
     },

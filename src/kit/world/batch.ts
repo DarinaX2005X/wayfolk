@@ -60,6 +60,7 @@ export function createBatch(root: Object3D): Batch {
   let labels: LabelInstances | null = null;
   let frame = 0;
   let opacity = 1;
+  const stale: Entry[] = [];
 
   const pool = (cls: MatClass): Pool => {
     let p = pools.get(cls);
@@ -236,11 +237,9 @@ export function createBatch(root: Object3D): Batch {
       root.updateMatrixWorld(true);
       inv.copy(root.matrixWorld).invert();
       visit(root);
-      for (const entry of [...entries.values()]) {
-        if (entry.seen !== frame) {
-          release(entry, true);
-        }
-      }
+      stale.length = 0;
+      for (const entry of entries.values()) if (entry.seen !== frame) stale.push(entry);
+      for (const entry of stale) release(entry, true);
       labels?.finish(frame, inv);
     },
     update() {

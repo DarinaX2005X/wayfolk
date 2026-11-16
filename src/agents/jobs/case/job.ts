@@ -22,7 +22,6 @@ import type {
   Explained,
   ExtractedEvent,
   FactField,
-  Note,
   OpenAsk,
   Page,
   Party,
@@ -400,7 +399,8 @@ export class CaseRun {
 
   private async extract(b: Batch): Promise<{ claims: { claim: ExtractedEvent; planted: boolean; seeded: boolean; id: string }[]; unread: number[] }> {
     const schema = extractSchema(this.plan);
-    const validate = (j: unknown) => schemaProblems(fillAnswer(j), schema);
+    // Optional values the author's scripted answers may leave out are filled in; a missing list is still bad output.
+    const validate = (j: unknown) => schemaProblems(Array.isArray((j as { events?: unknown })?.events) ? fillAnswer(j) : j, schema);
     const read = (r: CallResult, prefix: string) => {
       const events = fillAnswer(r.json).events;
       const planted = new Set(r.response.planted ?? []);
@@ -548,7 +548,10 @@ export class CaseRun {
         st.audit.push(item);
         this.checkNote(correctionLine(v, track.claim), false);
       }
-      for (const f of v.factItems) this.checkNote(`${f.claim.split(':')[0]} ${f.claim.split(': ')[1]} is not in the quote on page ${e.source.page}. The fact is removed; the event stays.`, false);
+      for (const f of v.factItems) {
+        const [field, value] = f.claim.split(': ');
+        this.checkNote(`${fieldLabel(field)} ${value} is not in the quote on page ${e.source.page}. The fact is removed; the event stays.`, false);
+      }
       return;
     }
     if (v.status === 'merged') {
@@ -600,7 +603,7 @@ export class CaseRun {
         role: 'extractor',
         pages: st.pages,
         priority: 1,
-        validate: (j) => schemaProblems(fillRecheck(j), schema),
+        validate: (j) => schemaProblems(Array.isArray((j as { fixes?: unknown })?.fixes) ? fillRecheck(j) : j, schema),
       });
     } catch (error) {
       if (error instanceof LlmError && error.code === 'bad-output') {

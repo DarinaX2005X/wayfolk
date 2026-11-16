@@ -65,9 +65,12 @@ export function env(total: number, a = 0.004): Env {
   return hit(attack, Math.max(0.001, (total - attack) / 7.5));
 }
 
-/** A noise band held to [lo, hi] by two poles on each side. */
+/**
+ * A noise band held to [lo, hi] by two second-order stages on each side, set a little
+ * inside the edges so that the skirts of the filters stay in the band too.
+ */
 const band = (lo: number, hi: number, centre?: Band): Band[] => {
-  const b = [hp(lo), hp(lo), lp(hi), lp(hi)];
+  const b = [hp(lo * 1.1), hp(lo * 1.1), lp(hi * 0.85), lp(hi * 0.85)];
   return centre ? [centre, ...b] : b;
 };
 

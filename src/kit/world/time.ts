@@ -123,9 +123,12 @@ export function installKit(world: World, clock?: { now(): number }): void {
 
 export const clamp01 = (x: number): number => (x < 0 ? 0 : x > 1 ? 1 : x);
 export const lerp = (a: number, b: number, k: number): number => a + (b - a) * k;
-/** Progress 0..1 of a move that started at `start` and lasts `ms` (0 ms jumps). */
+/**
+ * Progress 0..1 of a move that started at `start` and lasts `ms` (0 ms jumps). A move
+ * that never started (`start` = −Infinity) counts as long finished: the resting state.
+ */
 export function progress(t: number, start: number, ms: number): number {
-  if (!(start > -Infinity)) return 0;
+  if (!(start > -Infinity)) return 1;
   if (ms <= 0) return t >= start ? 1 : 0;
   return clamp01((t - start) / ms);
 }

@@ -1,0 +1,151 @@
+{
+  "name": "Two people with one surname",
+  "goal": "Find where the stories don't match",
+  "plan": {
+    "parties": [
+      {
+        "id": "mark",
+        "name": "Mark Ellison",
+        "role": "Tenant",
+        "aliases": [
+          "Mr Ellison",
+          "Mark",
+          "tenant"
+        ]
+      },
+      {
+        "id": "lena",
+        "name": "Lena Ortiz",
+        "role": "Landlord",
+        "aliases": [
+          "Ms Ortiz",
+          "Lena",
+          "landlord"
+        ]
+      },
+      {
+        "id": "dana",
+        "name": "Dana Whitlock",
+        "role": "Managing agent",
+        "aliases": [
+          "Ms Whitlock",
+          "Dana",
+          "agent"
+        ]
+      },
+      {
+        "id": "ana",
+        "name": "Ana Ortiz",
+        "role": "Landlord's daughter",
+        "aliases": [
+          "Ana"
+        ]
+      }
+    ],
+    "topics": [
+      "keys",
+      "deposit",
+      "leak",
+      "repairs"
+    ],
+    "fields": [
+      {
+        "id": "keys.returned_on",
+        "topic": "keys",
+        "type": "date",
+        "question": "When were the keys returned?"
+      },
+      {
+        "id": "deposit.amount",
+        "topic": "deposit",
+        "type": "amount",
+        "question": "How much was the deposit?"
+      },
+      {
+        "id": "leak.started_on",
+        "topic": "leak",
+        "type": "date",
+        "question": "When did the leak start?"
+      },
+      {
+        "id": "repairs.authorised",
+        "topic": "repairs",
+        "type": "yesno",
+        "question": "Did the landlord authorise the plumber?"
+      }
+    ]
+  },
+  "doc": {
+    "id": "msgs",
+    "title": "Text messages",
+    "kind": "messages",
+    "from": 1,
+    "to": 1
+  },
+  "page": {
+    "docId": "msgs",
+    "n": 1,
+    "blocks": [
+      {
+        "k": "msg",
+        "who": "Ana Ortiz",
+        "at": "20 January 2026, 18:00",
+        "text": "My mother will call the plumber tomorrow."
+      },
+      {
+        "k": "msg",
+        "who": "Lena Ortiz",
+        "at": "21 January 2026, 09:15",
+        "text": "I have called the plumber about the leak."
+      }
+    ]
+  },
+  "expect": {
+    "actorsByQuote": [
+      {
+        "quote": "My mother will call",
+        "actors": [
+          "ana"
+        ]
+      },
+      {
+        "quote": "I have called the plumber",
+        "actors": [
+          "lena"
+        ]
+      }
+    ]
+  },
+  "example": {
+    "events": [
+      {
+        "kind": "record",
+        "date": "2026-01-20",
+        "time": "",
+        "actors": [
+          "Ana Ortiz"
+        ],
+        "label": "Plumber planned",
+        "summary": "Something happened.",
+        "quote": "Ana Ortiz, 20 January 2026, 18:00: My mother will call the plumber tomorrow.",
+        "page": 1,
+        "topic": "repairs",
+        "facts": []
+      },
+      {
+        "kind": "record",
+        "date": "2026-01-21",
+        "time": "",
+        "actors": [
+          "Lena Ortiz"
+        ],
+        "label": "Plumber called",
+        "summary": "Something happened.",
+        "quote": "Lena Ortiz, 21 January 2026, 09:15: I have called the plumber about the leak.",
+        "page": 1,
+        "topic": "repairs",
+        "facts": []
+      }
+    ]
+  }
+}

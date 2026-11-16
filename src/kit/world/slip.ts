@@ -105,8 +105,11 @@ export function createSlip(item: CheckedItem, opts: { caption?: [string, string]
   cover.rotation.x = Math.PI;
   bl.add(cover);
   const coverSpec = PANEL.traySlip;
-  const label = createLabel(`${caption[0]}\n${caption[1]}`, { role: 'label', width: 0.05, eyeDist: coverSpec.eyeDist, lines: 2, color: COLOR.vermilionText, weight: 700 });
+  // Two lines of up to 9 characters across the slip, under the stamp ring in the corner.
+  const label = createLabel(`${caption[0]}
+${caption[1]}`, { role: 'label', width: FOLDED.w - 0.008, eyeDist: coverSpec.eyeDist, lines: 2, color: COLOR.vermilionText, weight: 700 });
   label.rotation.x = -Math.PI / 2;
+  label.position.set(0, 0.0006, FOLDED.d / 2 - 0.003 - label.scale.y / 2);
   cover.add(label);
   const face = new Object3D();
   tl.add(face);
@@ -118,7 +121,7 @@ export function createSlip(item: CheckedItem, opts: { caption?: [string, string]
     const list: Object3D[] = [];
     // On the folded face (units of the folded slip) and on the open top-left quarter.
     for (const [parent, size, x, z] of [
-      [cover, 0.017, -0.0245, -0.0085],
+      [cover, 0.015, -0.026, -0.015],
       [face, 0.024, -0.026, -0.022],
     ] as [Object3D, number, number, number][]) {
       const { g, key } = markGeometry(mark, size);

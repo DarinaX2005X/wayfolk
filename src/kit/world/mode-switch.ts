@@ -17,7 +17,7 @@ const H = 0.03;
 const TURN_MS = 420;
 
 function skyBand(): ReturnType<typeof cylinder> {
-  const g = cylinder(R * 0.86, R * 0.86, 0.008, 32, true);
+  const g = cylinder(R * 0.94, R * 0.94, 0.008, 32, true);
   const stops = SKY.stops.map((s) => ({ el: s.el, c: new Color(s.color) }));
   const out = new Color();
   return tintBy(g, (_n, p) => {
@@ -40,7 +40,7 @@ export function createModeSwitch(): ModeSwitch {
   root.add(base);
   const band = part(skyBand(), 'vcCeramic', 'mode-switch:band');
   band.position.y = 0.008;
-  const empty = part(cylinder(R * 0.86, R * 0.86, 0.008, 32, true), 'boneShade', 'mode-switch:empty');
+  const empty = part(cylinder(R * 0.94, R * 0.94, 0.008, 32, true), 'boneShade', 'mode-switch:empty');
   empty.position.y = 0.008;
   empty.visible = false;
   root.add(band, empty);
@@ -49,13 +49,14 @@ export function createModeSwitch(): ModeSwitch {
   const shell = part(
     lathe(
       [
-        [0, H - 0.016],
-        [R * 0.55, H - 0.0165],
-        [R * 0.85, H - 0.019],
-        [R * 0.98, H - 0.024],
-        [R, 0.002],
-        [R * 0.97, 0],
         [R * 0.9, 0],
+        [R * 0.97, 0],
+        [R, 0.002],
+        [R, H - 0.024],
+        [R * 0.97, H - 0.019],
+        [R * 0.85, H - 0.0165],
+        [R * 0.55, H - 0.0155],
+        [0, H - 0.015],
       ],
       36,
     ),

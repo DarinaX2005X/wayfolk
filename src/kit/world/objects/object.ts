@@ -13,7 +13,7 @@ import { Object3D, Shape, Vector3, type BufferGeometry, type Mesh } from '@iwsdk
 import type { ObjectSpec } from '../../../agents/types';
 import { COLOR, MOTION } from '../../../tokens/tokens';
 import { bevelBox, cylinder, flatRing, merge, placed, slab, tint, torusArc } from '../geom';
-import { createLabel, setLabelText } from '../label';
+import { createLabel, measureLabel, setLabelText } from '../label';
 import { part } from '../materials';
 import { attachShadow, setShadowHeight } from '../shadow';
 import { animate, easeBack, lessMotion, now, progress, clamp01 } from '../time';
@@ -111,9 +111,9 @@ export function createObject(spec: ObjectSpec, opts: { seed?: number } = {}): Pr
   const tag = new Object3D();
   tag.name = 'object:tag';
   const tagBody = part(merge([tint(bevelBox(0.06, 0.0015, 0.09, 0.0004, 0.004), COLOR.paper), tint(placed(flatRing(0.0035, 0.0008, 12), [0, 0.0015, -0.036]), COLOR.edge)]), 'vcMatte', 'object:tag');
-  tagBody.rotation.x = -1.2;
+  tagBody.rotation.x = -1.3;
   tag.add(tagBody);
-  tag.position.set(fw / 2 - 0.035, 0.002, fd / 2 + 0.03);
+  tag.position.set(-fw / 2 + 0.04, 0.002, fd / 2 + 0.025);
   root.add(tag);
 
   // Selected: a cobalt ring on the tiles around, four bone buttons at the foot.
@@ -183,10 +183,13 @@ export function createObject(spec: ObjectSpec, opts: { seed?: number } = {}): Pr
         const node = new Object3D();
         node.name = `object-button:${b.id}`;
         node.userData.target = `object-button:${b.id}`;
-        const plate = part(bevelBox(0.11, 0.048, 0.008, 0.002, 0.008), 'bone', 'object:button');
-        plate.position.y = -0.024;
+        // A button 60 mm high for a ray at this distance, as wide as its label needs.
+        const textW = measureLabel(b.label, { role: 'label', eyeDist: 1.6, weight: 700 });
+        const w = Math.max(0.1, textW + 0.024);
+        const plate = part(bevelBox(w, 0.06, 0.008, 0.002, 0.012), 'bone', 'object:button');
+        plate.position.y = -0.03;
         node.add(plate);
-        const label = createLabel(b.label, { role: 'label', width: 0.1, eyeDist: 1.6, lines: 1, align: 'center', color: COLOR.cobaltText, weight: 700 });
+        const label = createLabel(b.label, { role: 'label', width: w - 0.012, eyeDist: 1.6, lines: 1, align: 'center', color: COLOR.cobaltText, weight: 700 });
         label.position.set(0, 0, 0.0085);
         node.add(label);
         const p = obj.buttonPoints()[i];
@@ -198,8 +201,8 @@ export function createObject(spec: ObjectSpec, opts: { seed?: number } = {}): Pr
       void setLabelText;
     },
     buttonPoints() {
-      // An arc in front of the object, toward the person, 12 cm apart, raised 3 cm.
-      return [-1.5, -0.5, 0.5, 1.5].map((k) => new Vector3(k * 0.12, 0.05, fd / 2 + 0.09 + Math.abs(k) * -0.02));
+      // A row in front of the object, toward the person, 15 cm apart, curving back at the ends.
+      return [-1.5, -0.5, 0.5, 1.5].map((k) => new Vector3(k * 0.15, 0.06, fd / 2 + 0.1 - Math.abs(k) * 0.025));
     },
     update(t) {
       const reduced = lessMotion();

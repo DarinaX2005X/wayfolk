@@ -1,0 +1,21 @@
+{
+  "name": "probe 7: Meta VR Glasses, gaze aims and a pinch selects; pull and take become selects",
+  "route": "/gallery?section=probe",
+  "xr": true,
+  "device": "metaVRGlasses",
+  "mode": "gaze",
+  "steps": [
+    { "label": "probe ready", "eval": "typeof handProbe !== 'undefined' && handProbe.reset() === undefined", "equals": true, "within": 30 },
+    { "label": "dwell off", "eval": "(store.settings.value = { ...store.settings.peek(), dwell: false }, true)", "equals": true },
+    { "label": "look at the button and pinch", "run": { "device": "hand-right", "steps": [ { "target": "probe:button", "press": {} } ] } },
+    { "label": "selected by gaze", "eval": "handProbe.last('select', 'probe:button')?.input", "equals": "gaze" },
+    { "label": "look at the cube and pinch: a select, not a grab", "run": { "device": "hand-right", "steps": [ { "target": "probe:cube", "press": {} } ] } },
+    { "label": "selected", "eval": "handProbe.last('select', 'probe:cube')?.input", "equals": "gaze" },
+    { "label": "not taken", "eval": "handProbe.count('grab')", "equals": 0 },
+    { "label": "look at the bead and pinch: the pull is a select", "run": { "device": "hand-right", "steps": [ { "target": "probe:bead", "press": {} } ] } },
+    { "label": "committed without a pull", "eval": "handProbe.count('pull-commit', 'probe:bead')", "equals": 1 },
+    { "label": "the left hand pinches too", "run": { "device": "hand-left", "steps": [ { "target": "probe:button", "press": {} } ] } },
+    { "label": "a second select", "eval": "handProbe.count('select', 'probe:button')", "equals": 2 },
+    { "shot": "probe-glasses.png" }
+  ]
+}

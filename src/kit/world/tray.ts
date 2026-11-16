@@ -49,14 +49,12 @@ export function createTray(kind: 'sent-back' | 'fool'): Tray {
   tag.name = `tray:${kind}:count`;
   tag.userData.target = `tray:${kind}:count`;
   const tagBody = part(bevelBox(0.034, 0.024, 0.003, 0.0008, 0.003), 'bone', 'tray:tag');
-  tagBody.rotation.x = Math.PI / 2;
-  tagBody.position.set(0, 0.0015, 0);
   tag.add(tagBody);
   const tagText = createLabel('0', { role: 'label', width: 0.03, eyeDist: 0.5, weight: 700, lines: 1, align: 'center' });
-  tagText.position.set(0, 0.001, 0.0032);
+  tagText.position.set(0, 0.012, 0.0018);
   tag.add(tagText);
-  tag.position.set(0, FLOOR + RIM + 0.012, -D / 2 + WALL / 2);
-  tag.rotation.x = -0.35;
+  tag.position.set(0, FLOOR + RIM - 0.002, -D / 2 + WALL / 2);
+  tag.rotation.x = -0.3;
   root.add(tag);
 
   // The fool tray's own stamp head on its post.
@@ -82,7 +80,7 @@ export function createTray(kind: 'sent-back' | 'fool'): Tray {
     const yaw = (rand(seed, 1) - 0.5) * 0.22;
     out.set((rand(seed, 2) - 0.5) * 0.008, FLOOR + 0.0006 + i * SLIP_T, 0.012 + (rand(seed, 3) - 0.5) * 0.01);
     if (kind === 'fool') out.x -= 0.006;
-    return { pos: out, yaw: yaw + Math.PI / 2 };
+    return { pos: out, yaw };
   };
 
   const tray: Tray = {

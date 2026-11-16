@@ -1,0 +1,136 @@
+{
+  "name": "A forwarded email quoting an older one: one event for the old text, on the page named",
+  "goal": "Find where the stories don't match",
+  "plan": {
+    "parties": [
+      {
+        "id": "mark",
+        "name": "Mark Ellison",
+        "role": "Tenant",
+        "aliases": [
+          "Mr Ellison",
+          "Mark",
+          "tenant"
+        ]
+      },
+      {
+        "id": "lena",
+        "name": "Lena Ortiz",
+        "role": "Landlord",
+        "aliases": [
+          "Ms Ortiz",
+          "Lena",
+          "landlord"
+        ]
+      },
+      {
+        "id": "dana",
+        "name": "Dana Whitlock",
+        "role": "Managing agent",
+        "aliases": [
+          "Ms Whitlock",
+          "Dana",
+          "agent"
+        ]
+      }
+    ],
+    "topics": [
+      "keys",
+      "deposit",
+      "leak",
+      "repairs"
+    ],
+    "fields": [
+      {
+        "id": "keys.returned_on",
+        "topic": "keys",
+        "type": "date",
+        "question": "When were the keys returned?"
+      },
+      {
+        "id": "deposit.amount",
+        "topic": "deposit",
+        "type": "amount",
+        "question": "How much was the deposit?"
+      },
+      {
+        "id": "leak.started_on",
+        "topic": "leak",
+        "type": "date",
+        "question": "When did the leak start?"
+      },
+      {
+        "id": "repairs.authorised",
+        "topic": "repairs",
+        "type": "yesno",
+        "question": "Did the landlord authorise the plumber?"
+      }
+    ]
+  },
+  "doc": {
+    "id": "fwd",
+    "title": "Forwarded email",
+    "kind": "email",
+    "from": 1,
+    "to": 1
+  },
+  "page": {
+    "docId": "fwd",
+    "n": 1,
+    "blocks": [
+      {
+        "k": "head",
+        "text": "From: Dana Whitlock"
+      },
+      {
+        "k": "head",
+        "text": "Date: Monday 19 January 2026, 10:02"
+      },
+      {
+        "k": "p",
+        "text": "Lena, forwarding the tenant's email below. I have passed it to the plumber."
+      },
+      {
+        "k": "p",
+        "text": "> On 12 January 2026 Mark Ellison wrote: The bathroom ceiling has been leaking for two weeks now."
+      }
+    ]
+  },
+  "expect": {
+    "maxEvents": 2,
+    "quoteOnce": "leaking for two weeks"
+  },
+  "example": {
+    "events": [
+      {
+        "kind": "record",
+        "date": "2026-01-19",
+        "time": "",
+        "actors": [
+          "Dana Whitlock",
+          "Lena Ortiz"
+        ],
+        "label": "Forwarded",
+        "summary": "Something happened.",
+        "quote": "Lena, forwarding the tenant's email below. I have passed it to the plumber.",
+        "page": 1,
+        "topic": "leak",
+        "facts": []
+      },
+      {
+        "kind": "record",
+        "date": "2026-01-12",
+        "time": "",
+        "actors": [
+          "Mark Ellison"
+        ],
+        "label": "Leak reported",
+        "summary": "Something happened.",
+        "quote": "On 12 January 2026 Mark Ellison wrote: The bathroom ceiling has been leaking for two weeks now",
+        "page": 1,
+        "topic": "leak",
+        "facts": []
+      }
+    ]
+  }
+}

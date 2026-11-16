@@ -117,7 +117,7 @@ export function willowClaims(): ExtractedEvent[] {
     // 8 planted: a participant who is not in the case -> unknown-actor, withdrawn
     ev({ page: 2, date: '2026-03-04', actors: ['Ms Whitmore'], label: 'Fee told', quote: 'Nina Park, 4 March 2026, 18:20: The plumber from Vale was here on 2 March. The fee was $180.' }),
     // 9 a duplicate of 3 -> merged
-    ev({ page: 2, date: '2026-03-04', actors: ['Owen Hale'], label: 'No consent', quote: 'I never agreed to a call-out' }),
+    ev({ page: 2, date: '', actors: ['Owen Hale'], label: 'No consent', quote: 'I never agreed to a call-out' }),
     // 10 planted: "it" changed to "that" -> quote-reworded, corrected
     ev({ page: 2, date: '', actors: ['Owen Hale'], label: 'Invoice asked', quote: 'Send me the invoice and I will look at that' }),
     // 11 planted: a fee the quote does not give -> the fact is removed, the event stays

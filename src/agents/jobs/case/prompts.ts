@@ -47,7 +47,8 @@ const QUOTE_RULE =
 const DATE_RULE =
   'date: ISO YYYY-MM-DD of when the event happened. For a record take it from the quote or from the heading of the page; ' +
   'for an account give a date only when the quote states it, otherwise "". A date written without a year takes the year of the ' +
-  'nearest full date above it on the same page. time: HH:MM in 24 hours, or "".';
+  'nearest full date above it on the same page. When the quote names only a weekday ("on Friday") and no date, leave date "" ' +
+  'rather than guessing it. time: HH:MM in 24 hours, or "".';
 
 const FACT_RULE =
   'facts: only fields from the list, and only when this quote states the value. basis "literal" when the value is written in the quote ' +

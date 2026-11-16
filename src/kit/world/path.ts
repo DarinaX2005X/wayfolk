@@ -124,7 +124,7 @@ export function createPath(): PathView {
   root.add(shelfRoot);
 
   const stakeGeo = stakeGeometry();
-  const collarGeo = flatRing(STAKE.d / 2 + 0.0012, 0.0022, 20);
+  const collarGeo = flatRing(STAKE.d / 2 + 0.002, 0.0036, 20);
   const rodGeo = cylinder(LAYOUT.board.rod / 2, LAYOUT.board.rod / 2, ROD_TOP - SHELF.y, 8);
   let stakes: StakeNode[] = [];
   let leaving: StakeNode[] = [];

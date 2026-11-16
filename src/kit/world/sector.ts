@@ -31,10 +31,11 @@ import {
   Mesh,
   Object3D,
   Quaternion,
+  Shape,
   Vector3,
 } from '@iwsdk/core';
 import { COLOR, LAYOUT, MATERIAL, MOTION, SEAT } from '../../tokens/tokens';
-import { bevelBox, box, merge, prep, tint } from './geom';
+import { bevelBox, box, merge, prep, slab, tint } from './geom';
 import { mat, part } from './materials';
 import { animate, drop, easeInOut, easeOut, lessMotion, now, progress, rand } from './time';
 import type { SectorState, SectorView } from './types';
@@ -167,6 +168,22 @@ function baseGeometry(): BufferGeometry {
 }
 let baseGeo: BufferGeometry | null = null;
 
+/** A tile whose inner edge (+z, toward the person) is `inner` wide and outer edge `outer` wide. */
+function trapezoidTile(inner: number, outer: number, depth: number): BufferGeometry {
+  const shape = new Shape();
+  const b = MATERIAL.tile.bevel;
+  const hi = inner / 2 - b;
+  const ho = outer / 2 - b;
+  const hd = depth / 2 - b;
+  // Shape y becomes -z after slab(): +y is the outer edge.
+  shape.moveTo(-hi, -hd);
+  shape.lineTo(hi, -hd);
+  shape.lineTo(ho, hd);
+  shape.lineTo(-ho, hd);
+  shape.lineTo(-hi, -hd);
+  return slab(shape, TILE_H, b);
+}
+
 /** Tile geometry for a grid: sized to the middle cell, base on y = 0. */
 function tileGeometry(sx: number, sz: number): BufferGeometry {
   return bevelBox(sx, TILE_H, sz, MATERIAL.tile.bevel, 0.002);
@@ -224,7 +241,7 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
     const add = (r: number, a: number, along: 'r' | 'a'): void => {
       const pos = new Vector3(r * Math.sin(a), surfaceY(r) + y, -r * Math.cos(a));
       const q = new Quaternion().setFromEuler(new Euler(TILT, -a, along === 'r' ? 0 : 0, 'YXZ'));
-      const s = along === 'a' ? new Vector3(0.022, 1, 1) : new Vector3(1, 1, 0.022);
+      const s = along === 'a' ? new Vector3(0.022, 1, 0.005) : new Vector3(0.005, 1, 0.022);
       dashPoses.push(new Matrix4().compose(pos, q, s));
     };
     const step = 0.036;
@@ -247,7 +264,7 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
     arc(RING.outer + 0.01, true);
     side(-SPAN / 2 - 0.006, false);
   }
-  const dashGeo = prep(box(1, 0.0025, 0.005));
+  const dashGeo = prep(box(1, 0.0025, 1));
   const outline = new InstancedMesh(dashGeo, mat('cobalt'), dashPoses.length);
   outline.name = `sector:${spec.slot}:outline`;
   outline.frustumCulled = false;
@@ -302,23 +319,31 @@ export function createSector(spec: { slot: number; seed: number }): SectorView {
     }
     const seam = MATERIAL.seam.closed;
     const pose = poseA;
-    cellPose(g, 0, seam, pose);
-    const tile = tileGeometry(pose.sx, pose.sz);
     const pieces: BufferGeometry[] = [];
     const tiles = Math.ceil(n / g.perTile);
+    // One trapezoid per row (narrower at the inner edge), so the tiles follow the wedge.
+    const rowTiles = new Map<number, BufferGeometry>();
+    let tile: BufferGeometry | null = null;
     for (let j = 0; j < tiles + withCourse; j++) {
-      if (j < tiles) cellPose(g, j, seam, pose);
+      const isCourse = j >= tiles;
+      if (!isCourse) cellPose(g, j, seam, pose);
       else cellPose(g, j - tiles, seam, pose, true, withCourse);
+      const row = isCourse ? -1 : cellOf(g, j).row;
+      tile = rowTiles.get(row) ?? null;
+      if (!tile) {
+        const dr = isCourse ? COURSE_W : (RING.outer - RING.inner) / g.rows;
+        const r0 = isCourse ? RING.outer + 0.004 : RING.inner + row * dr;
+        const da = isCourse ? SPAN / withCourse : SPAN / g.cols;
+        tile = trapezoidTile(r0 * da - seam, (r0 + dr) * da - seam, pose.sz);
+        rowTiles.set(row, tile);
+      }
       const c = tile.clone();
-      const bb = tile.boundingBox!;
-      const sx = pose.sx / (bb.max.x - bb.min.x);
-      const sz = pose.sz / (bb.max.z - bb.min.z);
-      m4.compose(pose.pos, pose.q, s3.set(sx, 1, sz));
+      m4.compose(pose.pos, pose.q, s3.set(1, 1, 1));
       c.applyMatrix4(m4);
       tint(c, toneOf(j < tiles ? j : 100000 + j - tiles));
       pieces.push(c);
     }
-    trisPerTile = (tile.index ? tile.index.count : tile.attributes.position.count) / 3;
+    trisPerTile = tile ? (tile.index ? tile.index.count : tile.attributes.position.count) / 3 : 0;
     mergedTiles = tiles + withCourse;
     baseGeo ??= baseGeometry();
     pieces.push(baseGeo);

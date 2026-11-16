@@ -571,7 +571,9 @@ export function createInstruments(world: World | null, max = 6): InstrumentPool 
         const top = INSTRUMENT.drumH + 0.008;
         if (it.carry) {
           loads.setGeometryIdAt(li.carry, loadIds[it.carry]);
-          m4.makeTranslation(0, top, 0.002);
+          // The load turns with the body, but its writing reads from the seat.
+          loadQ.setFromAxisAngle(up, Math.atan2(-pos.x, -pos.z) - yaw);
+          m4.compose(v0.set(0, top, 0.002), loadQ, one);
           if (it.failed) m4.makeTranslation(0.045, -drumBottom + 0.001, 0.01);
           m4.premultiply(body.matrix);
           loads.setMatrixAt(li.carry, m4);
@@ -622,3 +624,6 @@ const m4 = new Matrix4();
 const s3 = new Vector3();
 const euler = new Euler();
 const body = new Object3D();
+const loadQ = new Quaternion();
+const v0 = new Vector3();
+const one = new Vector3(1, 1, 1);

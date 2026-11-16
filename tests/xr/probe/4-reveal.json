@@ -17,10 +17,10 @@
     { "label": "closed", "eval": "handProbe.open()", "equals": false },
     { "label": "let go", "run": { "device": "hand-right", "steps": [ { "pinch": 0, "duration": 0.15 } ] } },
     { "label": "the slip goes back to the tray", "wait": 0.6 },
-    { "label": "take it again and turn the palm 60° without lifting", "run": { "device": "hand-right", "steps": [
+    { "label": "take it again and turn it without lifting (palm turned 80°: the slip turns about 60° of it)", "run": { "device": "hand-right", "steps": [
       { "label": "take", "target": "probe:slip", "approach": { "distance": 0.05 }, "pinch": { "value": 1, "at": "arrival" } },
       { "label": "palm down", "anchor": "grasp", "position": { "relativeTo": "head", "x": 0.2, "y": -0.29, "z": -0.42 }, "orientation": { "fingers": [0, 0, -1], "palm": [0, -1, 0] }, "duration": 0.5 },
-      { "label": "turn 65°", "orientation": { "fingers": [0, 0, -1], "palm": [-0.906, -0.423, 0] }, "duration": 0.5 }
+      { "label": "turn the palm 80° toward the thumb", "orientation": { "fingers": [0, 0, -1], "palm": [-0.985, -0.174, 0] }, "duration": 0.5 }
     ] } },
     { "label": "opened by turning", "eval": "handProbe.open()", "equals": true },
     { "label": "let go: it folds", "run": { "device": "hand-right", "steps": [ { "pinch": 0, "duration": 0.15 } ] } },

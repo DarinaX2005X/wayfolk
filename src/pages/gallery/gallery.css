@@ -126,7 +126,7 @@
 .g-stage {
   position: relative;
   height: calc(100vh - 170px);
-  min-height: 520px;
+  min-height: 300px;
   overflow: hidden;
   border-radius: var(--radius-large);
   background: var(--sky-gradient);

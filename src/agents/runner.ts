@@ -79,7 +79,7 @@ export async function startRun(spec: RunSpec, deps: RunDeps): Promise<RunHandle>
       pace: spec.pace ?? 1,
       answerSet: set,
     };
-    const record = newRecord(stored, deps);
+    const record = newRecord(stored);
     const run = new Run(record, stored, deps, release, false);
     active.set(projectId, run);
     await run.begin();
@@ -120,7 +120,7 @@ function newId(): string {
   return 'r_' + [...bytes].map((b) => alphabet[b % alphabet.length]).join('');
 }
 
-function newRecord(spec: StoredSpec, deps: RunDeps): RunRecord {
+function newRecord(spec: StoredSpec): RunRecord {
   const set = spec.answerSet;
   return {
     id: newId(),
@@ -210,6 +210,9 @@ class Run {
   private client: LlmClient;
   private queue: LlmQueue<{ station: string; callId: string }>;
   private abort = new AbortController();
+  /** Rejects when the run is cancelled, so a call that never answers cannot hold the run. */
+  private stopped: Promise<never>;
+  private stop!: (e: Error) => void;
   private callCache = new Map<string, CallRecord>();
   private callsUsed = 0;
   private byTask: Partial<Record<LlmTask, number>> = {};
@@ -260,6 +263,8 @@ class Run {
       onTwoStreams: () => this.emit({ type: 'note', station: 's2', source: 'Queue', text: 'The model asked us to slow down. Two calls at a time from now on.' }),
     });
     this.done = new Promise((r) => (this.resolveDone = r));
+    this.stopped = new Promise<never>((_, reject) => (this.stop = reject));
+    this.stopped.catch(() => undefined);
     this.ctx = this.makeCtx();
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const run = this;
@@ -447,7 +452,7 @@ class Run {
       const chars = messageChars(spec.messages);
       let response;
       try {
-        response = await this.queue.call(req, {
+        response = await Promise.race([this.stopped, this.queue.call(req, {
           priority: spec.priority ?? 0,
           tag,
           signal: this.abort.signal,
@@ -463,7 +468,7 @@ class Run {
               ...(spec.pages ? { pages: spec.pages } : {}),
               chars,
             }),
-        });
+        })]);
       } catch (raw) {
         if (raw instanceof CancelledError || this.cancelled) throw new CancelledError();
         const error = classifyError(raw);
@@ -609,6 +614,7 @@ class Run {
     this.cancelled = true;
     this.abort.abort();
     this.queue.cancel();
+    this.stop(new CancelledError());
     for (const a of [...this.asks.values()]) {
       a.self.clear();
       a.countdown.clear();
@@ -668,6 +674,8 @@ class Run {
       call: (spec) => run.call(spec),
       save: (key, value) => {
         run.record.partial[key] = value;
+        // Events first: a saved batch never lacks its items and tiles after a reload.
+        run.flush();
         return run.write(() => run.deps.store.savePartial(run.record.id, key, value));
       },
       ask: (station, spec) => run.ask(station, spec),

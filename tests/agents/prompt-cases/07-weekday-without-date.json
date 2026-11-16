@@ -1,0 +1,113 @@
+{
+  "name": "A weekday without a date",
+  "goal": "Find where the stories don't match",
+  "plan": {
+    "parties": [
+      {
+        "id": "mark",
+        "name": "Mark Ellison",
+        "role": "Tenant",
+        "aliases": [
+          "Mr Ellison",
+          "Mark",
+          "tenant"
+        ]
+      },
+      {
+        "id": "lena",
+        "name": "Lena Ortiz",
+        "role": "Landlord",
+        "aliases": [
+          "Ms Ortiz",
+          "Lena",
+          "landlord"
+        ]
+      },
+      {
+        "id": "dana",
+        "name": "Dana Whitlock",
+        "role": "Managing agent",
+        "aliases": [
+          "Ms Whitlock",
+          "Dana",
+          "agent"
+        ]
+      }
+    ],
+    "topics": [
+      "keys",
+      "deposit",
+      "leak",
+      "repairs"
+    ],
+    "fields": [
+      {
+        "id": "keys.returned_on",
+        "topic": "keys",
+        "type": "date",
+        "question": "When were the keys returned?"
+      },
+      {
+        "id": "deposit.amount",
+        "topic": "deposit",
+        "type": "amount",
+        "question": "How much was the deposit?"
+      },
+      {
+        "id": "leak.started_on",
+        "topic": "leak",
+        "type": "date",
+        "question": "When did the leak start?"
+      },
+      {
+        "id": "repairs.authorised",
+        "topic": "repairs",
+        "type": "yesno",
+        "question": "Did the landlord authorise the plumber?"
+      }
+    ]
+  },
+  "doc": {
+    "id": "letter",
+    "title": "Letter from the tenant",
+    "kind": "letter",
+    "from": 1,
+    "to": 1
+  },
+  "page": {
+    "docId": "letter",
+    "n": 1,
+    "blocks": [
+      {
+        "k": "head",
+        "text": "Date: Monday 9 March 2026"
+      },
+      {
+        "k": "p",
+        "text": "On Friday the agent came into the flat while I was away."
+      }
+    ]
+  },
+  "expect": {
+    "minEvents": 1
+  },
+  "example": {
+    "events": [
+      {
+        "kind": "record",
+        "date": "",
+        "time": "",
+        "actors": [
+          "Dana Whitlock",
+          "Mark Ellison"
+        ],
+        "label": "Agent entered",
+        "summary": "Something happened.",
+        "quote": "On Friday the agent came into the flat while I was away",
+        "page": 1,
+        "topic": "keys",
+        "facts": []
+      }
+    ]
+  }
+}

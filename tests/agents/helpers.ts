@@ -46,9 +46,15 @@ export function manualTimers() {
   return { timers, now: () => t, advance, pending: () => due.size };
 }
 
-/** Lets every queued promise and I/O callback run. */
-export async function settle(rounds = 5): Promise<void> {
-  for (let i = 0; i < rounds; i++) await new Promise((r) => setImmediate(r));
+/**
+ * Lets every queued promise and I/O callback run, including Web Crypto digests (the
+ * request hash of every call), which finish on Node's thread pool.
+ */
+export async function settle(rounds = 3): Promise<void> {
+  for (let i = 0; i < rounds; i++) {
+    await new Promise((r) => setImmediate(r));
+    await new Promise((r) => setTimeout(r, 0));
+  }
 }
 
 /** The event id a claim becomes, as the gate computes it. */
@@ -78,15 +84,22 @@ export function deps(over: Partial<RunDeps> = {}): RunDeps & { store: ReturnType
   } as RunDeps & { store: ReturnType<typeof memoryRunStore> };
 }
 
-/** Runs Willow Lane on scripted answers at pace 0; `answer` is given to the question as soon as it comes. */
+/**
+ * Runs Willow Lane on scripted answers at pace 0 on manual timers; `answer` is given to
+ * the question as soon as it comes, or nobody answers and the countdown runs out.
+ */
 export async function runWillow(opts: { pages?: Page[]; answer?: string | null; recheck?: boolean } = {}) {
   resetRunsForTests();
   const pages = opts.pages ?? willowPages();
   const set = willowSet(willowVerdicts(willowPages()), { recheck: opts.recheck });
-  const d = deps();
+  const mt = manualTimers();
+  const d = deps({ timers: mt.timers, now: mt.now });
   const h = await startRun({ project: willowProject(), docs: willowDocs(pages), scope: 'full', answers: set, pace: 0 }, d);
   if (opts.answer) h.subscribe((e) => e.type === 'ask' && setImmediate(() => h.answer(e.askId, opts.answer!, 'mouse')));
   else h.subscribe((e) => e.type === 'ask' && h.shown(e.askId));
+  let finished = false;
+  void h.done.then(() => (finished = true));
+  for (let i = 0; i < 100 && !finished; i++) await mt.advance(5000);
   const record = await h.done;
   return { record, handle: h, deps: d };
 }

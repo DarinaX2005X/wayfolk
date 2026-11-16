@@ -1,0 +1,164 @@
+{
+  "name": "A record and a later account about the same keys",
+  "goal": "Find where the stories don't match",
+  "plan": {
+    "parties": [
+      {
+        "id": "mark",
+        "name": "Mark Ellison",
+        "role": "Tenant",
+        "aliases": [
+          "Mr Ellison",
+          "Mark",
+          "tenant"
+        ]
+      },
+      {
+        "id": "lena",
+        "name": "Lena Ortiz",
+        "role": "Landlord",
+        "aliases": [
+          "Ms Ortiz",
+          "Lena",
+          "landlord"
+        ]
+      },
+      {
+        "id": "dana",
+        "name": "Dana Whitlock",
+        "role": "Managing agent",
+        "aliases": [
+          "Ms Whitlock",
+          "Dana",
+          "agent"
+        ]
+      }
+    ],
+    "topics": [
+      "keys",
+      "deposit",
+      "leak",
+      "repairs"
+    ],
+    "fields": [
+      {
+        "id": "keys.returned_on",
+        "topic": "keys",
+        "type": "date",
+        "question": "When were the keys returned?"
+      },
+      {
+        "id": "deposit.amount",
+        "topic": "deposit",
+        "type": "amount",
+        "question": "How much was the deposit?"
+      },
+      {
+        "id": "leak.started_on",
+        "topic": "leak",
+        "type": "date",
+        "question": "When did the leak start?"
+      },
+      {
+        "id": "repairs.authorised",
+        "topic": "repairs",
+        "type": "yesno",
+        "question": "Did the landlord authorise the plumber?"
+      }
+    ]
+  },
+  "doc": {
+    "id": "mix",
+    "title": "Check-out report and tenant statement",
+    "kind": "report",
+    "date": "2026-03-06",
+    "from": 1,
+    "to": 1
+  },
+  "page": {
+    "docId": "mix",
+    "n": 1,
+    "blocks": [
+      {
+        "k": "head",
+        "text": "Check-out report, Friday 6 March 2026"
+      },
+      {
+        "k": "p",
+        "text": "Keys: both sets of unit keys returned to the agent's office on 6 March 2026."
+      },
+      {
+        "k": "p",
+        "text": "Tenant's note added on 12 October 2026: I returned the keys on Friday 27 February 2026, when I moved out."
+      }
+    ]
+  },
+  "expect": {
+    "kinds": {
+      "record": 1,
+      "account": 1
+    },
+    "facts": [
+      {
+        "field": "keys.returned_on",
+        "value": "2026-03-06"
+      },
+      {
+        "field": "keys.returned_on",
+        "value": "2026-02-27"
+      }
+    ]
+  },
+  "example": {
+    "events": [
+      {
+        "kind": "record",
+        "date": "2026-03-06",
+        "time": "",
+        "actors": [
+          "Dana Whitlock"
+        ],
+        "label": "Keys back",
+        "summary": "Something happened.",
+        "quote": "Keys: both sets of unit keys returned to the agent's office on 6 March 2026",
+        "page": 1,
+        "topic": "keys",
+        "facts": [
+          {
+            "field": "keys.returned_on",
+            "type": "date",
+            "value": "2026-03-06",
+            "basis": "literal",
+            "subject": "",
+            "from": "",
+            "to": ""
+          }
+        ]
+      },
+      {
+        "kind": "account",
+        "date": "2026-02-27",
+        "time": "",
+        "actors": [
+          "Mark Ellison"
+        ],
+        "label": "Keys returned",
+        "summary": "Something happened.",
+        "quote": "I returned the keys on Friday 27 February 2026, when I moved out",
+        "page": 1,
+        "topic": "keys",
+        "facts": [
+          {
+            "field": "keys.returned_on",
+            "type": "date",
+            "value": "2026-02-27",
+            "basis": "literal",
+            "subject": "",
+            "from": "",
+            "to": ""
+          }
+        ]
+      }
+    ]
+  }
+}

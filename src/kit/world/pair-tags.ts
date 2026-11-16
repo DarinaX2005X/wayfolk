@@ -104,7 +104,7 @@ export function createPairTags(): PairTags {
         p.check.visible = p.verdict === 'explained';
         p.check.position.set(0.012, TAG.h + 0.0006, gap / 2 + TAG.d / 2);
         // Released: rise and leave toward the plot behind the arc.
-        const kf = reduced ? (t >= p.released ? 1 : 0) : progress(t, p.released, FLY_MS);
+        const kf = p.released === -Infinity ? 0 : reduced ? (t >= p.released ? 1 : 0) : progress(t, p.released, FLY_MS);
         p.node.visible = kf < 1;
         const base = p.base;
         p.node.position.set(base.x * (1 - kf), base.y + 0.12 * Math.sin(Math.PI * kf * 0.8) + 0.05 * kf, base.z - 0.4 * easeInOut(kf));

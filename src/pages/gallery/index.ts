@@ -428,7 +428,8 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
     if (mode === 'seat') {
       cam.position.set(seat[0], seat[1], seat[2]);
       cam.rotation.set(MathUtils.degToRad(SEAT.desk.pitchDeg), app.seat.yaw, 0, 'YXZ');
-      cam.fov = MathUtils.radToDeg(2 * Math.atan(Math.tan(MathUtils.degToRad(45)) / aspect));
+      // 90° across, but never under the 60° high of the desk camera: the bench must stay in frame.
+      cam.fov = Math.max(SEAT.desk.fovDeg, MathUtils.radToDeg(2 * Math.atan(Math.tan(MathUtils.degToRad(45)) / aspect)));
     } else {
       const b = active.built.bounds.clone();
       const size = b.getSize(new Vector3());
@@ -597,9 +598,19 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   };
   requestAnimationFrame(tick);
 
+  // Each stage fits the window under the sticky bar, so a whole section is one frame.
+  const fitStages = (): void => {
+    const h = Math.max(300, window.innerHeight - bar.offsetHeight - 24);
+    for (const s of slots.values()) if (s.stage) s.stage.style.height = `${h}px`;
+  };
+  fitStages();
+  window.addEventListener('resize', fitStages);
+
   const first = params.query.get('section');
   if (first && slots.has(first)) {
-    slots.get(first)!.el.scrollIntoView();
+    const slot = slots.get(first)!;
+    const at = (slot.stage ?? slot.el).getBoundingClientRect().top + window.scrollY - bar.offsetHeight - 12;
+    window.scrollTo(0, Math.max(0, at));
     activate(first);
   }
   void BUDGET;
