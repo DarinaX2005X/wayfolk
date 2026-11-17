@@ -33,6 +33,8 @@ export type Glide = {
   /** Desk: glide to the ring nearest a world point, if one is near. */
   near(p: Vector3): number;
   rings(): Mesh[];
+  /** Browser mode: the paper flags over the rings (same order), clickable. */
+  beacons(): Mesh[];
   /** Closes the view to a colour (0 open, 1 closed); used by the glide and by scenes. */
   vignette: { amount: number };
 };
@@ -53,6 +55,44 @@ function ringTexture(): CanvasTexture {
   return t;
 }
 
+/** A paper pennant on a stick with the spot's name: how a ring reads from afar in a page. */
+function flagTexture(name: string): CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 512;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#6b3b22';
+  g.fillRect(122, 60, 10, 452);
+  g.save();
+  g.shadowColor = 'rgba(70,35,15,0.35)';
+  g.shadowBlur = 10;
+  g.shadowOffsetY = 4;
+  g.fillStyle = '#fff4e2';
+  g.beginPath();
+  g.moveTo(132, 40);
+  g.lineTo(250, 40);
+  g.lineTo(226, 92);
+  g.lineTo(250, 144);
+  g.lineTo(132, 144);
+  g.closePath();
+  g.fill();
+  g.restore();
+  g.fillStyle = '#e9724c';
+  g.beginPath();
+  g.arc(127, 40, 13, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = '#5a2a17';
+  g.font = "700 30px 'Atkinson Hyperlegible Next', system-ui, sans-serif";
+  g.textBaseline = 'middle';
+  const words = name.replace(/^the /i, '').split(' ');
+  const lines = words.length > 1 ? [words.slice(0, Math.ceil(words.length / 2)).join(' '), words.slice(Math.ceil(words.length / 2)).join(' ')] : [name.replace(/^the /i, '')];
+  lines.forEach((l, i) => g.fillText(l, 142, 92 + (i - (lines.length - 1) / 2) * 32, 92));
+  const t = new CanvasTexture(c);
+  t.colorSpace = SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
 export function createGlide(app: App, hands: Hands, world: WorldPort, rig: Rig, replies: Replies, busy: () => boolean): Glide {
   const group = new Group();
   group.name = 'glide';
@@ -61,7 +101,9 @@ export function createGlide(app: App, hands: Hands, world: WorldPort, rig: Rig, 
   const ringMat = new MeshBasicMaterial({ map: ringTexture(), transparent: true, depthWrite: false, blending: AdditiveBlending });
   const spots: Anchor[] = [];
   const rings: Mesh[] = [];
+  const flags: Mesh[] = [];
   const p = new Vector3();
+  const eye = new Vector3();
   const hit = new Vector3();
   let moving = false;
 
@@ -84,7 +126,12 @@ export function createGlide(app: App, hands: Hands, world: WorldPort, rig: Rig, 
 
   const refresh = (): void => {
     for (const r of rings) r.removeFromParent();
+    for (const f of flags) {
+      (f.material as MeshBasicMaterial).map?.dispose();
+      f.removeFromParent();
+    }
     rings.length = 0;
+    flags.length = 0;
     spots.length = 0;
     for (const s of world.spots()) spots.push(s);
     spots.forEach((s, i) => {
@@ -95,6 +142,14 @@ export function createGlide(app: App, hands: Hands, world: WorldPort, rig: Rig, 
       ring.name = `spot:${i}`;
       group.add(ring);
       rings.push(ring);
+      const name = (s as { name?: string }).name ?? 'over there';
+      const flag = new Mesh(new PlaneGeometry(0.55, 1.1), new MeshBasicMaterial({ map: flagTexture(name), transparent: true, alphaTest: 0.1, depthWrite: true }));
+      flag.geometry.translate(0, 0.55, 0);
+      flag.position.set(p.x, p.y, p.z);
+      flag.name = `flag:${i}`;
+      flag.visible = false;
+      group.add(flag);
+      flags.push(flag);
     });
   };
 
@@ -117,7 +172,21 @@ export function createGlide(app: App, hands: Hands, world: WorldPort, rig: Rig, 
     vignetteMat.uniforms.amount.value = vig.amount;
     vignette.visible = vig.amount > 0.001;
     if (!group.visible) return;
-    for (let i = 0; i < rings.length; i += 1) rings[i].scale.setScalar(1 + Math.sin(now / 700 + i) * 0.05);
+    // In a page the rings are larger and carry paper flags; in a headset they stay soft.
+    const desk = app.store.mode.peek() === 'desk';
+    app.world.camera.getWorldPosition(eye);
+    for (let i = 0; i < rings.length; i += 1) {
+      const near = Math.hypot(rings[i].position.x - eye.x, rings[i].position.z - eye.z) < 1.2;
+      rings[i].scale.setScalar((desk ? 1.25 : 1) * (1 + Math.sin(now / 700 + i) * 0.05));
+      const f = flags[i];
+      if (!f) continue;
+      f.visible = desk && !near;
+      if (f.visible) {
+        f.rotation.set(0, Math.atan2(eye.x - f.position.x, eye.z - f.position.z), Math.sin(now / 900 + i) * 0.03);
+        const d = Math.hypot(eye.x - f.position.x, eye.z - f.position.z);
+        f.scale.setScalar(Math.max(1, Math.min(2.2, d / 6)));
+      }
+    }
   });
 
   const glide: Glide = {
@@ -148,6 +217,7 @@ export function createGlide(app: App, hands: Hands, world: WorldPort, rig: Rig, 
       return best;
     },
     rings: () => rings,
+    beacons: () => flags,
     vignette: vig,
   };
 

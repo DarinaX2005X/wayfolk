@@ -15,6 +15,8 @@ export type Rig = {
   placeAt(anchor: Anchor, opts?: { groundOffset?: number }): void;
   /** Desk look: yaw and pitch of the camera in radians, relative to the spot's facing. */
   look(yaw: number, pitch: number): void;
+  /** Desk walking: puts the person's feet at a point of the ground, keeping the facing. */
+  stepTo(x: number, y: number, z: number): void;
   readonly lookYaw: number;
   readonly lookPitch: number;
   /** The head object (the camera) in world space. */
@@ -71,6 +73,12 @@ export function createRig(app: App): Rig {
       yaw = y;
       pitch = MathUtils.clamp(x, -1.2, 1.0);
       if (!world.renderer.xr.isPresenting) aimDesk();
+    },
+    stepTo(x, y, z) {
+      if (world.renderer.xr.isPresenting) return;
+      spot.set(x, y, z);
+      world.player.position.set(x, y, z);
+      world.player.updateMatrixWorld(true);
     },
     get lookYaw() {
       return yaw;

@@ -11,6 +11,7 @@ import { CATALOG } from './catalog';
 import { M, MAT, autoSurface, ball, build, cbox, cone, cyl, dome, gear, hull, lathe, mixHex, place, rng, tone, type Hex, type PaintOpts } from './geo';
 import { kitGeometry } from './kit';
 import { buildProp } from './props';
+import { addYard } from './yard';
 
 export type Stage = 'foundation' | 'walls' | 'roof' | 'details' | 'props';
 export const STAGES: Stage[] = ['foundation', 'walls', 'roof', 'details', 'props'];
@@ -719,6 +720,19 @@ export function planHouse(spec: HouseSpec): HousePlan {
     const far = 1 + Math.floor(i / slots.length) * 0.3;
     hb.prop(id, s[0] * far, s[1] * far, s[2]);
   });
+  // small life round the house, clear of the walls and of the props already standing
+  const used: { x: number; z: number; r: number }[] = [];
+  const half = { x: 0.8, z: 0.8 };
+  for (const p of hb.pieces) {
+    if (!p.geo.boundingBox) p.geo.computeBoundingBox();
+    const bb = p.geo.boundingBox!;
+    if (p.name.startsWith('prop:')) used.push({ x: p.pos[0], z: p.pos[2], r: Math.max(0.3, Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) * 0.5) });
+    else if (p.stage === 'foundation' || p.stage === 'walls') {
+      half.x = Math.max(half.x, Math.abs(p.pos[0] + bb.min.x), Math.abs(p.pos[0] + bb.max.x));
+      half.z = Math.max(half.z, Math.abs(p.pos[2] + bb.min.z), Math.abs(p.pos[2] + bb.max.z));
+    }
+  }
+  addYard({ spec, used, half, add: (stage, name, parts) => hb.add(stage, name, parts), prop: (id, x, z, rotY, y, k) => hb.prop(id, x, z, rotY, y, k) }, info.door);
   const pieces = hb.pieces
     .map((p, i) => ({ p, i }))
     .sort((a, b) => rank(a.p.stage) - rank(b.p.stage) || (a.p.stage === 'props' ? a.i - b.i : a.p.pos[1] - b.p.pos[1] || a.i - b.i))

@@ -18,6 +18,8 @@ export type Replies = {
   readonly open: boolean;
   /** Picks a choice by index (desk buttons, tests). */
   pick(index: number): void;
+  /** Answers in the person's own words (the typed field in a page); resolves show() with them. */
+  answer(text: string): void;
   /** Bubble meshes, for the desk raycast. */
   meshes(): Object3D[];
   /** True while a pinch was taken by a bubble (other pinch users skip it). */
@@ -190,6 +192,12 @@ export function createReplies(app: App, hands: Hands): Replies {
       return resolve !== null;
     },
     pick: (i) => choose(i),
+    answer(text) {
+      const t = text.trim().slice(0, 200);
+      if (!t || !resolve) return;
+      sound.play('tap');
+      finish(t);
+    },
     meshes: () => bubbles,
     consumed: (s) => taken[s],
   };

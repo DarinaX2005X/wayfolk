@@ -409,12 +409,19 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
       speakers.delete(id);
       homes.delete(id);
     },
-    walkTo(id: string, p: PointLike): Promise<void> {
+    walkTo(id: string, p: PointLike, opts?: { speed?: number }): Promise<void> {
       const a = agents.get(id);
       const to = readPoint(p, new Vector3(), ground);
       if (!a || !to) return Promise.resolve();
       manual(id, 60);
-      return new Promise<void>((resolve) => a.walk(route(a.pos, to), resolve));
+      const normal = a.speed;
+      if (opts?.speed) a.speed = opts.speed;
+      return new Promise<void>((resolve) =>
+        a.walk(route(a.pos, to), () => {
+          a.speed = normal;
+          resolve();
+        }),
+      );
     },
     say(id: string, text: string, opts?: SayOptions): Promise<void> {
       if (id === 'pip') return pip.say(text, opts);

@@ -23,25 +23,39 @@ function islandGeometry(seed: number, radius: number, village: boolean): BufferG
   const r = rng(seed);
   const parts: BufferGeometry[] = [];
   // top: a squashed lumpy disc of grass
-  const top = paint(blob(radius, 2, seed, 0.06, 0.16), '#7cb24b', { shade: 0.15, mat: M.grass }, true);
+  const top = paint(blob(radius, village ? 2 : 1, seed, 0.06, 0.16), '#7cb24b', { shade: 0.15, mat: M.grass }, true);
   top.translate(0, -radius * 0.04, 0);
   parts.push(top);
   // underside: a rocky cone in warm strata
   const under = paint(cone(radius * 0.95, radius * 1.5, 12).rotateX(Math.PI).translate(0, -radius * 0.08, 0), '#b07a4c', { shade: 0.45, mat: M.rock }, true);
   parts.push(under);
-  const hillIds = ['hills-trees-a', 'hills-trees-b', 'mountain-a', 'mountain-b'];
-  const hill = hillIds[seed % hillIds.length];
-  parts.push(place(kitGeometry(hill, (radius / 1.9) * (0.7 + r() * 0.2)), [radius * -0.35, radius * 0.05, radius * -0.25], [0, r() * 6.28, 0]));
-  const trees = ['tree-round-a', 'tree-round-b', 'pine-yellow-medium', 'pine-orange-medium', 'trees-a-medium'];
-  for (let i = 0; i < (village ? 5 : 3); i++) {
+  // far away a soft green hill and a few round trees read better (and cost far less) than kit pieces
+  if (village) {
+    const hillIds = ['hills-trees-a', 'hills-trees-b', 'mountain-a', 'mountain-b'];
+    const hill = hillIds[seed % hillIds.length];
+    parts.push(place(kitGeometry(hill, (radius / 1.9) * (0.7 + r() * 0.2)), [radius * -0.35, radius * 0.05, radius * -0.25], [0, r() * 6.28, 0]));
+  } else {
+    const hill = paint(blob(radius * 0.45, 1, seed + 3, 0.12, 0.55), '#6f9f45', { shade: 0.3, mat: M.grass }, true);
+    parts.push(hill.translate(radius * -0.3, radius * 0.08, radius * -0.2));
+  }
+  const trees = ['tree-round-a', 'tree-round-b', 'pine-yellow-medium', 'pine-orange-medium'];
+  for (let i = 0; i < (village ? 3 : 0); i++) {
     const a = r() * Math.PI * 2;
     const d = radius * (0.35 + r() * 0.5);
     const id = trees[Math.floor(r() * trees.length)];
     parts.push(place(kitGeometry(id, CATALOG[id].scale * (1.1 + r() * 0.5)), [Math.cos(a) * d, radius * 0.05, Math.sin(a) * d], [0, r() * 6.28, 0]));
   }
+  if (!village)
+    for (let i = 0; i < 4; i++) {
+      const a = r() * Math.PI * 2;
+      const d = radius * (0.3 + r() * 0.5);
+      const k = radius * (0.08 + r() * 0.05);
+      const leaf = ['#5d9a40', '#d29a3a', '#4f8a3a', '#c9782f'][i % 4];
+      parts.push(paint(blob(k, 1, seed + 10 + i, 0.15, 1.1).translate(Math.cos(a) * d, radius * 0.06 + k * 1.3, Math.sin(a) * d), leaf, { shade: 0.35, mat: M.leaf }, true));
+    }
   if (village) {
     const blds = ['bld-home-a', 'bld-home-b', 'bld-windmill', 'bld-tower', 'bld-church', 'bld-tavern', 'bld-well', 'bld-watermill', 'bld-market'];
-    const n = 2 + Math.floor(r() * 2);
+    const n = 2;
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + r();
       const d = radius * (0.15 + r() * 0.4);

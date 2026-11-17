@@ -70,7 +70,15 @@ export interface PaintOpts {
   /** Glows at night. */
   glow?: boolean;
   seed?: number;
+  /**
+   * Moves in the wind (cloth, flags, a cat's tail): 'down' frees the lower edge (laundry),
+   * 'x' frees the +x end (a flag on a pole at x = min), 'all' moves everything a little.
+   */
+  flutter?: 'down' | 'x' | 'all';
 }
+
+/** Colour alpha for a surface id with a flutter weight 0..1 (see materials.ts). */
+export const flutterAlpha = (id: number, w: number): number => (id + 0.15 + 0.3 * Math.max(0, Math.min(1, w))) / 15;
 
 /** Makes geometry non-indexed with flat normals (or keeps smooth normals) and paints it. */
 export function paint(g: BufferGeometry, hex: Hex | Color, opts: PaintOpts = {}, smooth = false): BufferGeometry {
@@ -94,10 +102,15 @@ export function paint(g: BufferGeometry, hex: Hex | Color, opts: PaintOpts = {},
   const col = new Float32Array(n * 4);
   let minY = Infinity;
   let maxY = -Infinity;
+  let minX = Infinity;
+  let maxX = -Infinity;
   for (let i = 0; i < n; i++) {
     const y = pos.getY(i);
     if (y < minY) minY = y;
     if (y > maxY) maxY = y;
+    const x = pos.getX(i);
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
   }
   const shade = opts.shade ?? 0.18;
   const wobble = opts.wobble ?? 0.03;
@@ -110,7 +123,11 @@ export function paint(g: BufferGeometry, hex: Hex | Color, opts: PaintOpts = {},
     col[i * 4] = base.r * k;
     col[i * 4 + 1] = base.g * k;
     col[i * 4 + 2] = base.b * k;
-    col[i * 4 + 3] = opts.glow ? 0 : surfaceAlpha(opts.mat ?? M.plain);
+    if (opts.glow) col[i * 4 + 3] = 0;
+    else if (opts.flutter) {
+      const w = opts.flutter === 'down' ? (maxY - pos.getY(i)) / span : opts.flutter === 'x' ? (pos.getX(i) - minX) / Math.max(1e-4, maxX - minX) : 0.6;
+      col[i * 4 + 3] = flutterAlpha(opts.mat ?? M.cloth, w);
+    } else col[i * 4 + 3] = surfaceAlpha(opts.mat ?? M.plain);
   }
   geo.setAttribute('color', new BufferAttribute(col, 4));
   return geo;

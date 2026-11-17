@@ -14,6 +14,7 @@
 import {
   Color,
   FogExp2,
+  type BufferGeometry,
   Group,
   Matrix4,
   Mesh,
@@ -37,6 +38,7 @@ import { createIsland } from './island';
 import { kitGeometry, loadKit } from './kit';
 import { CENTER, HILL, HOUSE_R, LOTS, Land, PIER, POND, SEAT, faceSeat } from './land';
 import { mainMaterial, U } from './materials';
+import { M, MAT, build, cbox, cyl, place } from './geo';
 import { pathGeometry, routePath } from './paths';
 import { buildProp } from './props';
 import { planHouse, type HousePlan, type Stage } from './recipes';
@@ -44,9 +46,13 @@ import { createBlobs } from './shadows';
 import { createSky } from './sky';
 import { createSigns } from './signs';
 import { wind } from './wind';
+import { createEvents, firePitGeometry, type WeatherKind } from './events';
+import { setAmbienceState } from './ambience';
 
 export { CATALOG, GIFT_PROPS, propsForTrade, resolveProp } from './catalog';
-export { wind, WIND_GLSL } from './wind';
+export { wind, WIND_GLSL, createWindSound } from './wind';
+export { createAmbience, type Ambience } from './ambience';
+export type { WeatherKind } from './events';
 export type { Stage } from './recipes';
 
 /** What createWorld needs from the app: an IWSDK World fits. */
@@ -153,6 +159,22 @@ export interface World {
   grow(): boolean;
   readonly growth: number;
   groundY(x: number, z: number): number;
+  /** Rain and clear skies: rain streaks, rings on the pond, darker light, a rainbow after. */
+  weather: { set(kind: WeatherKind): void; readonly kind: WeatherKind };
+  /** Sends a big soft cloud whale gliding past the island (about 75 s); resolves when gone. */
+  skyWhale(): Promise<void>;
+  /**
+   * A shooting star at night that lands glowing within reach of the seat. Resolves when it
+   * lands: `star` is the glowing object (reparent it to a hand to carry it), `release()`
+   * removes it.
+   */
+  shootingStar(): Promise<{ pos: Vector3; star: Object3D; release(): void }>;
+  /** Music pulse 0..1 (and hue 0..1): windows, lanterns, flowers and fireflies glow in time. */
+  setPulse(level: number, hue?: number): void;
+  /** Lights or puts out the campfire by the log benches in front of the porch. */
+  campfire(on: boolean): void;
+  /** Where the campfire burns (ground point, world.root space). */
+  readonly fire: Vector3;
   /** Per-frame tick (runs on its own from the sky's render callback). */
   update(timeMs?: number): void;
   stats(): { triangles: number; houses: number; props: number; parts: Record<string, number> };
@@ -168,6 +190,8 @@ interface HouseRec {
   group: Group;
   built: boolean;
   still: number;
+  /** Small pieces in world.root space, shown while the viewer is near. */
+  fine: BufferGeometry[];
 }
 
 interface PropRec {
@@ -181,7 +205,27 @@ interface PropRec {
 
 const v3 = (p: P2, y = 0): Vector3 => new Vector3(p.x, y, p.z);
 
-export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {}): World {
+/** Log benches round the fire pit: one across the fire facing the seat, one at its side. */
+const fireBenches: Anchor[] = [
+  { pos: new Vector3(-2.75, 0, -5.05), rotY: Math.atan2(2.75, 5.05) },
+  { pos: new Vector3(-4.0, 0, -3.3), rotY: Math.atan2(1.5, -0.4) },
+];
+
+/** A split log on two stumps, about 1.3 m long. */
+function logBench(): BufferGeometry {
+  return build([
+    [place(cyl(0.16, 0.16, 1.3, 9), [-0.65, 0.36, 0], [0, 0, -Math.PI / 2], [1, 1, 0.75]), MAT.wood, { mat: M.bark }],
+    [place(cbox(1.2, 0.04, 0.26, 0.01), [0, 0.47, 0]), MAT.woodLight],
+    [place(cyl(0.13, 0.15, 0.3, 8), [-0.45, 0, 0]), MAT.woodDark, { mat: M.bark }],
+    [place(cyl(0.13, 0.15, 0.3, 8), [0.45, 0, 0]), MAT.woodDark, { mat: M.bark }],
+  ]);
+}
+
+/** Houses nearer than this (metres from the viewer) show their props and small details. */
+const FINE_R = 13;
+
+export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: () => number } = {}): World {
+  const clock = opts.now ?? ((): number => (typeof performance !== 'undefined' ? performance.now() : Date.now()));
   const root = new Group();
   root.name = 'world';
   app.scene?.add(root);
@@ -190,10 +234,13 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
   const staticBatch = new Batch('world:static', mat);
   const decorBatch = new Batch('world:decor', mat);
   const houseBatch = new Batch('world:houses', mat);
+  // small house pieces (props, lamps, yard life) only for houses near the viewer
+  const fineBatch = new Batch('world:house-detail', mat);
   const propBatch = new Batch('world:props', mat);
   const pathBatch = new Batch('world:paths', mat);
   const horizonBatch = new Batch('world:horizon', mat);
-  for (const b of [staticBatch, decorBatch, houseBatch, propBatch, pathBatch, horizonBatch]) root.add(b.mesh);
+  const batches = [staticBatch, decorBatch, houseBatch, fineBatch, propBatch, pathBatch, horizonBatch];
+  for (const b of batches) root.add(b.mesh);
 
   const skyRig = createSky(root);
   const clouds = createClouds(root);
@@ -218,6 +265,9 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
     cam.far = 1600;
     cam.updateProjectionMatrix?.();
   }
+  const FIRE = new Vector3(-2.5, 0, -3.7);
+  const events = createEvents(root, { firePos: FIRE, cloudMaterial: () => clouds.solid() });
+  let rainShown = 0;
   const scene = app.scene as Scene | undefined;
   if (scene && 'fog' in scene) scene.fog = new FogExp2(new Color(sky.fog), FOG_DENSITY);
 
@@ -275,7 +325,19 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
     shadowList = island.shadows;
     lightList = island.lights;
     island.refreshGround();
+    FIRE.y = land.height(FIRE.x, FIRE.z);
+    staticBatch.add('firepit', place(firePitGeometry(), [FIRE.x, FIRE.y, FIRE.z]));
+    for (const b of fireBenches) {
+      const y = land.height(b.pos.x, b.pos.z);
+      b.pos.y = y;
+      staticBatch.add(`firepit:bench:${b.rotY.toFixed(2)}`, place(logBench(), [b.pos.x, y, b.pos.z], [0, b.rotY, 0]));
+    }
+    land.obstacles.push({ x: FIRE.x, z: FIRE.z, r: 1.7, id: 'firepit' });
+    shadowList.push([FIRE.x, FIRE.z, 0.9, 0.35]);
+    lightList.push([FIRE.x, FIRE.z, 0.01]);
     meadow = createMeadow(root, land);
+    meadow.clear(FIRE.x, FIRE.z, 0.75);
+    for (const b of fireBenches) meadow.clear(b.pos.x, b.pos.z, 0.55);
     critters = createCritters(root, land);
     clouds.addDrifters(kitGeometry('cloud-big', 1));
     const start = { x: 0.6, z: -1.7 };
@@ -288,21 +350,52 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
   })();
 
   function flush(): void {
-    for (const b of [staticBatch, decorBatch, houseBatch, propBatch, pathBatch, horizonBatch]) b.flush();
+    for (const b of batches) b.flush();
+  }
+
+  /** The sky as it looks now: the clock's sky, greyed and dimmed while it rains. */
+  function shownSky(): SkyState {
+    const k = events.rain * 0.8;
+    rainShown = events.rain;
+    if (k < 0.005) return sky;
+    const n = 1 - sky.night * 0.75;
+    const grey = (c: Color, hex: string): Color => c.clone().lerp(new Color(hex).multiplyScalar(n), k);
+    return {
+      ...sky,
+      zenith: grey(sky.zenith, '#6d7c8a'),
+      mid: grey(sky.mid, '#8c98a2'),
+      horizon: grey(sky.horizon, '#a3acb3'),
+      fog: grey(sky.fog, '#98a3aa'),
+      sun: grey(sky.sun, '#c9d0d6'),
+      sunI: sky.sunI * (1 - 0.6 * k),
+      hemiI: sky.hemiI * (1 - 0.15 * k),
+      hemiSky: grey(sky.hemiSky, '#a9b4bd'),
+      cloudLit: grey(sky.cloudLit, '#c3cad0'),
+      cloudShade: grey(sky.cloudShade, '#6c7782'),
+      cloudUnder: grey(sky.cloudUnder, '#8a949d'),
+      water: grey(sky.water, '#5b7280'),
+      glow: Math.min(1, sky.glow + k * 0.5),
+    };
   }
 
   function applySky(): void {
+    const sky = shownSky();
     skyRig.apply(sky);
     clouds.apply(sky);
     U.glow.value = sky.glow;
     U.rim.value.copy(sky.sun).multiplyScalar(sky.night > 0.5 ? 0.35 : 0.9);
     if (island) {
-      const wm = island.water.material as unknown as { uniforms: { uWater: { value: Color } } };
+      const wm = island.water.material as unknown as { uniforms: Record<string, { value: Color & Vector3 }> };
       wm.uniforms.uWater.value.copy(sky.water);
+      wm.uniforms.uSkyLow.value.copy(sky.horizon);
+      wm.uniforms.uSkyHigh.value.copy(sky.zenith);
+      wm.uniforms.uSun.value.copy(sky.sun).multiplyScalar(1 - sky.night);
+      wm.uniforms.uSunDir.value.copy(sky.sunDir);
     }
     if (scene && scene.fog instanceof FogExp2) scene.fog.color.copy(sky.fog);
-    blobs.setNight(sky.glow, U.glowColor.value);
+    blobs.setNight(Math.min(1, sky.glow + U.pulse.value * 0.5), U.glowColor.value);
     critters?.setDaylight(sky.night, sky.glow);
+    setAmbienceState({ night: sky.night, rain: events.rain });
   }
 
   // ---------- houses ----------
@@ -356,7 +449,7 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
       group.add(mesh);
       pieces.push(mesh);
     }
-    const rec: HouseRec = { spec, plan, matrix, quat, pieces, group, built: false, still: 0 };
+    const rec: HouseRec = { spec, plan, matrix, quat, pieces, group, built: false, still: 0, fine: [] };
     houses.set(spec.id, rec);
     clearAround(spec.pos.x, spec.pos.z, plan.radius + 0.3);
     meadow?.clear(spec.pos.x, spec.pos.z, plan.radius + 0.2);
@@ -370,10 +463,14 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
     if (rec.built) return;
     rec.built = true;
     const m = new Matrix4();
-    for (const mesh of rec.pieces) {
+    rec.pieces.forEach((mesh, i) => {
       mesh.updateMatrix();
-      houseBatch.add(rec.spec.id, mesh.geometry, m.copy(mesh.matrix));
-    }
+      const piece = rec.plan.pieces[i];
+      if (isFine(piece)) rec.fine.push(mesh.geometry.clone().applyMatrix4(m.copy(mesh.matrix)));
+      else houseBatch.add(rec.spec.id, mesh.geometry, m.copy(mesh.matrix));
+    });
+    lodDirty = true;
+    applyLod();
     root.remove(rec.group);
     rec.pieces = [];
     if (rec.spec.sign) {
@@ -390,6 +487,7 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
     const rec = houses.get(id);
     if (!rec) return;
     houseBatch.remove(id);
+    fineBatch.remove(id);
     root.remove(rec.group);
     signs.remove(id);
     houses.delete(id);
@@ -513,14 +611,48 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
     return [a, ...chain, b];
   }
 
+  // ---------- level of detail ----------
+
+  /** Props and small details are drawn only near the viewer; far houses keep walls, roof, windows. */
+  function isFine(piece: { stage: Stage; geo: BufferGeometry }): boolean {
+    if (piece.stage === 'props') return true;
+    if (piece.stage !== 'details') return false;
+    if (!piece.geo.boundingSphere) piece.geo.computeBoundingSphere();
+    return piece.geo.boundingSphere!.radius < 0.32;
+  }
+  const lodEye = new Vector3(SEAT.x, 1.2, SEAT.z);
+  const lastLodEye = new Vector3(1e9, 0, 0);
+  let lodDirty = true;
+  function applyLod(): void {
+    if (!lodDirty && lodEye.distanceToSquared(lastLodEye) < 9) return;
+    lodDirty = false;
+    lastLodEye.copy(lodEye);
+    let changed = false;
+    for (const rec of houses.values()) {
+      if (!rec.built) continue;
+      const near = Math.hypot(rec.spec.pos.x - lodEye.x, rec.spec.pos.z - lodEye.z) < FINE_R;
+      const has = fineBatch.has(rec.spec.id);
+      if (near && !has) {
+        for (const g of rec.fine) fineBatch.add(rec.spec.id, g);
+        changed = true;
+      } else if (!near && has) {
+        fineBatch.remove(rec.spec.id);
+        changed = true;
+      }
+    }
+    if (changed) fineBatch.flush();
+  }
+
   // ---------- frame tick ----------
 
-  const start = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  const start = clock();
   let lastFrame = -1;
+  let frameN = 0;
+  let lastT = 0;
   const eye = new Vector3();
   const tmpM = new Matrix4();
   const tick = (timeMs?: number): void => {
-    const now = timeMs ?? (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const now = timeMs ?? clock();
     const t = (now - start) / 1000;
     U.time.value = t;
     wind.update(t);
@@ -559,10 +691,15 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
         refreshShadows();
       }
     }
+    if (frameN++ % 30 === 0) applyLod();
+    events.update(t, Math.min(0.1, Math.max(0, t - lastT)), lodEye, sky.sunDir);
+    lastT = t;
+    if (Math.abs(events.rain - rainShown) > 0.01 || (events.rain === 0 && rainShown > 0)) applySky();
+    setAmbienceState({ fire: events.fireOn, firePos: FIRE });
     critters?.update(t);
     // light shifts as high clouds pass the sun
     const cover = Math.max(0, Math.sin(t * 0.045) * Math.sin(t * 0.027 + 1.3) - 0.35) / 0.65;
-    skyRig.sun.intensity = sky.sunI * (1 - 0.28 * cover * (1 - sky.night));
+    skyRig.sun.intensity = sky.sunI * (1 - 0.28 * cover * (1 - sky.night)) * (1 - 0.6 * events.rain * 0.8);
     flush();
   };
 
@@ -575,6 +712,7 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
     camera.getWorldPosition(eye);
     root.worldToLocal(eye);
     skyRig.follow(eye);
+    lodEye.copy(eye);
   };
 
   const world: World = {
@@ -729,7 +867,7 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
       return out;
     },
     benches() {
-      const out: Anchor[] = [{ pos: new Vector3(SEAT.x, 0.16, SEAT.z + 0.32), rotY: 0 }];
+      const out: Anchor[] = [{ pos: new Vector3(SEAT.x, 0.16, SEAT.z + 0.32), rotY: 0 }, ...fireBenches.map((b) => ({ pos: b.pos.clone(), rotY: b.rotY }))];
       for (const rec of houses.values())
         rec.plan.pieces.forEach((piece) => {
           if (piece.name !== 'prop:bench') return;
@@ -741,16 +879,47 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
       return out;
     },
     cloudY: SEA_Y,
+    weather: {
+      set(kind) {
+        events.setWeather(kind);
+        wind.strength = kind === 'rain' ? 1.6 : kind === 'drizzle' ? 1.25 : 1;
+      },
+      get kind() {
+        return events.weather;
+      },
+    },
+    skyWhale: () => events.skyWhale(),
+    shootingStar() {
+      // lands in front of the seat, to the right, at a seated hand's height
+      const target = new Vector3(seat.pos.x + 0.35, seat.pos.y + 0.85, seat.pos.z - 0.5);
+      return events.shootingStar(target);
+    },
+    setPulse(level, hue) {
+      const k = Math.max(0, Math.min(1, level));
+      U.pulse.value = k;
+      if (hue !== undefined) U.pulseColor.value.setHSL(((hue % 1) + 1) % 1, 0.75, 0.62);
+      critters?.setPulse(k);
+      blobs.setNight(Math.min(1, sky.glow + k * 0.5), U.glowColor.value);
+    },
+    campfire(on) {
+      events.setCampfire(on);
+      lightList = lightList.filter((l) => !(l[0] === FIRE.x && l[1] === FIRE.z));
+      lightList.push([FIRE.x, FIRE.z, on ? 2.6 : 0.01]);
+      refreshShadows();
+    },
+    get fire() {
+      return FIRE.clone();
+    },
     update(timeMs) {
       tick(timeMs);
     },
     stats() {
       let triangles = 0;
-      for (const b of [staticBatch, decorBatch, houseBatch, propBatch, pathBatch, horizonBatch]) triangles += b.triangles();
+      for (const b of batches) triangles += b.triangles();
       triangles += (island?.triangles() ?? 0) + (meadow?.triangles() ?? 0) + clouds.triangles() + (critters?.triangles() ?? 0) + 32 * 18 * 2;
       for (const rec of houses.values()) for (const m of rec.pieces) triangles += m.geometry.getAttribute('position').count / 3;
       const parts: Record<string, number> = {};
-      for (const b of [staticBatch, decorBatch, houseBatch, propBatch, pathBatch, horizonBatch]) parts[b.mesh.name] = Math.round(b.triangles());
+      for (const b of batches) parts[b.mesh.name] = Math.round(b.triangles());
       parts.ground = Math.round(island?.triangles() ?? 0);
       parts.meadow = Math.round(meadow?.triangles() ?? 0);
       parts.clouds = Math.round(clouds.triangles());

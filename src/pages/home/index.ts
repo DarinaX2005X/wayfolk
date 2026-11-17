@@ -6,13 +6,14 @@
  * without a headset sit on the island with a mouse or a finger. The world boots in the
  * background from the first frame, so both buttons work at once.
  *
- * While inside at the desk, the page shows captions, the reply choices as buttons, and
- * the postcard with its link and QR code.
+ * While inside at the desk, the page adds what a newcomer needs to talk and move
+ * (./desk.ts), the captions for screen readers, and the postcard with its link and QR code.
  */
 import { effect } from '@preact/signals-core';
 import { qrSvg } from '../../kit/ui/qr';
 import { store } from '../../app/store';
 import type { RouteParams } from '../router';
+import { createDeskUi } from './desk';
 import { BALLOON, CLOUDS_LEFT, CLOUDS_RIGHT, LOADING_SKY, PIP_FLYING, WORDMARK } from './art';
 import './home.css';
 
@@ -36,10 +37,6 @@ export const TEXT = {
   invite: 'Invite a friend',
   snap: 'Take a postcard',
   vr: 'Enter in VR',
-  hold: 'Hold to speak',
-  listening: 'Listening',
-  hintMouse: ['Drag to look around.', 'Click Pip, a neighbour or a bubble.', 'Click a glowing ring to go there.'],
-  hintTouch: ['Drag to look around.', 'Tap Pip, a neighbour or a bubble.', 'Tap a glowing ring to go there.'],
   inviteTitle: 'Come sit on my island',
   again: 'The island is ready. Press Enter again to put the headset on.',
 } as const;
@@ -106,7 +103,6 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   strip.setAttribute('aria-label', 'What is being said');
   const captions = el('div', 'home-captions');
   captions.setAttribute('aria-live', 'polite');
-  const choices = el('div', 'home-choices');
   // Once the first minute is over, Pip's little menu as tags at the desk.
   const menu = el('div', 'home-menu');
   const snap = el('button', 'tag tag-small', TEXT.snap);
@@ -122,42 +118,20 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   vrTag.addEventListener('click', () => void enterSession());
   menu.append(snap, inviteTag, vrTag);
 
-  // Speaking at the desk: hold the button while you talk to a traveler.
-  const mic = el('button', 'tag tag-small tag-mic', TEXT.hold);
-  mic.type = 'button';
-  mic.hidden = true;
-  const micOn = (e: Event): void => {
-    e.preventDefault();
-    void wf?.voice.start();
-  };
-  const micOff = (): void => wf?.voice.stop();
-  mic.addEventListener('pointerdown', micOn);
-  mic.addEventListener('pointerup', micOff);
-  mic.addEventListener('pointerleave', micOff);
-  effect(() => {
-    const canSpeak = typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
-    mic.hidden = !(canSpeak && store.talkingTo.value && store.choices.value.length > 0 && store.mode.value === 'desk');
-    mic.textContent = store.listening.value ? TEXT.listening : TEXT.hold;
-    mic.dataset.on = store.listening.value ? 'yes' : 'no';
-  });
-
-  // How the browser mode works, once, on a paper note that goes after first use.
-  const touch = matchMedia('(pointer: coarse)').matches;
-  const hint = el('aside', 'home-hint');
-  hint.setAttribute('aria-label', 'How to play here');
-  for (const line of touch ? TEXT.hintTouch : TEXT.hintMouse) hint.append(el('p', '', line));
-  let hintTimer = 0;
-  effect(() => {
-    const show = store.mode.value === 'desk' && page.dataset.state === 'desk';
-    if (store.deskUsed.value && !hintTimer) hintTimer = window.setTimeout(() => hint.classList.add('is-gone'), 5000);
-    hint.hidden = !show && !hint.classList.contains('is-on');
-  });
   effect(() => {
     menu.hidden = store.phase.value !== 'free' || store.mode.value !== 'desk';
   });
   const prepared = el('p', 'home-prepared', 'prepared traveler');
   prepared.hidden = true;
-  strip.append(captions, choices, mic, prepared, menu);
+  strip.append(captions, prepared, menu);
+  let wf: Awaited<ReturnType<WF['startWayfolk']>> | null = null;
+  const deskUi = createDeskUi(store, {
+    pick: (i) => wf?.replies.pick(i),
+    answer: (text) => wf?.replies.answer(text),
+    micStart: () => void wf?.voice.start(),
+    micStop: () => wf?.voice.stop(),
+    walk: (f, r) => wf?.guide.setWalk(f, r),
+  });
   effect(() => {
     prepared.hidden = !(store.prepared.value && store.choices.value.length > 0);
   });
@@ -165,7 +139,7 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   const card = el('aside', 'home-card');
   card.hidden = true;
 
-  page.append(stage, sky, plate, balloon, strip, card, hint);
+  page.append(stage, sky, plate, balloon, strip, card, ...deskUi);
   root.replaceChildren(page);
 
   effect(() => {
@@ -179,18 +153,6 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
     );
   });
 
-  let wf: Awaited<ReturnType<WF['startWayfolk']>> | null = null;
-  effect(() => {
-    const list = store.choices.value;
-    choices.replaceChildren(
-      ...list.map((text, i) => {
-        const b = el('button', 'home-choice', text);
-        b.type = 'button';
-        b.addEventListener('click', () => wf?.replies.pick(i));
-        return b;
-      }),
-    );
-  });
   const showCard = (pc: { url: string; image?: string; title: string }): void => {
     card.replaceChildren();
     const img = el('img', 'home-card-img');
@@ -267,8 +229,6 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
 
   const inside = (how: 'desk' | 'session'): void => {
     page.dataset.state = how;
-    hint.hidden = how !== 'desk';
-    if (how === 'desk') hint.classList.add('is-on');
   };
   // The balloon lifts off with its tags before the clouds come.
   const liftOff = (): Promise<void> =>

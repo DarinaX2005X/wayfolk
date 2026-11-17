@@ -79,6 +79,12 @@ function groundColor(land: Land, x: number, z: number, s: number, out: Color): C
   return out;
 }
 
+/** The lawn colour at a point (what grass tufts take as their tint). */
+export function groundTint(land: Land, x: number, z: number, out: Color): Color {
+  const s = land.isletAt(x, z) ? 0.5 : Math.min(1, land.mainS(x, z));
+  return groundColor(land, x, z, s, out);
+}
+
 function groundGeometry(land: Land, sh: GroundShape): BufferGeometry {
   const { rings, segs } = sh;
   const verts: number[] = [];
@@ -193,6 +199,11 @@ void main() {
 const waterFragment = /* glsl */ `
 uniform vec3 uWater;
 uniform vec3 uFoam;
+uniform vec3 uSkyLow;
+uniform vec3 uSkyHigh;
+uniform vec3 uSun;
+uniform vec3 uSunDir;
+uniform float uRain;
 uniform float uTime;
 uniform float uGlow;
 varying vec2 vUv;
@@ -214,10 +225,31 @@ void main() {
     float edge = smoothstep(0.0, 0.12, vUv.x) * smoothstep(1.0, 0.88, vUv.x);
     c = mix(uFoam, c, 0.4 + 0.6 * edge);
   } else {
+    // still water: ripples bend the reflected sky; rain draws rings
     vec2 p = vWorld.xz * 1.6;
-    float r = n(p + uTime * 0.25) * 0.5 + n(p * 1.9 - uTime * 0.2) * 0.5;
-    c = mix(c * 0.9, c * 1.25 + vec3(0.05), smoothstep(0.55, 0.9, r));
-    c = mix(c, uFoam, smoothstep(0.86, 1.0, length(vUv - 0.5) * 2.0) * 0.6);
+    float r1 = n(p + uTime * 0.25);
+    float r2 = n(p * 1.9 - uTime * 0.2);
+    vec2 wob = vec2(r1 - 0.5, r2 - 0.5) * 0.35;
+    float rings = 0.0;
+    if (uRain > 0.01) {
+      vec2 cell = floor(vWorld.xz * 2.2);
+      for (int k = 0; k < 4; k++) {
+        vec2 c2 = cell + vec2(float(k / 2), float(k - (k / 2) * 2)) - 0.5;
+        float ph = fract(uTime * 0.9 + h(c2) * 7.0);
+        vec2 ctr = (c2 + 0.5 + (vec2(h(c2 + 1.7), h(c2 + 3.1)) - 0.5) * 0.6) / 2.2;
+        float d = length(vWorld.xz - ctr);
+        rings += smoothstep(0.03, 0.0, abs(d - ph * 0.32)) * (1.0 - ph) * step(h(c2 + 9.0), uRain);
+      }
+      wob += vec2(rings) * 0.25;
+    }
+    vec3 V = normalize(cameraPosition - vWorld);
+    float fres = pow(1.0 - clamp(V.y + wob.x * 0.4, 0.0, 1.0), 2.2);
+    float sky = clamp(-V.y * -1.0 + 0.15 + wob.y, 0.0, 1.0);
+    vec3 refl = mix(uSkyLow, uSkyHigh, smoothstep(0.1, 0.9, sky + (1.0 - fres) * 0.6));
+    c = mix(c * 0.85, refl, 0.35 + 0.55 * fres);
+    c += uSun * pow(clamp(dot(reflect(-V, normalize(vec3(wob.x, 1.0, wob.y))), uSunDir), 0.0, 1.0), 60.0) * 0.6;
+    c = mix(c, uFoam, smoothstep(0.86, 1.0, length(vUv - 0.5) * 2.0) * 0.45);
+    c = mix(c, uFoam, rings * 0.35);
   }
   gl_FragColor = vec4(c, 1.0);
   #include <colorspace_fragment>
@@ -337,7 +369,17 @@ export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatc
   wg.setIndex(widx);
   wg.computeBoundingSphere();
   const waterMat = new ShaderMaterial({
-    uniforms: { uWater: { value: new Color('#5fb0d6') }, uFoam: { value: new Color('#f4fbff') }, uTime: U.time, uGlow: U.glow },
+    uniforms: {
+      uWater: { value: new Color('#5fb0d6') },
+      uFoam: { value: new Color('#f4fbff') },
+      uSkyLow: { value: new Color('#cfe6f2') },
+      uSkyHigh: { value: new Color('#4f97de') },
+      uSun: { value: new Color('#fff4e2') },
+      uSunDir: { value: new Vector3(0, 1, 0) },
+      uRain: U.rain,
+      uTime: U.time,
+      uGlow: U.glow,
+    },
     vertexShader: waterVertex,
     fragmentShader: waterFragment,
     side: 2,
@@ -382,24 +424,24 @@ export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatc
   batch.add('porch', build(porch.map(([g, c]) => [g, c] as [BufferGeometry, string])));
   const benchItem = CATALOG.bench;
   batch.add('porch:bench', place(kitGeometry('bench', benchItem.scale), [SEAT.x, deckY, SEAT.z + 0.32], [0, 0, 0]));
-  batch.add('porch:rug', place(kitGeometry('rug', 0.5), [SEAT.x, deckY + 0.005, SEAT.z - 0.55], [0, 0, 0]));
   batch.add('porch:lamp', place(kitGeometry('post-lantern', 0.62), [-1.6, deckY, 0.55], [0, Math.PI / 2, 0]));
   perches.push({ pos: new Vector3(-1.6, 2.2, 0.55), kind: 'lamp' });
   for (const x of [-1.7, -0.6, 0.6, 1.7]) perches.push({ pos: new Vector3(x, deckY + 0.72, 1.48), kind: 'post' });
   lights.push([-1.6, 0.2, 2.2]);
   const side: [string, number, number, number, number][] = [
-    ['tea-table', 1.25, -0.55, -0.4, 0.75],
+    ['tea-table', 1.35, -0.45, -0.4, 0.75],
     ['flower-pot', -1.45, 0.95, 0, 1],
     ['flower-pot', 1.55, 1.05, 0.5, 0.9],
-    ['mailbox', 1.95, -1.55, -0.5, 1],
+    ['wind-chime', 1.62, 0.25, 0.6, 0.8],
+    ['mailbox', 2.45, -1.1, -0.9, 1],
   ];
   for (const [id, x, z, rot, s] of side) {
     const g = buildProp(id, 3);
     if (!g) continue;
     if (s !== 1) g.scale(s, s, s);
-    batch.add(`porch:${id}:${x}`, place(g, [x, id === 'mailbox' ? 0 : deckY, z], [0, rot, 0]));
+    batch.add(`porch:${id}:${x}`, place(g, [x, id === 'mailbox' ? land.height(x, z) - 0.02 : deckY, z], [0, rot, 0]));
   }
-  batch.add('porch:books', place(kitGeometry('books', 0.5), [1.05, deckY + 0.3, -0.3], [0, 0.4, 0]));
+  batch.add('porch:books', place(kitGeometry('books', 0.5), [1.15, deckY + 0.3, -0.2], [0, 0.4, 0]));
   batch.add('porch:tree', place(kitGeometry('tree-round-b', 3.6), [-3.2, land.height(-3.2, 0.9), 0.9], [0, 0.6, 0]));
   shadows.push([-3.2, 0.9, 1.7, 0.6]);
   batch.add('porch:pumpkins', join([

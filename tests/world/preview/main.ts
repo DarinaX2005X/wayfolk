@@ -7,7 +7,7 @@
  *   ?houses=12         how many houses to build
  *   ?build=1           leave the last house as a hidden build plan (to check buildPlan)
  */
-import { ACESFilmicToneMapping, PerspectiveCamera, SRGBColorSpace, Scene, Vector3, WebGLRenderer } from '@iwsdk/core';
+import { ACESFilmicToneMapping, Frustum, Matrix4, PerspectiveCamera, SRGBColorSpace, Scene, Vector3, WebGLRenderer, type InstancedMesh, type Mesh } from '@iwsdk/core';
 import type { HouseSpec, Trade } from '../../../src/mind/types';
 import { TRADES } from '../../../src/mind/types';
 import { createWorld } from '../../../src/world/index';
@@ -29,7 +29,16 @@ const scene = new Scene();
 const camera = new PerspectiveCamera(Number(q.get('fov') ?? '72'), innerWidth / innerHeight, 0.05, 1600);
 camera.position.set(0, 1.2, 0);
 
-const world = createWorld({ scene, camera, renderer });
+let offset = 0;
+const now = (): number => performance.now() + offset;
+const world = createWorld({ scene, camera, renderer }, { now });
+/** Runs the world forward by some seconds of simulated time. */
+const sim = (seconds: number): void => {
+  for (let i = 0; i < seconds * 20; i++) {
+    offset += 50;
+    world.update(now());
+  }
+};
 
 const PALETTES: Record<Trade, { wall: string; roof: string; trim: string; sign: string; props: string[] }> = {
   baker: { wall: '#f3e2c4', roof: '#c8553d', trim: '#8a5a3b', sign: 'Crumb & Co', props: ['fruit-basket'] },
@@ -83,6 +92,31 @@ async function main(): Promise<void> {
     { id: 'the-shallows', name: 'The Shallows' },
   ]);
   world.setTime(atHour(hour));
+  // events: ?weather=rain|drizzle, ?bow=1 (rain then clear), ?fire=1, ?whale=1, ?star=1, ?pulse=0.8
+  const wq = q.get('weather');
+  if (wq === 'rain' || wq === 'drizzle') {
+    world.weather.set(wq);
+    sim(20);
+  }
+  if (q.get('bow') === '1') {
+    world.weather.set('rain');
+    sim(12);
+    world.weather.set('clear');
+    sim(30);
+  }
+  if (q.get('fire') === '1') {
+    world.campfire(true);
+    sim(4);
+  }
+  if (q.get('pulse')) world.setPulse(Number(q.get('pulse')), 0.08);
+  if (q.get('whale') === '1') {
+    void world.skyWhale();
+    sim(Number(q.get('at') ?? '30'));
+  }
+  if (q.get('star') === '1') {
+    void world.shootingStar();
+    sim(Number(q.get('at') ?? '2.4'));
+  }
 
   const look = (from: Vector3, to: Vector3): void => {
     camera.position.copy(from);
@@ -135,6 +169,24 @@ async function main(): Promise<void> {
   };
   loop();
   (window as unknown as Record<string, unknown>).__world = world;
+  (window as unknown as Record<string, unknown>).__probe = () => {
+    const fr = new Frustum().setFromProjectionMatrix(new Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    const rows: [string, number, boolean][] = [];
+    scene.traverseVisible((o) => {
+      const m = o as Mesh;
+      if (!m.geometry || (o as unknown as { isPoints?: boolean }).isPoints) return;
+      const g = m.geometry;
+      const per = (g.index ? g.index.count : (g.getAttribute('position')?.count ?? 0)) / 3;
+      const n = (m as InstancedMesh).isInstancedMesh ? (m as InstancedMesh).count : 1;
+      if (!g.boundingSphere) g.computeBoundingSphere();
+      const s = g.boundingSphere!.clone().applyMatrix4(m.matrixWorld);
+      const inView = !m.frustumCulled || fr.intersectsSphere(s);
+      rows.push([m.name || m.type, Math.round(per * n), inView]);
+    });
+    rows.sort((a, b) => b[1] - a[1]);
+    const seen = rows.filter((r) => r[2]).reduce((a, r) => a + r[1], 0);
+    return [`in view ${seen}`, ...rows.map((r) => `${r[2] ? '*' : ' '} ${r[1]} ${r[0]}`)];
+  };
 }
 
 main().catch((e) => {

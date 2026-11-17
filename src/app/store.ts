@@ -110,7 +110,23 @@ export type Store = {
   invite: Signal<string | null>;
   /** The last postcard link, once made. */
   postcard: Signal<{ url: string; image: string } | null>;
+  /** Browser mode: the one next thing to do, shown by the page as a paper tag with an arrow. */
+  cue: Signal<string | null>;
+  /** Browser mode: the person has walked with the keys or the stick. */
+  walked: Signal<boolean>;
+  /** What the person just said (typed, or heard from the microphone), shown back to them. */
+  heard: Signal<string | null>;
+  /** Who is speaking now ('pip', a resident id), for the page to place the replies by them. */
+  speaker: Signal<string | null>;
+  /**
+   * Browser mode, written every frame by src/app/desk/: where on the page the speaker and
+   * the cue target are (CSS pixels; `on` false when behind the camera or off the page).
+   * A plain object, not a signal, so the page reads it in its own animation frame.
+   */
+  points: { speaker: ScreenPoint; cue: ScreenPoint };
 };
+
+export type ScreenPoint = { x: number; y: number; on: boolean; /** the target's height on the page, px */ size: number };
 
 export const store: Store = {
   mode: signal<Mode>('desk'),
@@ -128,6 +144,11 @@ export const store: Store = {
   prepared: signal(false),
   invite: signal<string | null>(null),
   deskUsed: signal(false),
+  cue: signal<string | null>(null),
+  walked: signal(false),
+  heard: signal<string | null>(null),
+  speaker: signal<string | null>(null),
+  points: { speaker: { x: 0, y: 0, on: false, size: 0 }, cue: { x: 0, y: 0, on: false, size: 0 } },
 };
 
 bindPersist(store.settings, KEYS.settings, sanitizeSettings);

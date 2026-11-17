@@ -113,7 +113,8 @@ export interface Life {
   arrive(resident: Resident, vehicle?: Vehicle): Promise<void>;
   spawn(resident: Resident, home?: HouseSpec | P2): Object3D;
   despawn(id: string): void;
-  walkTo(id: string, p: PointLike): Promise<void>;
+  /** Walks along the island's paths; `speed` (m/s) for this walk only. */
+  walkTo(id: string, p: PointLike, opts?: { speed?: number }): Promise<void>;
   say(id: string, text: string, opts?: SayOptions): Promise<void>;
   emote(id: string, kind: Emote): void;
   /** Turn a resident (or 'pip') toward a point, or toward the person when omitted. */

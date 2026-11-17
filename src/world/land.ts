@@ -247,7 +247,7 @@ export class Land {
   /** Why a house of radius r cannot stand at p, or null if it can. */
   blocked(x: number, z: number, r = 2.2, ignore?: string): string | null {
     const ds = Math.hypot(x - SEAT.x, z - SEAT.z);
-    if (ds < 5.6) return 'too close to the seat';
+    if (ds < 6) return 'too close to the seat';
     if (ds > 34) return 'too far';
     if (z > -1.5) return 'behind the seat';
     if (!this.inside(x, z, r + 0.15)) return 'off the edge';
@@ -304,32 +304,52 @@ export function segDist(x: number, z: number, a: P2, b: P2): number {
 }
 
 /**
- * Good lots for houses, in order of preference: near the seat and in front first, fanning
- * out, then the islets. Picked once from the empty land, at least 5.6 m apart.
+ * Good lots for houses, in order of preference. The first two stand 7 to 12 m away, one to
+ * the front-left and one to the front-right, so the middle of the view (the meadow, the pond
+ * and the cloud sea beyond the rim) and the line to the pier stay open; later lots fill
+ * outward, nearer ones first. Picked once from the empty land, at least 5.3 m apart.
  */
 export const LOTS: P2[] = (() => {
   const land = new Land();
-  const cand: { x: number; z: number; score: number }[] = [];
+  const pondAng = Math.atan2(POND.x - SEAT.x, -(POND.z - SEAT.z));
+  const pondD = Math.hypot(POND.x - SEAT.x, POND.z - SEAT.z);
+  const hidesPond = (x: number, z: number): boolean => {
+    const d = Math.hypot(x - SEAT.x, z - SEAT.z);
+    return d < pondD && Math.abs(Math.atan2(x - SEAT.x, -(z - SEAT.z)) - pondAng) < Math.atan2(HOUSE_R + POND.r * 0.5, d);
+  };
+  const cand: { x: number; z: number; d: number; ang: number; score: number }[] = [];
   for (let x = -16; x <= 16; x += 0.5)
     for (let z = -28; z <= -3; z += 0.5) {
       if (land.blocked(x, z, HOUSE_R)) continue;
       const d = Math.hypot(x - SEAT.x, z - SEAT.z);
-      const ang = Math.abs(Math.atan2(x - SEAT.x, -(z - SEAT.z)));
-      // keep the middle of the view open near the seat: close houses stand to the sides
-      cand.push({ x, z, score: d + ang * 4 + (ang < 0.4 && d < 10.5 ? 12 : 0) });
+      const ang = Math.atan2(x - SEAT.x, -(z - SEAT.z));
+      const a = Math.abs(ang);
+      // keep the middle of the view open: near houses stand to the sides
+      const middle = a < 0.3 && d < 16 ? 14 : 0;
+      cand.push({ x, z, d, ang, score: d + a * 3 + middle + (d < 7 ? 30 : 0) + (hidesPond(x, z) ? 8 : 0) });
     }
-  cand.sort((a, b) => a.score - b.score);
   const out: P2[] = [];
-  for (const c of cand) {
-    if (out.some((o) => Math.hypot(o.x - c.x, o.z - c.z) < 5.3)) continue;
+  const fits = (c: { x: number; z: number }): boolean => {
+    if (out.some((o) => Math.hypot(o.x - c.x, o.z - c.z) < 5.3)) return false;
     // do not hide a house right behind a nearer one
     const ca = Math.atan2(c.x - SEAT.x, -(c.z - SEAT.z));
     const cd = Math.hypot(c.x - SEAT.x, c.z - SEAT.z);
-    if (out.some((o) => {
+    return !out.some((o) => {
       const oa = Math.atan2(o.x - SEAT.x, -(o.z - SEAT.z));
       const od = Math.hypot(o.x - SEAT.x, o.z - SEAT.z);
       return Math.abs(oa - ca) < 0.13 && cd > od && cd - od < 7;
-    })) continue;
+    });
+  };
+  // the first two: front-left, then front-right, about 9 m out and 30 degrees aside
+  for (const side of [-1, 1]) {
+    const best = cand
+      .filter((c) => Math.sign(c.ang) === side && c.d >= 7 && c.d <= 12 && Math.abs(c.ang) > 0.3 && Math.abs(c.ang) < 0.95 && !hidesPond(c.x, c.z))
+      .sort((a, b) => Math.abs(a.d - 9) + Math.abs(Math.abs(a.ang) - 0.5) * 4 - (Math.abs(b.d - 9) + Math.abs(Math.abs(b.ang) - 0.5) * 4))[0];
+    if (best && fits(best)) out.push({ x: best.x, z: best.z });
+  }
+  cand.sort((a, b) => a.score - b.score);
+  for (const c of cand) {
+    if (!fits(c)) continue;
     out.push({ x: c.x, z: c.z });
     if (out.length >= 14) break;
   }

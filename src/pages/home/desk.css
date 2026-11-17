@@ -1,0 +1,481 @@
+/* ---------------------------------------------------------------- browser mode: talk, cue, keys
+
+   The page only adds what a person without a headset needs: the replies beside whoever
+   speaks, one arrow at the next thing to do, one line of keys at a time. */
+.desk-talk {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 4;
+  width: min(340px, calc(100vw - 24px));
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  will-change: translate;
+}
+
+.desk-talk[hidden],
+.desk-cue[hidden],
+.desk-hint[hidden],
+.desk-help[hidden],
+.desk-all[hidden],
+.desk-stick[hidden],
+.desk-row[hidden],
+.desk-heard[hidden],
+.desk-thinking[hidden],
+.desk-mic[hidden] {
+  display: none;
+}
+
+.desk-talk[data-side='left'] {
+  justify-items: end;
+}
+
+.desk-heard {
+  margin: 0;
+  max-width: 100%;
+  padding: 6px 12px;
+  background: rgba(255, 244, 226, 0.92);
+  color: #5a2a17;
+  font-size: 15px;
+  line-height: 1.35;
+  rotate: 0.8deg;
+  border-radius: 4px;
+}
+
+.desk-heard strong {
+  color: #b8683a;
+  margin-right: 4px;
+}
+
+.desk-thinking {
+  margin: 0;
+  padding: 8px 16px;
+  border-radius: 18px;
+  background: #fffaf0;
+  color: #b8683a;
+  font-weight: 700;
+  letter-spacing: 2px;
+  box-shadow: 0 4px 0 rgba(90, 42, 23, 0.2);
+}
+
+.desk-dots {
+  display: inline-block;
+  animation: desk-dots 1.1s ease-in-out infinite;
+}
+
+@keyframes desk-dots {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.desk-choices {
+  display: grid;
+  gap: 8px;
+  justify-items: inherit;
+}
+
+/* A reply: a paper speech bubble with a corner toward the speaker. */
+.desk-choice {
+  position: relative;
+  max-width: 100%;
+  min-height: 46px;
+  padding: 10px 18px 11px;
+  border: 0;
+  border-radius: 20px 20px 20px 6px;
+  background: #fffaf0;
+  color: #3a2c22;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+  box-shadow:
+    inset 0 0 0 3px #f0b46c,
+    0 5px 0 rgba(90, 42, 23, 0.22);
+  animation: desk-bubble-in 300ms cubic-bezier(0.3, 1.4, 0.6, 1) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+  transition:
+    transform 140ms ease,
+    background-color 140ms ease;
+}
+
+@keyframes desk-bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.85);
+  }
+}
+
+.desk-talk[data-side='left'] .desk-choice {
+  border-radius: 20px 20px 6px 20px;
+  text-align: right;
+}
+
+.desk-choice:hover {
+  background: #fff1d6;
+  transform: translateX(4px) rotate(-1deg);
+}
+
+.desk-talk[data-side='left'] .desk-choice:hover {
+  transform: translateX(-4px) rotate(1deg);
+}
+
+.desk-choice:active {
+  transform: translateY(2px) scale(0.97);
+}
+
+.desk-choice:focus-visible,
+.desk-send:focus-visible,
+.desk-mic:focus-visible,
+.desk-help:focus-visible,
+.desk-close:focus-visible {
+  outline: 3px solid #e9724c;
+  outline-offset: 3px;
+}
+
+.desk-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.desk-say {
+  display: flex;
+  flex: 1 1 200px;
+  min-width: 0;
+  background: #fff4e2;
+  clip-path: polygon(0 3px, 8px 0, 100% 2px, calc(100% - 3px) 100%, 2px calc(100% - 1px));
+  filter: drop-shadow(0 4px 0 rgba(90, 42, 23, 0.2));
+}
+
+.desk-input {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 0;
+  background: transparent;
+  color: #3a2c22;
+  font: inherit;
+  font-size: 16px;
+}
+
+.desk-input::placeholder {
+  color: #9a7a62;
+}
+
+.desk-input:focus {
+  outline: none;
+  background: #fffaf0;
+}
+
+.desk-send {
+  padding: 0 14px;
+  border: 0;
+  background: #e9724c;
+  color: #fff8ec;
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.desk-send:hover {
+  background: #d9603b;
+}
+
+.desk-mic {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 22px;
+  background: #fff4e2;
+  color: #5a2a17;
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  box-shadow: 0 4px 0 rgba(90, 42, 23, 0.2);
+  transition:
+    background-color 140ms ease,
+    transform 120ms ease;
+}
+
+.desk-mic:hover {
+  background: #fff1d6;
+}
+
+.desk-mic:active {
+  transform: translateY(2px);
+}
+
+.desk-mic-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #c4532f;
+  box-shadow: 0 0 0 3px rgba(196, 83, 47, 0.2);
+}
+
+.desk-mic[data-on='yes'] {
+  background: #e9724c;
+  color: #fff8ec;
+}
+
+.desk-mic[data-on='yes'] .desk-mic-dot {
+  background: #fff8ec;
+  animation: desk-rec 900ms ease-in-out infinite;
+}
+
+@keyframes desk-rec {
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 248, 236, 0.25);
+  }
+}
+
+.kbd-row {
+  display: inline-flex;
+  gap: 3px;
+  vertical-align: middle;
+}
+
+.kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: #fffaf0;
+  color: #5a2a17;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow:
+    inset 0 0 0 1.5px #d9bf98,
+    0 2px 0 #c9a77e;
+}
+
+.desk-mic[data-on='yes'] .kbd {
+  background: #fff4e2;
+}
+
+/* The next action: a paper tag with an arrow drawn by hand. */
+.desk-cue {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  pointer-events: none;
+  will-change: translate;
+}
+
+.desk-cue-text {
+  margin: 0;
+  padding: 10px 16px 11px;
+  background: #fff4e2;
+  color: #5a2a17;
+  font-size: 18px;
+  font-weight: 700;
+  white-space: nowrap;
+  rotate: -2deg;
+  clip-path: polygon(0 4px, 6px 0, 100% 3px, calc(100% - 4px) 100%, 3px calc(100% - 2px));
+  filter: drop-shadow(0 5px 0 rgba(90, 42, 23, 0.22));
+  animation: desk-pulse 1.6s ease-in-out infinite;
+}
+
+.desk-cue-arrow {
+  position: absolute;
+  right: 40px;
+  bottom: -20px;
+  width: 76px;
+  height: 38px;
+  transform-origin: 0 50%;
+}
+
+.desk-cue[data-edge='yes'] .desk-cue-arrow {
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  top: 50%;
+  margin-top: -19px;
+}
+
+.desk-cue-arrow svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  animation: desk-nudge 1.6s ease-in-out infinite;
+}
+
+@keyframes desk-pulse {
+  50% {
+    scale: 1.05;
+  }
+}
+
+@keyframes desk-nudge {
+  50% {
+    translate: 6px 0;
+  }
+}
+
+/* One line of keys at a time, and a small "?" to see them all again. */
+.desk-hint {
+  position: absolute;
+  left: max(16px, 2vw);
+  bottom: max(16px, 2.5vh);
+  z-index: 2;
+  padding: 8px 14px 9px;
+  background: #fff4e2;
+  color: #5a2a17;
+  font-size: 16px;
+  font-weight: 700;
+  rotate: -1deg;
+  filter: drop-shadow(0 4px 0 rgba(90, 42, 23, 0.2));
+  animation: desk-bubble-in 400ms ease both;
+}
+
+.desk-line {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.3;
+}
+
+.desk-glyph {
+  display: inline-block;
+  width: 26px;
+  height: 22px;
+  background: no-repeat center / contain;
+}
+
+.desk-glyph-drag {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 22'%3E%3Crect x='8' y='3' width='10' height='15' rx='5' fill='none' stroke='%235a2a17' stroke-width='2'/%3E%3Cpath d='M13 3v5' stroke='%235a2a17' stroke-width='2'/%3E%3Cpath d='M3 11h3M20 11h3M2 11l2.5-2.5M2 11l2.5 2.5M24 11l-2.5-2.5M24 11l-2.5 2.5' stroke='%235a2a17' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.desk-glyph-stick {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 22'%3E%3Ccircle cx='13' cy='11' r='9' fill='none' stroke='%235a2a17' stroke-width='2'/%3E%3Ccircle cx='13' cy='11' r='4' fill='%235a2a17'/%3E%3C/svg%3E");
+}
+
+.desk-help {
+  position: absolute;
+  left: max(16px, 2vw);
+  bottom: max(16px, 2.5vh);
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff4e2;
+  color: #5a2a17;
+  font: inherit;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(90, 42, 23, 0.22);
+  transition: transform 140ms ease;
+}
+
+.desk-help:hover {
+  transform: rotate(-8deg) scale(1.06);
+}
+
+.desk-all {
+  position: absolute;
+  left: max(16px, 2vw);
+  bottom: calc(max(16px, 2.5vh) + 52px);
+  z-index: 5;
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  background: #fff4e2;
+  color: #5a2a17;
+  font-size: 16px;
+  font-weight: 700;
+  rotate: -1deg;
+  filter: drop-shadow(0 5px 0 rgba(90, 42, 23, 0.22));
+}
+
+.desk-close {
+  justify-self: start;
+  margin-top: 4px;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: #e9724c;
+  color: #fff8ec;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* A small stick for walking on a phone. */
+.desk-stick {
+  position: absolute;
+  left: 20px;
+  bottom: 96px;
+  z-index: 3;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  background: rgba(255, 244, 226, 0.55);
+  box-shadow: inset 0 0 0 3px rgba(90, 42, 23, 0.25);
+  touch-action: none;
+}
+
+.desk-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  background: #fff4e2;
+  box-shadow: 0 4px 0 rgba(90, 42, 23, 0.25);
+}
+
+.home[data-state='desk'] .home-hint {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .desk-talk {
+    width: calc(100vw - 24px);
+    justify-items: center;
+  }
+  .desk-choice {
+    width: 100%;
+    text-align: center;
+    border-radius: 18px;
+  }
+  .desk-hint,
+  .desk-help {
+    bottom: auto;
+    top: 14px;
+  }
+  .desk-all {
+    bottom: auto;
+    top: 64px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-cue-text,
+  .desk-cue-arrow svg,
+  .desk-dots,
+  .desk-mic[data-on='yes'] .desk-mic-dot {
+    animation: none;
+  }
+}

@@ -11,7 +11,8 @@ import { effect } from '@preact/signals-core';
 import { bindFeel } from '../feel/bind';
 import type { App } from './boot/world';
 import { registerDebug, registerTest } from './debug';
-import { bindDesk } from './desk';
+import { bindDesk } from './desk/input';
+import { createGuide, type Guide } from './desk/guide';
 import { createEntry, type Entry } from './entry/entry';
 import { createFlow, type Flow } from './flow';
 import { createGifts, registerGiftTest } from './hands/gifts';
@@ -35,6 +36,7 @@ export type Wayfolk = {
   postcard: Postcard;
   replies: Replies;
   voice: Voice;
+  guide: Guide;
   /** Runs the first minute (or the later visit); safe to call once. */
   begin(): Promise<void>;
   /** Loads the fonts and compiles every material of the scene, so the reveal does not stutter. */
@@ -101,8 +103,18 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     return pip ? [pip, ...[]] : [];
   };
   const entry = createEntry(app, mods.world, rig, extras);
-  flow = createFlow(app, mods, { entry, hands, replies, placement, glide, gifts, voice, postcard });
-  bindDesk(app, rig, replies, placement, glide, [
+  const guide = createGuide(app, rig, mods.world, () => (mods.mind.state?.houses ?? []).map((h) => ({ x: h.pos.x, z: h.pos.z, r: 2.1 })));
+  {
+    const at = new Vector3();
+    (guide as unknown as { speakerAt(fn: (id: string) => Vector3 | null): void }).speakerAt((id) => {
+      const o = id === 'pip' ? mods.life.pip.object : (mods.life.objectOf?.(id) as Object3D | undefined);
+      if (!o) return null;
+      o.updateWorldMatrix(true, false);
+      return o.getWorldPosition(at).add(new Vector3(0, id === 'pip' ? 0.05 : 0.5, 0));
+    });
+  }
+  flow = createFlow(app, mods, { entry, hands, replies, placement, glide, gifts, voice, postcard, guide });
+  bindDesk(app, rig, replies, placement, glide, guide, voice, [
     { objects: () => (mods.life.pip.object ? [mods.life.pip.object] : []), pick: () => void flow?.pokePip() },
     {
       objects: () => residents().map((r) => r.object),
@@ -125,36 +137,6 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     }
   });
   app.recenter = () => rig.placeAt(mods.world.seat);
-
-  // At the desk, when a house is to be placed, the view turns gently toward a free spot.
-  const turnTo = (target: Vector3): void => {
-    const cam = world.camera;
-    const from = cam.getWorldPosition(new Vector3());
-    const dx = target.x - from.x;
-    const dz = target.z - from.z;
-    const yawWorld = Math.atan2(-dx, -dz);
-    const pitch = Math.atan2(target.y - from.y, Math.hypot(dx, dz));
-    const y0 = rig.lookYaw;
-    const p0 = rig.lookPitch;
-    let dy = yawWorld - world.player.rotation.y - y0;
-    dy = Math.atan2(Math.sin(dy), Math.cos(dy));
-    const t0 = app.clock.now();
-    const off = app.everyFrame((_dt, now) => {
-      const k = Math.min(1, (now - t0) / 900);
-      const e = k * k * (3 - 2 * k);
-      rig.look(y0 + dy * e, p0 + (pitch - p0) * e);
-      if (k >= 1) off();
-    });
-  };
-  let wasPlacing = false;
-  app.everyFrame(() => {
-    const placing = placement.active;
-    if (placing && !wasPlacing && app.store.mode.peek() === 'desk') {
-      const marker = app.roots.fx.getObjectByName('spot:suggested');
-      if (marker && marker.position.lengthSq() > 0.01) turnTo(marker.getWorldPosition(new Vector3()));
-    }
-    wasPlacing = placing;
-  });
 
   // From the table: a pinch near the small island goes back in.
   const near = new Vector3();
@@ -273,6 +255,7 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     postcard,
     replies,
     voice,
+    guide,
     async warm() {
       try {
         await Promise.all([document.fonts?.load('400 32px "Atkinson Hyperlegible Next"'), document.fonts?.load('700 32px "Atkinson Hyperlegible Next"')]);

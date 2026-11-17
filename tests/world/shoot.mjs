@@ -19,13 +19,20 @@ const OUT = path.join(HERE, 'out');
 fs.mkdirSync(OUT, { recursive: true });
 
 const SET = [
-  ['seat-sunset', '?view=seat&time=19.1'],
+  ['seat-morning', '?view=seat&time=8.2'],
   ['seat-golden', '?view=seat&time=18.0'],
-  ['seat-evening', '?view=seat&time=20.2'],
+  ['seat-sunset', '?view=seat&time=19.1'],
   ['seat-night', '?view=seat&time=23'],
-  ['seat-day', '?view=seat&time=11'],
+  ['seat-rain', '?view=seat&time=15&weather=rain'],
+  ['seat-rainbow', '?view=seat&time=16.5&bow=1'],
+  ['seat-down', '?camx=0&camy=1.15&camz=0&tx=0&ty=0&tz=-2.4&time=18.0'],
+  ['seat-right-pier', '?view=right&time=18.6'],
+  ['seat-fire', '?camx=0&camy=1.15&camz=0&tx=-2.5&ty=0.2&tz=-5&time=22&fire=1'],
+  ['seat-pulse', '?view=seat&time=19.6&pulse=0.9'],
+  ['sky-whale', '?view=seat&time=17.2&whale=1&at=36'],
+  ['shooting-star', '?camx=0&camy=1.15&camz=0&tx=0.6&ty=0.9&tz=-2&time=23&star=1&at=3.4'],
   ['above-golden', '?view=above&time=18.2'],
-  ['house-close', '?view=house&house=1&time=18.4'],
+  ['pond', '?camx=-4.5&camy=1.6&camz=-10&tx=-8.3&ty=0&tz=-13.6&time=17.5'],
 ];
 
 const args = process.argv.slice(2);
@@ -39,7 +46,7 @@ await server.listen();
 const base = 'http://127.0.0.1:5181/';
 const browser = await chromium.launch({
   headless: true,
-  args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'],
+  args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--mute-audio'],
 });
 try {
   const page = await browser.newPage({ viewport: { width: W, height: H } });

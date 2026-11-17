@@ -63,6 +63,8 @@ export interface Resident {
   visits?: number;             // conversations on separate visits
   lastTalkAt?: number;
   secretKnown?: boolean;       // the secret has been told to the person
+  chapters?: number;           // chapters of their story told at the evening fire
+  lastChapterAt?: number;
   from?: { islandId: string; islandName: string; returnsAt: number }; // a guest from another island
 }
 
@@ -115,7 +117,7 @@ export interface IslandState {
 }
 
 /** A gift or note left in an island's mailbox by someone visiting it. */
-export interface MailItem { id: string; at: number; from: string; fromIsland?: string; kind: 'gift' | 'note'; item?: GiftKind; text: string }
+export interface MailItem { id: string; at: number; from: string; fromIsland?: string; kind: 'gift' | 'note'; item?: GiftKind; text: string; read?: boolean }
 
 /** One island on the horizon. */
 export interface IslandSummary {
@@ -143,3 +145,75 @@ export interface Reply {
 }
 
 export interface GiveResult { text: string; prop?: string; loved: boolean; secret?: string; prepared?: boolean }
+
+// ------------------------------------------------------------------ evening of stories
+// A chapter of a resident's story, acted out as a paper silhouette theatre in the clouds.
+// The mind writes it (prepared, live or directed from the story beats); src/mind/chapters.ts
+// checks every chapter against this fixed vocabulary before the theatre plays it.
+
+/** Cut-out silhouettes the theatre can draw. */
+export const SILHOUETTES = [
+  // folk
+  'fox', 'rabbit', 'cat', 'bear', 'frog', 'owl', 'deer', 'hedgehog', 'raccoon', 'penguin', 'mouse', 'otter',
+  'bird', 'birds', 'gull', 'fish', 'whale', 'bee', 'goat',
+  // ways to travel
+  'balloon', 'paper-boat', 'boat', 'kite', 'umbrella', 'lantern',
+  // places
+  'house', 'town', 'tower', 'lighthouse', 'windmill', 'bridge', 'island', 'hill', 'tree', 'pine', 'rock', 'tent',
+  // things
+  'oven', 'teapot', 'cup', 'bread', 'book', 'map', 'telescope', 'fiddle', 'easel', 'hive', 'pumpkin', 'clock',
+  'key', 'letter', 'ladder', 'chair', 'net', 'flower', 'basket', 'notes', 'bell', 'boot',
+  // sky and weather
+  'moon', 'sun', 'cloud', 'stars', 'star', 'rain', 'snow', 'wind', 'rainbow', 'sea',
+] as const;
+export type SilhouetteKind = (typeof SILHOUETTES)[number];
+
+/** Depth of a cut-out: far ones are small and hazy, near ones dark and sharp. */
+export const STAGE_LAYERS = ['far', 'mid', 'near'] as const;
+export type StageLayer = (typeof STAGE_LAYERS)[number];
+
+/** Named places on the stage. Ground places stand on the front row; sky places float. */
+export const STAGE_PLACES = [
+  'far-left', 'left', 'center', 'right', 'far-right',
+  'sky-left', 'sky', 'sky-right', 'high',
+  'offstage-left', 'offstage-right', 'below', 'above',
+] as const;
+export type StagePlace = (typeof STAGE_PLACES)[number];
+
+/** What a cut-out can do during a line. */
+export const STAGE_VERBS = [
+  'enter', 'exit', 'move', 'fly', 'appear', 'fade', 'rise', 'sink',
+  'hop', 'sway', 'shake', 'grow', 'shrink', 'turn', 'spin', 'glow',
+] as const;
+export type StageVerb = (typeof STAGE_VERBS)[number];
+
+export const STAGE_MOODS = ['dusk', 'night', 'day', 'storm'] as const;
+export type StageMood = (typeof STAGE_MOODS)[number];
+
+export interface CastMember {
+  id: string;                  // short name used by the actions, e.g. 'me', 'oven'
+  kind: SilhouetteKind;
+  layer: StageLayer;
+  at: StagePlace;              // where it stands when it is on stage
+  hidden?: boolean;            // waits off stage until 'enter' or 'appear'
+  facing?: 'left' | 'right';   // folk face right unless told
+  size?: number;               // 0.6 .. 1.6, 1 by default
+}
+
+export interface StageAction { do: StageVerb; who: string; to?: StagePlace }
+
+export interface ChapterBeat {
+  line: string;                // what the teller says, first person, one or two sentences
+  actions: StageAction[];      // what happens on stage while they say it (0..4)
+}
+
+export interface Chapter {
+  id: string;
+  residentId: string;
+  n: number;                   // chapter number, from 1
+  title: string;
+  mood: StageMood;
+  cast: CastMember[];
+  beats: ChapterBeat[];
+  source?: 'prepared' | 'live' | 'directed';
+}

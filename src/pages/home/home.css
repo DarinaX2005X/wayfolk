@@ -423,9 +423,13 @@
 }
 
 .home-captions {
-  display: grid;
-  gap: 6px;
-  justify-items: center;
+  /* The words are in the world as paper bubbles by the speaker; screen readers get them here. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .home-caption {
@@ -539,6 +543,51 @@
 .home-card-row {
   display: flex;
   gap: 8px;
+}
+
+/* ---------------------------------------------------------------- any window size
+
+   The title, the line and the balloon are sized from the shorter side of the window, so a
+   short wide window and a tall narrow phone both keep them apart. */
+.home-hero {
+  width: min(620px, 52vw, 92vh);
+}
+
+.home-line {
+  font-size: clamp(14px, min(1.9vw, 3.2vh), 23px);
+  max-width: min(30ch, 70vw);
+}
+
+.home-balloon-art {
+  width: clamp(64px, 19vh, 150px);
+}
+
+@media (max-height: 560px) and (min-width: 641px) {
+  .home-hero {
+    top: 14px;
+    width: min(440px, 46vw, 80vh);
+  }
+  .home-balloon {
+    top: 12px;
+    right: 20px;
+  }
+  .home-string {
+    height: 18px;
+  }
+  .tag-enter,
+  .tag-main {
+    min-width: 0;
+    font-size: 18px;
+    padding: 24px 20px 14px;
+  }
+  .tag-look {
+    min-width: 0;
+    font-size: 16px;
+  }
+  .tag-note {
+    max-width: 200px;
+    font-size: 13px;
+  }
 }
 
 /* ---------------------------------------------------------------- narrow screens */

@@ -8,7 +8,7 @@
  * Grass and flowers are instanced and sway on the GPU: gusts roll across the meadow as
  * waves that bend the blades and lighten them.
  */
-import { Color, DoubleSide, MeshLambertMaterial } from '@iwsdk/core';
+import { Color, DoubleSide, MeshLambertMaterial, Vector3 } from '@iwsdk/core';
 import { SURF_AMP, SURF_LAYER, SURF_SCALE, surfaceTextures } from './textures';
 import { WIND_GLSL, wind } from './wind';
 
@@ -17,10 +17,22 @@ export const U = {
   glow: { value: 0 },
   glowColor: { value: new Color('#ffc46e') },
   rim: { value: new Color('#ffe2b0') },
+  /** Music pulse 0..1 and its colour (sunset concert): windows, lanterns, flowers, fireflies. */
+  pulse: { value: 0 },
+  pulseColor: { value: new Color('#ffcf7a') },
+  /** Campfire light: strength (flickers), colour and place. */
+  fire: { value: 0 },
+  fireColor: { value: new Color('#ff9a4a') },
+  firePos: { value: new Vector3(0, -100, 0) },
+  /** Wet surfaces in rain, 0..1. */
+  wet: { value: 0 },
+  /** Rain on water (rings), 0..1. */
+  rain: { value: 0 },
 };
 
 let main: MeshLambertMaterial | null = null;
 let foliage: MeshLambertMaterial | null = null;
+let flowerMat: MeshLambertMaterial | null = null;
 
 const MAIN_VERTEX_HEAD = /* glsl */ `
 ${WIND_GLSL}
@@ -33,12 +45,27 @@ varying float vSurf;
 const MAIN_VERTEX_BODY = /* glsl */ `
 #include <begin_vertex>
 {
+  float flap = 0.0;
   #ifdef USE_COLOR_ALPHA
-    vSurf = floor(color.a * 15.0 + 0.5);
+    float raw = color.a * 15.0;
+    vSurf = floor(raw + 0.5);
+    flap = raw - vSurf;
   #else
     vSurf = 15.0;
   #endif
   vec3 wp0 = (modelMatrix * vec4(transformed, 1.0)).xyz;
+  if (flap > 0.1) {
+    // cloth, flags, tails: the fraction above the surface id carries how free the vertex is
+    float w = clamp((flap - 0.15) / 0.3, 0.0, 1.0);
+    float g = windGust(wp0.xz);
+    float s = uWindStrength;
+    float ph = dot(wp0, vec3(2.1, 1.7, 2.3));
+    float wave = sin(uWindTime * 6.5 + ph) * (0.6 + g) + sin(uWindTime * 11.0 + ph * 1.7) * 0.35;
+    vec2 push = uWindDir * (0.06 + 0.2 * g) * s * w;
+    transformed.x += push.x + uWindDir.y * wave * 0.035 * w * s;
+    transformed.z += push.y - uWindDir.x * wave * 0.035 * w * s;
+    transformed.y += length(push) * 0.35 + wave * 0.012 * w;
+  }
   if (abs(vSurf - 7.0) < 0.5) {
     // leaves: slow bend with the gust, branch sway, fast flutter
     float g = windGust(wp0.xz);
@@ -59,6 +86,12 @@ const MAIN_FRAGMENT_HEAD = /* glsl */ `
 uniform float uGlow;
 uniform vec3 uGlowColor;
 uniform vec3 uRim;
+uniform float uPulse;
+uniform vec3 uPulseColor;
+uniform float uFire;
+uniform vec3 uFireColor;
+uniform vec3 uFirePos;
+uniform float uWet;
 uniform sampler2DArray uSurf;
 uniform float uSurfLayer[16];
 uniform float uSurfScale[16];
@@ -84,6 +117,7 @@ const MAIN_FRAGMENT_SURFACE = /* glsl */ `
     float fade = 1.0 - smoothstep(30.0, 90.0, length(vWPos - cameraPosition));
     diffuseColor.rgb *= 1.0 + uSurfAmp[sid] * (d - 0.5) * 2.0 * fade;
   }
+  diffuseColor.rgb *= 1.0 - uWet * 0.18;
 }`;
 
 const MAIN_FRAGMENT_END = /* glsl */ `
@@ -93,6 +127,13 @@ const MAIN_FRAGMENT_END = /* glsl */ `
   vec3 warm = uGlowColor * (0.85 + 0.3 * max(vColor.r, vColor.g));
   outgoingLight = mix(outgoingLight, warm, glowMask * uGlow);
   outgoingLight += vColor.rgb * glowMask * 0.22;
+  outgoingLight += uPulseColor * uPulse * glowMask * 0.9;
+  if (uFire > 0.001) {
+    vec3 fd = uFirePos - vWPos;
+    float fl = length(fd);
+    float fk = uFire / (1.0 + fl * fl * 0.45) * smoothstep(9.0, 1.5, fl);
+    outgoingLight += diffuseColor.rgb * uFireColor * fk * (0.45 + 0.55 * max(dot(normalize(vWNorm), fd / max(fl, 1e-3)), 0.0));
+  }
   vec3 V = normalize(cameraPosition - vWPos);
   float rim = pow(1.0 - clamp(dot(normalize(vWNorm), V), 0.0, 1.0), 3.0);
   float foliage = (sid == 7 || sid == 1) ? 1.0 : 0.25;
@@ -111,6 +152,12 @@ export function mainMaterial(): MeshLambertMaterial {
     s.uniforms.uGlowColor = U.glowColor;
     s.uniforms.uRim = U.rim;
     s.uniforms.uTime = U.time;
+    s.uniforms.uPulse = U.pulse;
+    s.uniforms.uPulseColor = U.pulseColor;
+    s.uniforms.uFire = U.fire;
+    s.uniforms.uFireColor = U.fireColor;
+    s.uniforms.uFirePos = U.firePos;
+    s.uniforms.uWet = U.wet;
     s.uniforms.uSurf = { value: surf };
     s.uniforms.uSurfLayer = { value: SURF_LAYER };
     s.uniforms.uSurfScale = { value: SURF_SCALE };
@@ -125,25 +172,37 @@ export function mainMaterial(): MeshLambertMaterial {
       .replace('#include <color_fragment>', MAIN_FRAGMENT_SURFACE)
       .replace('#include <opaque_fragment>', MAIN_FRAGMENT_END);
   };
-  m.customProgramCacheKey = () => 'world-main-v2';
+  m.customProgramCacheKey = () => 'world-main-v3';
   main = m;
   return m;
 }
 
 /**
  * Grass and flowers: instanced, vertex colours from base to tip; the colour alpha holds how
- * much a vertex sways (0 at the root, 1 at the tip).
+ * much a vertex sways (0 at the root, 1 at the tip). The flower variant also glows with the
+ * music pulse at the heads.
  */
-export function foliageMaterial(): MeshLambertMaterial {
-  if (foliage) return foliage;
+export function foliageMaterial(flowers = false): MeshLambertMaterial {
+  if (!flowers && foliage) return foliage;
+  if (flowers && flowerMat) return flowerMat;
   const m = new MeshLambertMaterial({ vertexColors: true, side: DoubleSide });
-  m.name = 'world:foliage';
+  m.name = flowers ? 'world:flowers' : 'world:foliage';
   m.onBeforeCompile = (s) => {
     s.uniforms.uTime = U.time;
     s.uniforms.uRim = U.rim;
+    s.uniforms.uPulse = U.pulse;
+    s.uniforms.uPulseColor = U.pulseColor;
+    s.uniforms.uFire = U.fire;
+    s.uniforms.uFireColor = U.fireColor;
+    s.uniforms.uFirePos = U.firePos;
     Object.assign(s.uniforms, wind.uniforms);
     s.vertexShader = s.vertexShader
-      .replace('#include <common>', `#include <common>\n${WIND_GLSL}\nuniform float uTime;\nvarying float vGust;\nvarying float vTip;`)
+      .replace('#include <common>', `#include <common>
+${WIND_GLSL}
+uniform float uTime;
+varying float vGust;
+varying float vTip;
+varying vec3 vFW;`)
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
@@ -154,6 +213,7 @@ export function foliageMaterial(): MeshLambertMaterial {
             wp = instanceMatrix * wp;
           #endif
           wp = modelMatrix * wp;
+          vFW = wp.xyz;
           float g = windGust(wp.xz);
           float s = uWindStrength;
           float ph = wp.x * 0.9 + wp.z * 0.7;
@@ -177,16 +237,33 @@ export function foliageMaterial(): MeshLambertMaterial {
       )
       .replace('#include <beginnormal_vertex>', 'vec3 objectNormal = vec3(0.0, 1.0, 0.0);');
     s.fragmentShader = s.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying float vGust;\nvarying float vTip;\nuniform vec3 uRim;')
+      // blades and petals are lit like the lawn from either side (no flipped back faces)
+      .replace('#include <normal_fragment_begin>', 'float faceDirection = 1.0; vec3 normal = normalize(vNormal); vec3 nonPerturbedNormal = normal;')
+      .replace('#include <common>', `#include <common>
+varying float vGust;
+varying float vTip;
+varying vec3 vFW;
+uniform vec3 uRim;
+uniform float uPulse;
+uniform vec3 uPulseColor;
+uniform float uFire;
+uniform vec3 uFireColor;
+uniform vec3 uFirePos;`)
       .replace(
         '#include <opaque_fragment>',
         `diffuseColor.a = 1.0;
         outgoingLight *= 1.0 + vGust * vTip * 0.28;
         outgoingLight += uRim * vTip * 0.06;
+        if (uFire > 0.001) {
+          float fl = length(uFirePos - vFW);
+          outgoingLight += diffuseColor.rgb * uFireColor * uFire / (1.0 + fl * fl * 0.45) * smoothstep(9.0, 1.5, fl) * 0.8;
+        }
+        ${flowers ? 'outgoingLight += mix(diffuseColor.rgb, uPulseColor, 0.4) * uPulse * smoothstep(0.85, 1.0, vTip) * 1.1;' : ''}
         #include <opaque_fragment>`,
       );
   };
-  m.customProgramCacheKey = () => 'world-foliage-v2';
-  foliage = m;
+  m.customProgramCacheKey = () => (flowers ? 'world-flowers-v3' : 'world-foliage-v3');
+  if (flowers) flowerMat = m;
+  else foliage = m;
   return m;
 }

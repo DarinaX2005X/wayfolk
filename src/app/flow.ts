@@ -12,11 +12,13 @@
  * flow finishes on any device, and never depends on a model answer: if a call fails or
  * takes too long, a prepared line takes its place.
  */
+import { Vector3 } from '@iwsdk/core';
 import type { HouseSpec, IslandState, Reply, Resident, WorldEvent } from '../mind/types';
 import { say as caption } from '../feel/captions';
 import { sound } from '../feel/sound';
 import type { App } from './boot/world';
 import { registerDebug } from './debug';
+import type { Guide } from './desk/guide';
 import type { Entry } from './entry/entry';
 import type { Gifts } from './hands/gifts';
 import type { Glide } from './hands/glide';
@@ -47,10 +49,11 @@ export const LINES = {
   hello: "Oh, you're here. I'm Pip. Hold out your hand, palm up, and I'll come down.",
   helloDesk: "Oh, you're here. I'm Pip. This is your island.",
   landed: 'There. Warm hands. Look, someone is drifting this way.',
+  landedDesk: 'Look over there. Someone is drifting this way.',
   welcomeChoices: ['Hello there', 'Where are you headed?', 'Would you like to stay?'],
   stayNudge: 'Would you like to stay?',
   place: 'Point where their house should go, and pinch. Turn your wrist to turn it.',
-  placeDesk: 'Click where their house should go.',
+  placeDesk: 'Click the grass where their house should go.',
   built: 'The light is on. They live here now.',
   tomorrow: 'Someone else will find the island tomorrow. Come back and see who it is.',
   back: 'You came back. Let me tell you what happened.',
@@ -79,10 +82,10 @@ const HOUSE_COLORS: Record<string, { wall: string; roof: string; trim: string }>
 export function createFlow(
   app: App,
   mods: Modules,
-  parts: { entry: Entry; hands: Hands; replies: Replies; placement: Placement; glide: Glide; gifts: Gifts; voice: Voice; postcard: Postcard },
+  parts: { entry: Entry; hands: Hands; replies: Replies; placement: Placement; glide: Glide; gifts: Gifts; voice: Voice; postcard: Postcard; guide: Guide },
 ): Flow {
   const { world, life, mind } = mods;
-  const { entry, hands, replies, placement, glide, gifts, voice, postcard } = parts;
+  const { entry, hands, replies, placement, glide, gifts, voice, postcard, guide } = parts;
   const store = app.store;
   let pipOn: Side | null = null;
   let stayIndex = -1;
@@ -100,8 +103,12 @@ export function createFlow(
 
   // Every line also goes to the captions (the browser shows them; the headset has the bubbles).
   const stand = mods.report.life === 'standin';
+  const pipObject = guide.of(() => life.pip.object, 0.1);
+  const residentObject = (id: string) => guide.of(() => life.objectOf?.(id), 0.45);
   const pipSay = async (text: string): Promise<void> => {
     if (!stand) caption({ source: 'Pip', text });
+    store.speaker.value = 'pip';
+    if (desk() && !store.talkingTo.peek()) guide.frame(pipObject);
     try {
       await within(Promise.resolve(life.pip.say(text)), 2500 + text.length * 70, undefined);
     } catch {
@@ -110,6 +117,8 @@ export function createFlow(
   };
   const say = (id: string, name: string, text: string, opts: Record<string, unknown> = {}): Promise<void> => {
     if (!stand) caption({ source: name || 'Traveler', text });
+    store.speaker.value = id;
+    if (desk()) guide.frame(residentObject(id), { lift: -0.15 });
     return within(life.say(id, text, { name, ...opts }), 3000 + text.length * 70, undefined);
   };
 
@@ -151,6 +160,7 @@ export function createFlow(
           intents = ['stay', ...intents.slice(0, 2)];
         }
         stayIndex = choices.findIndex((c, i) => intents[i] === 'stay' || /stay/i.test(c));
+        store.speaker.value = r.id;
         // Touch a bubble, or speak with Pip near the mouth.
         let clip: Blob | null = null;
         const spoken = new Promise<string>((resolve) => {
@@ -173,12 +183,14 @@ export function createFlow(
         }
         const input = audio ? { audio } : { text: (picked as string) || 'Hello' };
         if (input.text) caption({ source: 'You', text: input.text });
+        store.heard.value = input.text ?? '…';
         const fallback: Reply = /stay/i.test(input.text ?? '')
           ? { text: "I'd like that very much. Show me where.", choices: [], intent: 'stay' }
           : { text: 'It is lovely up here. The clouds look like bread rising.', choices: [LINES.stayNudge, 'Tell me more', 'Safe travels'], intent: 'chat' };
         life.emote(r.id, 'talk');
         const reply = await within(mind.talk(r.id, input), 12000, { ...fallback, prepared: true });
         if (reply.heard) caption({ source: 'You', text: reply.heard });
+        if (audio) store.heard.value = reply.heard || null;
         store.prepared.value = Boolean(r.prepared || reply.prepared);
         await say(r.id, r.name, reply.text, { voice: r.voice, mood: reply.mood });
         if (reply.intent === 'stay') return true;
@@ -191,15 +203,23 @@ export function createFlow(
     } finally {
       voice.armed = false;
       store.talkingTo.value = null;
+      store.heard.value = null;
       void within(mind.endTalk?.(r.id), 5000, undefined);
     }
   };
 
   const build = async (r: Resident): Promise<void> => {
     store.phase.value = 'place';
+    const suggested = guide.of(() => app.roots.fx.getObjectByName('spot:suggested'), 0.2);
+    if (desk()) guide.frame(suggested, { lift: -0.4 });
+    const choosing = placement.choose();
+    if (desk()) guide.cue(suggested, 'Click here for their house');
     await pipSay(desk() ? LINES.placeDesk : LINES.place);
-    const spot = await placement.choose();
+    const spot = await choosing;
+    guide.cue(null);
     store.phase.value = 'build';
+    const site = new Vector3(spot.x, world.groundY?.(spot.x, spot.z) ?? 0, spot.z);
+    if (desk()) guide.frame(() => site, { lift: 0.9 });
     const colors = r.house?.colors ?? HOUSE_COLORS[r.trade] ?? { ...HOUSE_COLORS.default, roof: r.colors.accent };
     const spec: HouseSpec = {
       id: `h-${r.id}`,
@@ -245,7 +265,16 @@ export function createFlow(
     if (!traveler) return null;
     store.prepared.value = Boolean(traveler.prepared);
     tell('traveler-arrived', { resident: traveler });
+    if (desk()) guide.frame(residentObject(traveler.id), { lift: 0.3 });
     await life.arrive(traveler, traveler.vehicle);
+    // They come up the path to meet the person in front of the seat, talking on the way.
+    const meet = (world.seat as { meet?: Vector3 }).meet;
+    if (meet?.isVector3) {
+      const to = world.root.localToWorld(meet.clone());
+      void Promise.resolve(life.walkTo(traveler.id, { x: to.x, z: to.z }, { speed: 1.35 }))
+        .then(() => life.face?.(traveler.id))
+        .catch(() => undefined);
+    }
     // The first words come at once, without a model call.
     let intro = traveler.story.intro;
     let choices: string[] | undefined;
@@ -260,6 +289,12 @@ export function createFlow(
     return { traveler, choices };
   };
 
+  const startSpot = new Vector3();
+  let rigMoved = (): boolean => false;
+  const markStart = (): void => {
+    app.world.player.getWorldPosition(startSpot);
+    rigMoved = () => app.world.player.getWorldPosition(new Vector3()).distanceTo(startSpot) > 0.5;
+  };
   let ticking = false;
   const goFree = (): void => {
     store.phase.value = 'free';
@@ -275,7 +310,24 @@ export function createFlow(
         });
       }, 60_000);
     }
+    markStart();
     glide.enable(true);
+    store.speaker.value = null;
+    if (desk()) {
+      guide.frame(null);
+      // One next thing: the nearest flag, until the person has gone somewhere.
+      const flag = glide.beacons()[1] ?? glide.beacons()[0];
+      if (flag) {
+        guide.cue(guide.of(() => flag, 1.05), 'Click a flag to go there');
+        const t0 = app.clock.now();
+        const stop = app.everyFrame((_dt, now) => {
+          if (now - t0 > 16000 || store.walked.peek() || rigMoved() || store.phase.peek() !== 'free') {
+            stop();
+            guide.cue(null);
+          }
+        });
+      }
+    }
     gifts.setUp();
     gifts.enable(true);
     postcard.enable(true);
@@ -431,7 +483,7 @@ export function createFlow(
         await pipSay(desk() ? LINES.helloDesk : LINES.hello);
         store.phase.value = 'palm';
         await palm(9000);
-        await pipSay(LINES.landed);
+        await pipSay(desk() ? LINES.landedDesk : LINES.landed);
         const came = await arrival();
         const traveler = came?.traveler;
         if (traveler) {

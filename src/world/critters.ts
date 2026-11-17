@@ -70,10 +70,13 @@ uniform float uTime;
 uniform float uSize;
 uniform float uMode; // 0 fireflies, 1 drifting seeds
 attribute vec3 aSeedV;
+attribute vec3 aCol;
 varying float vBlink;
+varying vec3 vCol;
 void main() {
   vec3 p = position;
   float s = aSeedV.x;
+  vCol = aCol;
   if (uMode < 0.5) {
     p += vec3(sin(uTime * 0.31 + s * 11.0) * 1.2, sin(uTime * 0.53 + s * 7.0) * 0.35, cos(uTime * 0.27 + s * 5.0) * 1.2);
     vBlink = smoothstep(0.55, 1.0, sin(uTime * (0.9 + aSeedV.y) + s * 30.0) * 0.5 + 0.5);
@@ -87,7 +90,7 @@ void main() {
     p.xz = c + rel;
     float g = windGust(p.xz);
     p.y = position.y + sin(uTime * 0.8 + s * 13.0) * 0.4 + g * 0.8;
-    vBlink = 0.55 + 0.45 * g;
+    vBlink = uMode > 1.5 ? smoothstep(0.25, 0.9, g) : 0.55 + 0.45 * g;
   }
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_PointSize = uSize * (1.0 / max(0.5, -mv.z)) * 300.0;
@@ -97,13 +100,16 @@ void main() {
 const sparkFragment = /* glsl */ `
 uniform vec3 uColor;
 uniform float uShow;
+uniform float uMode;
 varying float vBlink;
+varying vec3 vCol;
 void main() {
   vec2 d = gl_PointCoord - 0.5;
-  float a = smoothstep(0.5, 0.0, length(d));
+  // petals are little ovals, seeds and fireflies round
+  float a = uMode > 1.5 ? smoothstep(0.5, 0.3, length(d * vec2(1.0, 1.8))) : smoothstep(0.5, 0.0, length(d));
   float k = a * vBlink * uShow;
   if (k < 0.01) discard;
-  gl_FragColor = vec4(uColor * k, k);
+  gl_FragColor = vec4(uColor * vCol * (uMode > 1.5 ? 1.0 : k), k);
   #include <colorspace_fragment>
 }`;
 
@@ -222,6 +228,8 @@ void main() {
 }`;
 
 export interface Critters {
+  /** Music pulse: fireflies swell and brighten. */
+  setPulse(level: number): void;
   /** Chimney tops that smoke (up to 16). */
   setSmoke(tops: Vector3[]): void;
   update(t: number): void;
@@ -296,16 +304,22 @@ export function createCritters(parent: Object3D, land: Land): Critters {
   root.add(flyers);
 
   // fireflies and drifting seeds
-  const spark = (count: number, mode: number, colour: string, size: number, spread: () => [number, number, number]): Points => {
+  const spark = (count: number, mode: number, colour: string, size: number, spread: () => [number, number, number], tints?: string[]): Points => {
     const pos = new Float32Array(count * 3);
     const sd = new Float32Array(count * 3);
+    const cols = new Float32Array(count * 3).fill(1);
     for (let i = 0; i < count; i++) {
       pos.set(spread(), i * 3);
       sd.set([r() * 10, r(), r()], i * 3);
+      if (tints) {
+        const c = new Color(tints[i % tints.length]);
+        cols.set([c.r, c.g, c.b], i * 3);
+      }
     }
     const g = new BufferGeometry();
     g.setAttribute('position', new BufferAttribute(pos, 3));
     g.setAttribute('aSeedV', new BufferAttribute(sd, 3));
+    g.setAttribute('aCol', new BufferAttribute(cols, 3));
     const m = new ShaderMaterial({
       uniforms: { uTime: time, uSize: { value: size }, uMode: { value: mode }, uColor: { value: new Color(colour) }, uShow: { value: 0 }, ...wind.uniforms },
       vertexShader: sparkVertex,
@@ -313,6 +327,7 @@ export function createCritters(parent: Object3D, land: Land): Critters {
       transparent: true,
       depthWrite: false,
       blending: mode === 0 ? AdditiveBlending : NormalBlending,
+      depthTest: true,
     });
     const pts = new Points(g, m);
     pts.frustumCulled = false;
@@ -332,6 +347,10 @@ export function createCritters(parent: Object3D, land: Land): Critters {
   fireflies.name = 'world:fireflies';
   const seeds = spark(70, 1, '#fff6ea', 0.035, () => [CENTER.x + (r() - 0.5) * 40, 0.6 + r() * 3.5, CENTER.z + (r() - 0.5) * 40]);
   seeds.name = 'world:seeds';
+  // petals lifted off the meadow, seen mostly when a gust rolls through
+  const petals = spark(90, 2, '#ffffff', 0.05, () => [CENTER.x + (r() - 0.5) * 40, 0.3 + r() * 2.2, CENTER.z + (r() - 0.5) * 40], ['#ffd9e0', '#fff3d6', '#f7d23e', '#f28aa0', '#ffffff', '#e8513f']);
+  petals.name = 'world:petals';
+  const fireSize = (fireflies.material as ShaderMaterial).uniforms.uSize;
 
   // far birds
   const birdGeo = new BufferGeometry();
@@ -393,6 +412,12 @@ export function createCritters(parent: Object3D, land: Land): Critters {
   root.add(smoke);
 
   return {
+    setPulse(level) {
+      fireSize.value = 0.07 * (1 + level * 1.2);
+      const m = fireflies.material as ShaderMaterial;
+      m.uniforms.uShow.value = Math.max(m.uniforms.uShow.value as number, level * 0.9);
+      fireflies.visible = fireflies.visible || level > 0.05;
+    },
     setSmoke(tops) {
       tops.slice(0, 16).forEach((t, i) => smokeSrc[i].copy(t));
       smokeMat.uniforms.uCount.value = Math.min(16, tops.length);
@@ -408,6 +433,8 @@ export function createCritters(parent: Object3D, land: Land): Critters {
       (fireflies.material as ShaderMaterial).uniforms.uShow.value = Math.max(0, glow - 0.2) / 0.8;
       fireflies.visible = glow > 0.25;
       (seeds.material as ShaderMaterial).uniforms.uShow.value = 0.35 + 0.65 * day;
+      (petals.material as ShaderMaterial).uniforms.uShow.value = day;
+      petals.visible = day > 0.05;
       birdMat.uniforms.uColor.value.set(night > 0.5 ? '#1a2033' : '#3b3a46');
       smokeMat.uniforms.uColor.value.set(night > 0.5 ? '#5d6678' : '#ebe5dc');
     },

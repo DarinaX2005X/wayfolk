@@ -78,7 +78,7 @@ export type LifePort = {
   build(steps: BuildStep[], opts?: unknown): Promise<void>;
   arrive(resident: Resident, vehicle?: Vehicle | string): Promise<void>;
   spawn(resident: Resident, at?: unknown): unknown;
-  walkTo(id: string, p: unknown): Promise<void> | void;
+  walkTo(id: string, p: unknown, opts?: { speed?: number }): Promise<void> | void;
   say(id: string, text: string, opts?: unknown): Promise<void>;
   emote(id: string, kind: string): void;
   startDaily(): void;

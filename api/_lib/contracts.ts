@@ -43,7 +43,7 @@ export type TestFail = 'offline' | '429' | 'slow' | '503' | '401' | '404' | 'bad
 // ------------------------------------------------------------------ /api/llm
 
 /** What the mind asks the model for. Each task may have its own model (LLM_MODEL_<TASK>). */
-export type LlmTask = 'traveler' | 'talk' | 'events' | 'gift' | 'trip';
+export type LlmTask = 'traveler' | 'talk' | 'events' | 'gift' | 'trip' | 'chapter';
 
 /** `off` spends nothing and answers `agents-offline`; `fixtures` is read as `off`. */
 export type Provider = 'openrouter' | 'gemini' | 'off';

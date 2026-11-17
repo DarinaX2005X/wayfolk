@@ -228,7 +228,7 @@ async function main() {
     return args.help ? 0 : 2;
   }
   const scenarios = args.files.map(loadScenario);
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ args: ['--mute-audio'] });
   let failed = 0;
   try {
     for (const scenario of scenarios) {

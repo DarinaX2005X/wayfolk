@@ -7,7 +7,7 @@ import type { ChatMessage, JsonSchema, LlmCallBody, LlmTask } from '../contracts
 import { isRecord } from '../http';
 import { schemaProblem } from './schema';
 
-export const TASKS: readonly LlmTask[] = ['traveler', 'talk', 'events', 'gift', 'trip'];
+export const TASKS: readonly LlmTask[] = ['traveler', 'talk', 'events', 'gift', 'trip', 'chapter'];
 const RUN_ID = /^[A-Za-z0-9_-]{1,64}$/;
 const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 const MAX_MESSAGES = 16;
