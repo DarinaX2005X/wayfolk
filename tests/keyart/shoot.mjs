@@ -4,7 +4,7 @@
  * UI, rendered from the live scene (src/app/keyart.ts) on the local dev server.
  *
  *   node tests/keyart/shoot.mjs              every frame (a b c d e)
- *   node tests/keyart/shoot.mjs b c          only these
+ *   node tests/keyart/shoot.mjs b c          only these (cover1 cover2 cover3: the covers, no words)
  *   node tests/keyart/shoot.mjs --base <url> another server with debug hooks
  *
  * Each frame gets a fresh page (`?keyart=1&fresh=1&offline=1`), runs `test.keyart(kind)`
@@ -31,7 +31,7 @@ try {
   for (const kind of list) {
     const page = await browser.newPage({ viewport: { width: 1200, height: 800 }, deviceScaleFactor: 2, ignoreHTTPSErrors: true });
     page.on('pageerror', (e) => console.log(`[${kind}] ${e.message}`));
-    await page.goto(`${base}/?keyart=1&fresh=1&offline=1`);
+    await page.goto(`${base}/?keyart=1&fresh=1&offline=1&debug=1`);
     await page.waitForFunction(() => document.querySelector('.home')?.dataset.loaded === 'yes', null, { timeout: 120000 });
     const ok = await page.evaluate((k) => window.__gw?.test?.keyart?.(k), kind);
     if (!ok) {
@@ -51,7 +51,7 @@ try {
       }
     });
     await page.waitForTimeout(100);
-    const file = path.join(OUT, `keyart-${kind}.png`);
+    const file = path.join(OUT, kind.startsWith('cover') ? `cover-${kind.slice(5)}.png` : `keyart-${kind}.png`);
     await page.locator('canvas').first().screenshot({ path: file });
     console.log(`wrote ${path.relative(ROOT, file)}`);
     await page.close();

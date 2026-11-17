@@ -8,7 +8,7 @@
  */
 import { BufferAttribute, BufferGeometry, Color, type Mesh, type Object3D } from '@iwsdk/core';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { M, cbox, paint, smoothNormals, surfaceAlpha } from './geo';
+import { M, MAT, build, cbox, cyl, join, paint, place, smoothNormals, surfaceAlpha } from './geo';
 import { KIT_BOUNDS } from './kit-bounds';
 
 const geos = new Map<string, BufferGeometry>();
@@ -118,11 +118,28 @@ function convert(src: BufferGeometry, id: string): BufferGeometry {
   return out;
 }
 
+/** A straight wooden lamp post, 3.3 kit units tall, with the kit's lantern on its top. */
+function lampPost(scale: number): BufferGeometry {
+  const h = 3.3 * scale;
+  const lantern = kitGeometry('lantern', scale * 0.8);
+  const lh = 0.925 * scale * 0.8;
+  lantern.translate(0, h - lh, 0);
+  const post = build([
+    [place(cbox(0.34 * scale, 0.14 * scale, 0.34 * scale, 0.03 * scale), [0, 0, 0]), MAT.woodDark],
+    [place(cyl(0.07 * scale, 0.095 * scale, h - lh - 0.06 * scale, 10), [0, 0.1 * scale, 0]), MAT.woodDark],
+    [place(cbox(0.3 * scale, 0.07 * scale, 0.3 * scale, 0.02 * scale), [0, h - lh - 0.07 * scale, 0]), MAT.wood],
+  ]);
+  return join([post.index ? post.toNonIndexed() : post, lantern.index ? lantern.toNonIndexed() : lantern]);
+}
+
 /**
  * A fresh copy of a kit piece's geometry at `scale`, optionally tinted. Falls back to a
  * box of the piece's size before the kit has loaded.
  */
 export function kitGeometry(id: string, scale = 1, tint?: string, tintAmount = 0): BufferGeometry {
+  // The kit's lamp post hangs its lantern off an arm, and from a seat that reads as a
+  // gallows: ours is a straight post with the lantern sitting on top.
+  if (id === 'post-lantern') return lampPost(scale);
   const g = geos.get(id);
   let out: BufferGeometry;
   if (g) out = g.clone();
