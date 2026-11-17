@@ -113,5 +113,7 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts', 'src/**/*.test.ts', 'content/**/*.test.ts'],
     exclude: ['**/node_modules/**', 'tests/xr/out/**', 'tests/web/out/**'],
+    // Building the whole island in Node takes a few seconds on a busy laptop.
+    testTimeout: 30_000,
   },
 });

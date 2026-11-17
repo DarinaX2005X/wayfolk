@@ -53,7 +53,7 @@ export type Flow = {
   setTogether(t: Together | null): void;
 };
 
-export type Together = { available(): boolean; label: string; open(): Promise<void>; joined?(): Promise<void> };
+export type Together = { available(): boolean; label: string; open(): Promise<void>; joined?(): Promise<void>; visiting?(state: IslandState | null): void };
 
 export const LINES = {
   hello: "Oh, you're here. I'm Pip. Hold out your hand, palm up, and I'll come down.",
@@ -590,6 +590,7 @@ export function createFlow(
       playing = true;
       try {
         loadIsland(state);
+        together?.visiting?.(state);
         for (const h of state.houses) built.add(h.id);
         store.phase.value = 'clouds';
         world.setTime(app.clock.wall());
@@ -669,7 +670,8 @@ export function createFlow(
         else if (pick === LINES.last[1]) {
           try {
             const out = await Promise.resolve(mods.live.host(mind.state.id));
-            postcard.showCard('Come sit on my island', out.link);
+            // The page shows its own card with the link; the headset gets the card in the air.
+            if (!desk()) postcard.showCard('Come sit on my island', out.link);
             app.store.invite.value = out.link;
             await pipSay(LINES.invited);
           } catch (error) {

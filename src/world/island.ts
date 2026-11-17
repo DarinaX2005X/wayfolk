@@ -427,10 +427,20 @@ export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatc
   batch.add('porch', build(porch.map(([g, c]) => [g, c] as [BufferGeometry, string])));
   const benchItem = CATALOG.bench;
   batch.add('porch:bench', place(kitGeometry('bench', benchItem.scale), [SEAT.x, deckY, SEAT.z + 0.32], [0, 0, 0]));
-  batch.add('porch:lamp', place(kitGeometry('post-lantern', 0.62), [-1.6, deckY, 0.55], [0, Math.PI / 2, 0]));
-  perches.push({ pos: new Vector3(-1.6, 2.2, 0.55), kind: 'lamp' });
+  // A straight lamp post with the lantern on top (a bracket lantern read as a gallows from
+  // the seat); Pip perches on the lantern's roof.
+  batch.add(
+    'porch:lamp-post',
+    build([
+      [place(cbox(0.22, 0.1, 0.22, 0.03), [-1.6, deckY, 0.55]), MAT.woodDark],
+      [place(cyl(0.045, 0.06, 1.86, 10), [-1.6, deckY + 0.05, 0.55]), MAT.woodDark],
+      [place(cbox(0.2, 0.05, 0.2, 0.02), [-1.6, deckY + 1.89, 0.55]), MAT.wood],
+    ]),
+  );
+  batch.add('porch:lamp', place(kitGeometry('lantern', 0.5), [-1.6, deckY + 1.93, 0.55], [0, Math.PI / 4, 0]));
+  perches.push({ pos: new Vector3(-1.6, deckY + 1.93 + 0.47, 0.55), kind: 'lamp' });
   for (const x of [-1.7, -0.6, 0.6, 1.7]) perches.push({ pos: new Vector3(x, deckY + 0.72, 1.48), kind: 'post' });
-  lights.push([-1.6, 0.2, 2.2]);
+  lights.push([-1.6, 0.55, 2.3]);
   const side: [string, number, number, number, number][] = [
     ['tea-table', 1.35, -0.45, -0.4, 0.75],
     ['flower-pot', -1.45, 0.95, 0, 1],

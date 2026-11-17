@@ -6,7 +6,8 @@
  * Start: `startWayfolk(app)` boots everything and seats the person; `begin()` runs the
  * flow (called when the person enters, or at once at the desk).
  */
-import { Box3, Object3D, Raycaster, Vector3, type Mesh } from '@iwsdk/core';
+import { Box3, Object3D, Ray, Raycaster, Vector3, type Mesh } from '@iwsdk/core';
+import { createTogether, type Together as TogetherModule } from '../together/index';
 import { effect } from '@preact/signals-core';
 import { bindFeel } from '../feel/bind';
 import type { App } from './boot/world';
@@ -31,7 +32,7 @@ import { createModules, type Modules } from './modules';
 import { createMusic, songFor, type MusicRun } from '../feel/music';
 import type { IslandState } from '../mind/types';
 import { anchorPoint, type AppHandle } from './ports';
-import { createPostcard, type Postcard } from './postcard';
+import { createPostcard, islandLink, type Postcard } from './postcard';
 import { createRig, type Rig } from './rig';
 
 export type Wayfolk = {
@@ -137,8 +138,19 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
   const evening = createEvening(app, mods, guide, hands);
   const painter = createPainter(app, mods, guide);
   const delights = createDelights(app, mods, hands, guide, () => (flow?.busy() ?? true) || evening.playing !== null || replies.open);
+  // Things two people do together while a friend is here (src/together/), made below.
+  let together: TogetherModule | null = null;
+  const handRay = new Ray();
   // Moving in a headset: real steps, a hop to any spot of grass, pulling yourself along.
-  createMove(app, hands, mods.world, glide, guide.walkable, (side) => replies.open || replies.consumed(side) || placement.active || gifts.holding() || (flow?.busy() ?? true) || evening.playing !== null);
+  // Never while holding the bridge rope, at the chimes, or when the pinch is for them.
+  createMove(app, hands, mods.world, glide, guide.walkable, (side) => {
+    if (replies.open || replies.consumed(side) || placement.active || gifts.holding() || (flow?.busy() ?? true) || evening.playing !== null) return true;
+    if (!together) return false;
+    const h = hands.get(side);
+    handRay.origin.copy(h.rayOrigin);
+    handRay.direction.copy(h.rayDir).normalize();
+    return together.wants(handRay, h.indexTip);
+  });
   flow = createFlow(app, mods, {
     entry,
     hands,
@@ -161,6 +173,36 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
   });
   const talker = flow as Flow & { say(id: string, name: string, text: string): Promise<void>; pipSay(text: string): Promise<void> };
   const visits = createVisits(app, mods, { replies, guide, glide, rig, say: (id, name, text) => talker.say(id, name, text), pipSay: (text) => talker.pipSay(text) });
+  // Once the friend is here, the invite card has done its job.
+  app.everyFrame(() => {
+    if (app.store.invite.peek() && together?.friend) app.store.invite.value = null;
+  });
+  try {
+    together = createTogether({
+      world: mods.world as never,
+      life: mods.life as never,
+      mind: mods.mind as never,
+      live: mods.live as never,
+      app: {
+        camera: world.camera,
+        everyFrame: (fn) => app.everyFrame((dt, now) => fn(dt > 1 ? dt / 1000 : dt, now)),
+        canvas: world.renderer.domElement,
+        hands,
+        glide: (p, yaw) => glide.toPoint(p, yaw),
+        pipSay: (t) => talker.pipSay(t),
+        choose: (o) => replies.show(o),
+        postcard,
+        link: () => islandLink(mods.mind.state.id),
+        renderer: world.renderer,
+        scene: world.scene,
+        immersive: () => world.renderer.xr.isPresenting,
+      },
+    });
+    flow.setTogether(together);
+    registerDebug('together', together);
+  } catch (error) {
+    console.warn('[wf] the things to do together are not here', error);
+  }
   bindDesk(app, rig, replies, placement, glide, guide, voice, [
     {
       objects: () => (mods.life.pip.object ? [mods.life.pip.object] : []),
@@ -469,7 +511,7 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     async invite() {
       try {
         const out = await Promise.resolve(mods.live.host(mods.mind.state.id));
-        postcard.showCard('Come sit on my island', out.link);
+        if (app.store.mode.peek() !== 'desk') postcard.showCard('Come sit on my island', out.link);
         app.store.invite.value = out.link;
         return out;
       } catch (error) {

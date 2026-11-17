@@ -231,11 +231,17 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   };
   effect(() => {
     const pc = store.postcard.value;
-    if (pc) showCard({ ...pc, title: TEXT.postcard });
+    if (pc) {
+      showCard({ ...pc, title: TEXT.postcard });
+      card.dataset.kind = 'postcard';
+    }
   });
   effect(() => {
     const link = store.invite.value;
-    if (link) showCard({ url: link, title: TEXT.inviteTitle });
+    if (link) {
+      showCard({ url: link, title: TEXT.inviteTitle });
+      card.dataset.kind = 'invite';
+    } else if (card.dataset.kind === 'invite') card.hidden = true;
   });
 
   // ---- the world boots in the background

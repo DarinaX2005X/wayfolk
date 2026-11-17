@@ -113,6 +113,14 @@ export interface Together {
   readonly record: TogetherRecord;
   readonly neighbours: readonly Neighbour[];
   readonly duetOpen: boolean;
+  /** True while my end of the bridge rope is held (the app keeps its own pinch moves away). */
+  readonly holding: boolean;
+  /**
+   * Would a pinch or a click along this ray (or with a fingertip here) be taken by
+   * something of ours: my rope end, a chime, the friend? The app asks before it uses the
+   * pinch for moving about.
+   */
+  wants(ray: Ray | null, tip?: Vector3 | null): boolean;
   /** The last high-five postcard, a JPEG data URL. */
   readonly lastPostcard: string | null;
   /** What two people can do now, as menu entries (empty without a friend). */
@@ -830,6 +838,19 @@ export function createTogether(mods: TogetherModules): Together {
     },
     get duetOpen() {
       return duet.open;
+    },
+    get holding() {
+      return holding;
+    },
+    wants(ray, tip) {
+      if (holding || duet.open) return true;
+      const b = building;
+      if (tip && b && !b.complete && b.docked) {
+        const coil = b.coils[sideOf(role())];
+        const local = world.root.worldToLocal(tip.clone());
+        if (coil && coil.position.clone().setY(coil.position.y + 0.8).distanceTo(local) < 0.35) return true;
+      }
+      return ray ? hitAlong(ray) !== null : false;
     },
     get lastPostcard() {
       return five.lastPostcard;

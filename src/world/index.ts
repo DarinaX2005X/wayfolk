@@ -303,7 +303,7 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: 
     pos: new Vector3(SEAT.x, seatY, SEAT.z),
     rotY: 0,
     meet: new Vector3(-0.3, 0.16, -1.9),
-    perch: new Vector3(-1.6, 2.12, 0.55),
+    perch: new Vector3(-1.6, 0.16 + 1.93 + 0.47, 0.55),
   };
   const side = { x: PIER.dir.z, z: -PIER.dir.x };
   const landingEnd = PIER.length + 0.1 + 9 * 0.33;
