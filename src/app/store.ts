@@ -118,6 +118,8 @@ export type Store = {
   heard: Signal<string | null>;
   /** Who is speaking now ('pip', a resident id), for the page to place the replies by them. */
   speaker: Signal<string | null>;
+  /** The evening show now playing (src/app/evening.ts): a story by the fire, or a concert. */
+  show: Signal<'story' | 'concert' | null>;
   /**
    * Browser mode, written every frame by src/app/desk/: where on the page the speaker and
    * the cue target are (CSS pixels; `on` false when behind the camera or off the page).
@@ -148,6 +150,7 @@ export const store: Store = {
   walked: signal(false),
   heard: signal<string | null>(null),
   speaker: signal<string | null>(null),
+  show: signal<'story' | 'concert' | null>(null),
   points: { speaker: { x: 0, y: 0, on: false, size: 0 }, cue: { x: 0, y: 0, on: false, size: 0 } },
 };
 

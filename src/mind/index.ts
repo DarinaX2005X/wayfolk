@@ -15,7 +15,9 @@
  * State is saved to IndexedDB after every change that matters.
  */
 import type { PublicResident } from '../../api/_lib/contracts';
+import { CHAPTER_SCHEMA, chapterMessages, cleanChapter, directChapter, nextChapterNumber, preparedChapter } from './chapters';
 import { islandFromPublic, publicSnapshot } from './check';
+import { DEMO_ISLANDS } from './demo';
 import { createModelClient, noModel, type ModelClient } from './llm';
 import { createIslandsClient } from './net';
 import { choicesFor, fill, greeting, guessIntent, offlineReply, type Choice } from './offline';
@@ -27,6 +29,7 @@ import {
   SPECIES,
   TRADES,
   VEHICLES,
+  type Chapter,
   type GiftKind,
   type GiveResult,
   type HouseSpec,
@@ -93,7 +96,25 @@ export type Mind = {
   leaveMail(islandId: string, mail: { kind: 'gift' | 'note'; item?: GiftKind; text: string; from?: string }): Promise<boolean>;
   /** Marks events as seen (Pip told them). */
   seen(events: WorldEvent[]): Promise<void>;
+  /** The next chapter of a resident's story for the evening fire: prepared, live, or directed from their beats. */
+  chapter(id: string): Promise<Chapter>;
+  /** A chapter was told to the end (or nearly): the next evening brings the next one. */
+  toldChapter(id: string): Promise<void>;
+  /** Notes and gifts in this island's mailbox that nobody has read out yet. */
+  notes(): MailItem[];
+  /** A note was read aloud. */
+  readNote(id: string): Promise<void>;
 };
+
+/** Notes neighbours from the islands on the horizon leave in a demo session. */
+const NEIGHBOUR_NOTES = [
+  'We saw your lights last night. They looked like a kettle on a shelf. Wave if you see ours.',
+  'Our gulls say your birds are very polite. Come over when the wind is kind.',
+  'I left a feather for your bird. The blue one. It fell off my hat on the way.',
+  'Your island looks small from here, which is the best kind of island.',
+  'Thank you for the lantern. It got stuck in our apple tree and we have named it Gerald.',
+  'Somebody on your island sings while they work. We hum along from here.',
+];
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -501,6 +522,11 @@ export function createMind(options: MindOptions = {}): Mind {
     for (const e of events) if (e.kind === 'growth' && e.effect?.prop && e.effect.at) state.props = [...state.props, { id: makeId('p'), kind: e.effect.prop, pos: e.effect.at, from: 'growth' }].slice(-80);
     events.push(...(await finishTrips(due, tripTold)));
     events.push(...(await fromServer(true)));
+    const note = count > 0 ? neighbourNote() : null;
+    if (note) {
+      state.mail = [...(state.mail ?? []), note].slice(-40);
+      events.push({ at, kind: 'visitor', text: `${note.from} from ${note.fromIsland} left a note in your mailbox.` });
+    }
     state.lastVisit = at;
     addEvents(events);
     await save();
@@ -617,6 +643,54 @@ export function createMind(options: MindOptions = {}): Mind {
     return r.ok;
   }
 
+  // ---------------------------------------------------------------- the evening fire
+
+  async function chapter(id: string): Promise<Chapter> {
+    const { r } = find(id);
+    const n = nextChapterNumber(r);
+    if (r.prepared) {
+      const prepared = preparedChapter(r, n);
+      if (prepared) return prepared;
+    }
+    if (await live()) {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const res = await model.call({ task: 'chapter', messages: chapterMessages(r, n, state.name), schema: CHAPTER_SCHEMA, maxTokens: 2200, timeoutMs: 18_000, attempt });
+        if (!res.ok) {
+          if (res.reason !== 'bad-output') break;
+          continue;
+        }
+        const c = cleanChapter(res.json, r, n, 'live');
+        if (typeof c !== 'string') return c;
+      }
+    }
+    return directChapter(r, n);
+  }
+
+  async function toldChapter(id: string): Promise<void> {
+    let r: Resident;
+    try {
+      r = find(id).r;
+    } catch {
+      return;
+    }
+    r.chapters = (r.chapters ?? 0) + 1;
+    r.lastChapterAt = now();
+    remember(r, `I told the person chapter ${r.chapters} of my story by the fire.`);
+    await save();
+  }
+
+  /** A demo session gets a note now and then from a neighbour on the horizon. */
+  function neighbourNote(): MailItem | null {
+    if (!demo || !DEMO_ISLANDS.length || state.residents.length === 0) return null;
+    if ((state.mail ?? []).some((m) => !m.read)) return null;
+    const island = pick(DEMO_ISLANDS);
+    const who = island.island.residents[Math.floor(random() * island.island.residents.length)];
+    if (!who) return null;
+    const used = new Set((state.mail ?? []).map((m) => m.text));
+    const text = NEIGHBOUR_NOTES.find((t) => !used.has(t)) ?? pick(NEIGHBOUR_NOTES);
+    return { id: makeId('m'), at: now(), from: who.name, fromIsland: island.island.name, kind: 'note', text };
+  }
+
   // ---------------------------------------------------------------- the object
 
   const mind: Mind = {
@@ -668,6 +742,14 @@ export function createMind(options: MindOptions = {}): Mind {
     unpublish,
     visit,
     leaveMail,
+    chapter,
+    toldChapter,
+    notes: () => (state.mail ?? []).filter((m) => !m.read),
+    async readNote(id) {
+      const m = (state.mail ?? []).find((x) => x.id === id);
+      if (m) m.read = true;
+      await save();
+    },
     async seen(events) {
       const set = new Set(events);
       for (const e of state.events) if (set.has(e)) e.seen = true;

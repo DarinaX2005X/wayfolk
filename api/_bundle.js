@@ -2363,7 +2363,7 @@ function parseModelJson(textValue) {
 }
 
 // api/_lib/llm/request.ts
-var TASKS = ["traveler", "talk", "events", "gift", "trip"];
+var TASKS = ["traveler", "talk", "events", "gift", "trip", "chapter"];
 var RUN_ID = /^[A-Za-z0-9_-]{1,64}$/;
 var BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 var MAX_MESSAGES = 16;

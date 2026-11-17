@@ -304,12 +304,14 @@ export function cleanChapter(raw: unknown, r: Resident, n: number, source: Chapt
 
   // A teller who waits off stage and is never called comes on with the first line.
   const meId = me.id;
-  const called = beats.some((b) => b.actions.some((a) => a.who === meId && (a.do === 'enter' || a.do === 'appear' || a.do === 'rise' || a.do === 'fly')));
-  if ((me.hidden || addedMe) && !called) beats[0].actions.unshift({ do: 'enter', who: meId, to: me.at });
+  // Any action brings a waiting cut-out on stage (the theatre fades it in), except leaving.
+  const bringsOn = (a: StageAction): boolean => a.do !== 'exit' && a.do !== 'fade' && a.do !== 'sink';
+  const called = beats.some((b) => b.actions.some((a) => a.who === meId && bringsOn(a)));
+  if ((me.hidden || addedMe) && !called) beats[0].actions = [{ do: 'enter' as const, who: meId, to: me.at }, ...beats[0].actions].slice(0, CHAPTER_LIMITS.actionsMax);
   // Every hidden cut-out that is never brought on is shown from the start instead.
   for (const c of cast) {
     if (!c.hidden) continue;
-    const used = beats.some((b) => b.actions.some((a) => a.who === c.id && (a.do === 'enter' || a.do === 'appear' || a.do === 'rise' || a.do === 'fly')));
+    const used = beats.some((b) => b.actions.some((a) => a.who === c.id && bringsOn(a)));
     if (!used) c.hidden = false;
   }
   return { id: `${r.id}-${n}`, residentId: r.id, n, title, mood, cast, beats, source };

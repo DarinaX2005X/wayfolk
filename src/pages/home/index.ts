@@ -36,6 +36,11 @@ export const TEXT = {
   close: 'Close',
   invite: 'Invite a friend',
   snap: 'Take a postcard',
+  story: 'A story by the fire',
+  song: 'A song',
+  lantern: 'Send a lantern',
+  next: 'Next',
+  enough: "That's enough for tonight",
   vr: 'Enter in VR',
   inviteTitle: 'Come sit on my island',
   again: 'The island is ready. Press Enter again to put the headset on.',
@@ -116,14 +121,39 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   vrTag.type = 'button';
   vrTag.hidden = true;
   vrTag.addEventListener('click', () => void enterSession());
-  menu.append(snap, inviteTag, vrTag);
+  // The evening: a story by the fire and a song, as tags too (Pip offers them in the headset).
+  const storyTag = el('button', 'tag tag-small tag-warm', TEXT.story);
+  storyTag.type = 'button';
+  storyTag.addEventListener('click', () => void wf?.evening.story());
+  const songTag = el('button', 'tag tag-small tag-warm', TEXT.song);
+  songTag.type = 'button';
+  songTag.addEventListener('click', () => void wf?.evening.concert());
+  const lanternTag = el('button', 'tag tag-small', TEXT.lantern);
+  lanternTag.type = 'button';
+  lanternTag.addEventListener('click', () => void wf?.delights.lantern());
+  menu.append(storyTag, songTag, lanternTag, snap, inviteTag, vrTag);
+  // While a story plays: hurry a line, or stop.
+  const showBar = el('div', 'home-menu home-show');
+  const nextTag = el('button', 'tag tag-small', TEXT.next);
+  nextTag.type = 'button';
+  nextTag.addEventListener('click', () => wf?.evening.next());
+  const enoughTag = el('button', 'tag tag-small', TEXT.enough);
+  enoughTag.type = 'button';
+  enoughTag.addEventListener('click', () => wf?.evening.stop());
+  showBar.append(nextTag, enoughTag);
+  effect(() => {
+    const show = store.show.value;
+    showBar.hidden = !show || store.mode.value !== 'desk';
+    nextTag.hidden = show !== 'story';
+    enoughTag.textContent = show === 'concert' ? 'Stop the music' : TEXT.enough;
+  });
 
   effect(() => {
-    menu.hidden = store.phase.value !== 'free' || store.mode.value !== 'desk';
+    menu.hidden = store.phase.value !== 'free' || store.mode.value !== 'desk' || store.show.value !== null;
   });
   const prepared = el('p', 'home-prepared', 'prepared traveler');
   prepared.hidden = true;
-  strip.append(captions, prepared, menu);
+  strip.append(captions, prepared, menu, showBar);
   let wf: Awaited<ReturnType<WF['startWayfolk']>> | null = null;
   const deskUi = createDeskUi(store, {
     pick: (i) => wf?.replies.pick(i),

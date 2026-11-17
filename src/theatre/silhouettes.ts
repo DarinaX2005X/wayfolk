@@ -744,11 +744,12 @@ const DRAW: Record<SilhouetteKind, (c: C, w: number) => void> = {
   },
   hill: (c, w) =>
     solid(c, () => {
+      // Rolling hills that come down to the ground at both ends, so no edge is cut.
       c.moveTo(0, 1);
-      c.lineTo(0, 0.55);
-      c.bezierCurveTo(w * 0.15, 0.2, w * 0.35, 0.15, w * 0.5, 0.45);
-      c.bezierCurveTo(w * 0.62, 0.65, w * 0.78, 0.1, w, 0.4);
-      c.lineTo(w, 1);
+      c.bezierCurveTo(w * 0.06, 0.7, w * 0.12, 0.3, w * 0.28, 0.3);
+      c.bezierCurveTo(w * 0.42, 0.3, w * 0.45, 0.55, w * 0.55, 0.5);
+      c.bezierCurveTo(w * 0.68, 0.42, w * 0.74, 0.15, w * 0.86, 0.25);
+      c.bezierCurveTo(w * 0.95, 0.35, w * 0.97, 0.75, w, 1);
       c.closePath();
     }),
   tree: (c, w) => tree(c, w),

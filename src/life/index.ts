@@ -7,7 +7,7 @@ import { loadBubbleFonts } from './bubble';
 import { Daily } from './daily';
 import { BirdAgent, readHand, type FlockEnv } from './flock';
 import { Fx } from './fx';
-import { ResidentAgent } from './residents';
+import { ResidentAgent, setBeat } from './residents';
 import { setRim } from './rig';
 import { Arrival, Build, type Scene } from './scenes';
 import { Speech, type Speaker } from './speech';
@@ -448,6 +448,18 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
     },
     startDaily(): void {
       daily.start();
+    },
+    flockCircle(at: Vector3 | null, radius = 3): void {
+      for (const b of flock) {
+        if (at) {
+          b.mode = 'circle';
+          b.circleCenter.copy(at);
+          b.circleRadius = radius;
+        } else if (b.mode === 'circle') b.mode = 'flock';
+      }
+    },
+    setBeat(bpm: number): void {
+      setBeat(bpm);
     },
     stopDaily(): void {
       daily.stop();

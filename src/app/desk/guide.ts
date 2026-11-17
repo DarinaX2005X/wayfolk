@@ -173,7 +173,7 @@ export function createGuide(app: App, rig: Rig, world: WorldPort, blocked: () =>
       dy = Math.atan2(Math.sin(dy), Math.cos(dy));
       const dp = goalPitch - rig.lookPitch;
       // A dead zone keeps the view still while the subject stays well in frame.
-      const far = Math.abs(dy) > 0.2 || Math.abs(dp) > 0.16;
+      const far = Math.abs(dy) > 0.13 || Math.abs(dp) > 0.11;
       if (far) aiming = true;
       if (aiming) {
         const k = 1 - Math.exp(-dt * 2.4);

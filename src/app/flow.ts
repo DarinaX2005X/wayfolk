@@ -58,8 +58,10 @@ export const LINES = {
   tomorrow: 'Someone else will find the island tomorrow. Come back and see who it is.',
   back: 'You came back. Let me tell you what happened.',
   quiet: 'It was quiet while you were away. Everyone slept well.',
-  menu: ['Who lives here?', 'Take a postcard', 'Invite a friend', 'Head home'],
-  meet: ['Say hello', 'Give a fruit', 'Never mind'],
+  menu: ['Tell us a story', 'Play us a song', 'Send a lantern', 'More'],
+  more: ['Paint the island', 'Visit an island', 'Take a postcard', 'More'],
+  last: ['Invite a friend', 'Head home', 'Who lives here?', 'Back'],
+  meet: ['Say hello', 'Give a fruit', 'Go on a trip', 'Peek inside'],
   pipBusy: {
     greet: 'Hello again. Hold on, I am still settling in.',
     palm: 'Here I am. Someone is on their way.',
@@ -72,6 +74,12 @@ export const LINES = {
   invited: 'Show this to a friend. When they open it, they will sit here with you.',
   farewell: 'Sleep well. The island will keep your seat warm.',
   leftEarly: 'They waved and drifted on. Someone else will come.',
+  eveningOffer: 'The sun is going down. Shall we light the fire?',
+  dayOffer: 'Everyone is home. Shall we have a story, or a song?',
+  eveningChoices: ['A story by the fire', 'Some music', 'Not now'],
+  whale: 'Look up. A whale is passing over the island.',
+  rain: 'Here comes a little rain. Nobody minds.',
+  rainStop: 'The rain has moved on. Everything smells green.',
 } as const;
 
 const HOUSE_COLORS: Record<string, { wall: string; roof: string; trim: string }> = {
@@ -82,7 +90,25 @@ const HOUSE_COLORS: Record<string, { wall: string; roof: string; trim: string }>
 export function createFlow(
   app: App,
   mods: Modules,
-  parts: { entry: Entry; hands: Hands; replies: Replies; placement: Placement; glide: Glide; gifts: Gifts; voice: Voice; postcard: Postcard; guide: Guide },
+  parts: {
+    entry: Entry;
+    hands: Hands;
+    replies: Replies;
+    placement: Placement;
+    glide: Glide;
+    gifts: Gifts;
+    voice: Voice;
+    postcard: Postcard;
+    guide: Guide;
+    /** The evening story and concert, and the small delights (lantern...), when present. */
+    shows?: { story(id?: string): Promise<void>; concert(id?: string): Promise<void>; lantern(): Promise<void>; paint(): Promise<void> };
+    /** A neighbour reads a note from the mailbox aloud; false when there is none. */
+    readNote?(): Promise<boolean>;
+    /** A shooting star falls by the seat (catch it, make a wish). */
+    star?(): Promise<void>;
+    /** Trips, visits to islands on the horizon, peeks through windows. */
+    visits?: { trip(id: string): Promise<void>; visit(id?: string): Promise<void>; peek(id: string): Promise<void>; returned(id: string): void };
+  },
 ): Flow {
   const { world, life, mind } = mods;
   const { entry, hands, replies, placement, glide, gifts, voice, postcard, guide } = parts;
@@ -143,9 +169,14 @@ export function createFlow(
 
   const residentName = (id: string): string => mind.state?.residents?.find((r) => r.id === id)?.name ?? mind.state?.pending?.name ?? '';
 
-  const talk = async (r: Resident, first?: string[], nudge = true): Promise<boolean> => {
+  const talk = async (r: Resident, first?: string[], nudge = true, near?: Promise<void>): Promise<boolean> => {
+    if (near) {
+      // Still walking up the path: wait until they stand in front of the person.
+      await within(near, 16000, undefined);
+    }
     store.phase.value = 'talk';
     store.talkingTo.value = r.id;
+    if (desk()) guide.frame(residentObject(r.id), { lift: -0.15 });
     let choices: string[] = first?.length ? first.slice(0, 3) : [...LINES.welcomeChoices];
     let turns = 0;
     let intents: string[] = [];
@@ -211,10 +242,14 @@ export function createFlow(
   const build = async (r: Resident): Promise<void> => {
     store.phase.value = 'place';
     const suggested = guide.of(() => app.roots.fx.getObjectByName('spot:suggested'), 0.2);
-    if (desk()) guide.frame(suggested, { lift: -0.4 });
     const choosing = placement.choose();
-    if (desk()) guide.cue(suggested, 'Click here for their house');
-    await pipSay(desk() ? LINES.placeDesk : LINES.place);
+    const asking = pipSay(desk() ? LINES.placeDesk : LINES.place);
+    // Pip speaks, but the view goes to the free spot, with the one thing to do there.
+    if (desk()) {
+      guide.frame(suggested, { lift: -0.4 });
+      guide.cue(suggested, 'Click here for their house');
+    }
+    await asking;
     const spot = await choosing;
     guide.cue(null);
     store.phase.value = 'build';
@@ -259,7 +294,7 @@ export function createFlow(
     life.emote(r.id, 'happy');
   };
 
-  const arrival = async (): Promise<{ traveler: Resident; choices?: string[] } | null> => {
+  const arrival = async (): Promise<{ traveler: Resident; choices?: string[]; near?: Promise<void> } | null> => {
     store.phase.value = 'arrive';
     const traveler = await within(Promise.resolve(mind.nextTraveler()), 15000, null as unknown as Resident);
     if (!traveler) return null;
@@ -267,11 +302,13 @@ export function createFlow(
     tell('traveler-arrived', { resident: traveler });
     if (desk()) guide.frame(residentObject(traveler.id), { lift: 0.3 });
     await life.arrive(traveler, traveler.vehicle);
-    // They come up the path to meet the person in front of the seat, talking on the way.
+    // They come up the path to meet the person in front of the seat, talking on the way;
+    // the replies wait until they stand there.
     const meet = (world.seat as { meet?: Vector3 }).meet;
+    let near: Promise<void> = Promise.resolve();
     if (meet?.isVector3) {
       const to = world.root.localToWorld(meet.clone());
-      void Promise.resolve(life.walkTo(traveler.id, { x: to.x, z: to.z }, { speed: 1.35 }))
+      near = Promise.resolve(life.walkTo(traveler.id, { x: to.x, z: to.z }, { speed: 2.2 }))
         .then(() => life.face?.(traveler.id))
         .catch(() => undefined);
     }
@@ -286,7 +323,62 @@ export function createFlow(
       // The intro of the card stays.
     }
     await say(traveler.id, traveler.name, intro, { voice: traveler.voice });
-    return { traveler, choices };
+    return { traveler, choices, near };
+  };
+
+  // Scenarios drive the evening themselves; a page under automation gets no surprises.
+  const automated = (): boolean => typeof navigator !== 'undefined' && navigator.webdriver === true && !/[?&]sky=1/.test(location.search);
+  // ---- the evening offer: at dusk and at night, Pip offers a story or a song once a visit.
+  let offered = false;
+  const offerEvening = (): void => {
+    if (offered || !parts.shows || automated()) return;
+    const h = app.clock.wall().getHours();
+    if (h < 17 && !app.params.later) return;
+    offered = true;
+    app.clock.timers.set(async () => {
+      if (playing || replies.open || store.phase.peek() !== 'free' || store.show.peek()) return;
+      playing = true;
+      try {
+        store.speaker.value = 'pip';
+        void pipSay(h >= 17 || h < 5 ? LINES.eveningOffer : LINES.dayOffer);
+        const pick = await replies.show([...LINES.eveningChoices], { side: pipOn ?? undefined });
+        if (pick === LINES.eveningChoices[0]) await parts.shows?.story();
+        else if (pick === LINES.eveningChoices[1]) await parts.shows?.concert();
+      } finally {
+        playing = false;
+      }
+    }, 9000 * pace());
+  };
+
+  // ---- the sky: now and then a whale passes, a little rain falls, a star drops.
+  let skyTimer = false;
+  const scheduleSky = (): void => {
+    if (skyTimer || automated()) return;
+    skyTimer = true;
+    const W = world as { skyWhale?: () => Promise<void>; weather?: { set(kind: string): void; readonly kind: string } };
+    const next = (): void => {
+      app.clock.timers.set(async () => {
+        next();
+        if (playing || replies.open || store.phase.peek() !== 'free' || store.show.peek()) return;
+        const roll = Math.random();
+        try {
+          if (roll < 0.4 && W.skyWhale) {
+            void pipSay(LINES.whale);
+            await W.skyWhale();
+          } else if (roll < 0.7 && W.weather) {
+            void pipSay(LINES.rain);
+            W.weather.set('drizzle');
+            app.clock.timers.set(() => {
+              W.weather?.set('clear');
+              void pipSay(LINES.rainStop);
+            }, 45000);
+          } else await parts.star?.();
+        } catch (error) {
+          console.warn('[wf] the sky event did not happen', error);
+        }
+      }, (150000 + Math.random() * 90000) * Math.max(0.3, pace()));
+    };
+    next();
   };
 
   const startSpot = new Vector3();
@@ -304,6 +396,7 @@ export function createFlow(
       ticking = true;
       app.clock.timers.set(function next() {
         void within(mind.tick!(Date.now()), 8000, [] as WorldEvent[]).then(async (events) => {
+          for (const e of events) if (e.kind === 'trip-return' && e.residentId) parts.visits?.returned(e.residentId);
           if (store.phase.peek() === 'free' && !playing) for (const e of events.slice(0, 2)) await pipSay(e.text);
           if (events.length) void within(mind.seen?.(events), 4000, undefined);
           app.clock.timers.set(next, 60_000);
@@ -311,6 +404,8 @@ export function createFlow(
       }, 60_000);
     }
     markStart();
+    scheduleSky();
+    offerEvening();
     glide.enable(true);
     store.speaker.value = null;
     if (desk()) {
@@ -395,7 +490,9 @@ export function createFlow(
     if (message) void pipSay(message);
   }) as never);
 
-  const flow: Flow = {
+  const flow: Flow & { say: typeof say; pipSay: typeof pipSay } = {
+    say,
+    pipSay,
     pipSide: () => pipOn,
     async pokePip() {
       life.pip.emote?.('happy');
@@ -414,6 +511,8 @@ export function createFlow(
       playing = true;
       try {
         life.face?.(id);
+        store.speaker.value = id;
+        if (desk()) guide.frame(residentObject(id), { lift: -0.15 });
         const pick = await replies.show([...LINES.meet]);
         if (pick === LINES.meet[0]) {
           let first: string[] | undefined;
@@ -430,7 +529,8 @@ export function createFlow(
           const answer = await within(Promise.resolve(mind.give(id, 'fruit')), 8000, { text: 'Thank you. That is kind.' });
           life.emote(id, 'happy');
           await say(id, r.name, answer.text);
-        }
+        } else if (pick === LINES.meet[2]) await parts.visits?.trip(id);
+        else if (pick === LINES.meet[3]) await parts.visits?.peek(id);
       } finally {
         playing = false;
       }
@@ -477,6 +577,8 @@ export function createFlow(
             if (e.effect?.prop && e.effect.at) world.addProp(e.effect.prop, e.effect.at);
           }
           void within(mind.seen?.(events.slice(0, 3)), 4000, undefined);
+          // Notes from guests: one is read aloud on the way in.
+          await within(parts.readNote?.() ?? false, 30000, false);
           goFree();
           return;
         }
@@ -487,7 +589,7 @@ export function createFlow(
         const came = await arrival();
         const traveler = came?.traveler;
         if (traveler) {
-          const stays = await talk(traveler, came.choices);
+          const stays = await talk(traveler, came.choices, true, came.near);
           if (stays) {
             await build(traveler);
             store.phase.value = 'goodnight';
@@ -511,11 +613,9 @@ export function createFlow(
     },
     async pipMenu() {
       if (playing || replies.open || store.phase.peek() !== 'free') return;
-      playing = true;
-      try {
-        const pick = await replies.show([...LINES.menu], { side: pipOn ?? undefined });
-        if (pick === LINES.menu[1]) await postcard.take();
-        else if (pick === LINES.menu[2]) {
+      const lastPage = async (): Promise<void> => {
+        const pick = await replies.show([...LINES.last], { side: pipOn ?? undefined });
+        if (pick === LINES.last[0]) {
           try {
             const out = await Promise.resolve(mods.live.host(mind.state.id));
             postcard.showCard('Come sit on my island', out.link);
@@ -525,14 +625,29 @@ export function createFlow(
             console.warn('[wf] no invite link', error);
             await pipSay(mods.live.message ?? 'The invite did not work just now. Try again in a moment.');
           }
-        } else if (pick === LINES.menu[3]) {
+        } else if (pick === LINES.last[1]) {
           store.phase.value = 'farewell';
           await pipSay(LINES.farewell);
           await entry.leave();
-        } else if (pick === LINES.menu[0]) {
+        } else if (pick === LINES.last[2]) {
           const names = (mind.state?.residents ?? []).map((r) => r.name);
           await pipSay(names.length ? `${names.join(' and ')} ${names.length > 1 ? 'live' : 'lives'} here. More will come.` : 'Only us birds, for now.');
         }
+      };
+      const morePage = async (): Promise<void> => {
+        const pick = await replies.show([...LINES.more], { side: pipOn ?? undefined });
+        if (pick === LINES.more[0]) await parts.shows?.paint();
+        else if (pick === LINES.more[1]) await parts.visits?.visit();
+        else if (pick === LINES.more[2]) await postcard.take();
+        else if (pick === LINES.more[3]) await lastPage();
+      };
+      playing = true;
+      try {
+        const first = await replies.show([...LINES.menu], { side: pipOn ?? undefined });
+        if (first === LINES.menu[0]) await parts.shows?.story();
+        else if (first === LINES.menu[1]) await parts.shows?.concert();
+        else if (first === LINES.menu[2]) await parts.shows?.lantern();
+        else if (first === LINES.menu[3]) await morePage();
       } finally {
         playing = false;
       }

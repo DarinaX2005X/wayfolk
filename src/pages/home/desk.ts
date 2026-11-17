@@ -60,7 +60,7 @@ const keycaps = (keys: string[]): HTMLElement => {
 };
 
 /** A curved arrow drawn by hand, pointing to the right; rotated by the page. */
-const ARROW = `<svg viewBox="0 0 120 60" aria-hidden="true"><path d="M6 44 C 34 10, 70 6, 104 26" fill="none" stroke="#5a2a17" stroke-width="5" stroke-linecap="round"/><path d="M88 12 L106 27 L84 36" fill="none" stroke="#5a2a17" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const ARROW = `<svg viewBox="0 0 120 60" aria-hidden="true"><path d="M3 15 C 34 -4, 78 -6, 112 14" fill="none" stroke="#5a2a17" stroke-width="5" stroke-linecap="round"/><path d="M97 4 L114 15 L98 27" fill="none" stroke="#5a2a17" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 export function createDeskUi(store: Store, hooks: Hooks): HTMLElement[] {
   const touch = matchMedia('(pointer: coarse)').matches;
@@ -212,7 +212,8 @@ export function createDeskUi(store: Store, hooks: Hooks): HTMLElement[] {
   const [dragLine, walkLine] = lineEls();
   let shown: HTMLElement | null = null;
   effect(() => {
-    const desk = store.mode.value === 'desk';
+    // Only once inside: the landing has its own tags.
+    const desk = store.mode.value === 'desk' && store.phase.value !== 'boot';
     const looked = store.deskUsed.value;
     const walked = store.walked.value;
     const free = store.phase.value === 'free';
@@ -269,6 +270,7 @@ export function createDeskUi(store: Store, hooks: Hooks): HTMLElement[] {
 
   // ---- placing things where the world says, every frame
   const pos = { x: -1, y: -1 };
+  const rest = { x: -1, y: -1 };
   const frame = (): void => {
     requestAnimationFrame(frame);
     if (store.mode.peek() !== 'desk') return;
@@ -292,36 +294,65 @@ export function createDeskUi(store: Store, hooks: Hooks): HTMLElement[] {
       }
       x = Math.max(12, Math.min(W - box.width - 12, x));
       y = Math.max(12, Math.min(H - box.height - 84, y));
+      // The replies stay put while the speaker sways or bobs; they follow only a real move,
+      // so a bubble never slides away from the pointer.
       if (pos.x < 0) {
         pos.x = x;
         pos.y = y;
-      } else {
-        pos.x += (x - pos.x) * 0.18;
-        pos.y += (y - pos.y) * 0.18;
+        rest.x = x;
+        rest.y = y;
+      } else if (Math.hypot(x - rest.x, y - rest.y) > 70) {
+        rest.x = x;
+        rest.y = y;
       }
+      pos.x += (rest.x - pos.x) * 0.2;
+      pos.y += (rest.y - pos.y) * 0.2;
+      if (Math.abs(rest.x - pos.x) < 0.5) pos.x = rest.x;
+      if (Math.abs(rest.y - pos.y) < 0.5) pos.y = rest.y;
       talk.style.translate = `${Math.round(pos.x)}px ${Math.round(pos.y)}px`;
       talk.dataset.side = sp.on && !narrow && pos.x < sp.x ? 'left' : 'right';
     } else pos.x = -1;
     if (!cue.hidden) {
       const cp = store.points.cue;
-      const box = cue.getBoundingClientRect();
+      const box = cueText.getBoundingClientRect();
+      const bw = box.width;
+      const bh = box.height;
+      let x: number;
+      let y: number;
+      let sx: number;
+      let sy: number;
+      let tx = cp.x;
+      let ty = cp.y;
       if (cp.on) {
-        // The tag sits up and to the left of the target; the arrow curls down onto it.
-        const above = cp.y > box.height + 80;
-        const x = Math.max(12, Math.min(W - box.width - 12, cp.x - box.width + 30));
-        const y = above ? cp.y - box.height - 30 : cp.y + 40;
-        cue.style.translate = `${Math.round(x)}px ${Math.round(y)}px`;
-        const ax = cp.x - (x + box.width - 60);
-        const ay = cp.y - (y + (above ? box.height - 20 : 20));
-        cueArrow.style.rotate = `${Math.atan2(ay, ax)}rad`;
+        // The tag sits up and to one side of the target; the arrow runs from its corner.
+        const left = cp.x - bw - 70 > 12;
+        const above = cp.y - bh - 60 > 12;
+        x = left ? cp.x - bw - 70 : cp.x + 70;
+        y = above ? cp.y - bh - 60 : cp.y + 60;
+        x = Math.max(12, Math.min(W - bw - 12, x));
+        y = Math.max(12, Math.min(H - bh - 90, y));
+        sx = left ? x + bw - 10 : x + 10;
+        sy = above ? y + bh : y;
         cue.dataset.edge = 'no';
       } else {
-        const x = Math.max(12, Math.min(W - box.width - 12, cp.x - box.width / 2));
-        const y = Math.max(12, Math.min(H - box.height - 90, cp.y - box.height / 2));
-        cue.style.translate = `${Math.round(x)}px ${Math.round(y)}px`;
-        cueArrow.style.rotate = `${Math.atan2(cp.y - H / 2, cp.x - W / 2)}rad`;
+        x = Math.max(12, Math.min(W - bw - 12, cp.x - bw / 2));
+        y = Math.max(12, Math.min(H - bh - 90, cp.y - bh / 2));
+        sx = x + bw / 2;
+        sy = y + bh / 2;
+        // Out of view: the arrow points out of the page toward it.
+        const a = Math.atan2(cp.y - H / 2, cp.x - W / 2);
+        sx += Math.cos(a) * (bw / 2 + 4);
+        sy += Math.sin(a) * (bh / 2 + 4);
+        tx = sx + Math.cos(a) * 70;
+        ty = sy + Math.sin(a) * 70;
         cue.dataset.edge = 'yes';
       }
+      cueText.style.translate = `${Math.round(x)}px ${Math.round(y)}px`;
+      const len = Math.max(30, Math.min(130, Math.hypot(tx - sx, ty - sy) - 14));
+      cueArrow.style.translate = `${Math.round(sx)}px ${Math.round(sy - len * 0.25)}px`;
+      cueArrow.style.width = `${Math.round(len)}px`;
+      cueArrow.style.height = `${Math.round(len * 0.5)}px`;
+      cueArrow.style.rotate = `${Math.atan2(ty - sy, tx - sx)}rad`;
     }
   };
   requestAnimationFrame(frame);

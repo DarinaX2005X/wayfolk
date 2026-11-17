@@ -1,1 +1,8492 @@
-{}
+{
+ "p-stargazer-owl": [
+  {
+   "title": "The Humming Tower",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "owl",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "tower",
+     "kind": "tower",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "town",
+     "kind": "town",
+     "layer": "far",
+     "at": "far-left"
+    },
+    {
+     "id": "stars",
+     "kind": "stars",
+     "layer": "far",
+     "at": "sky"
+    },
+    {
+     "id": "telescope",
+     "kind": "telescope",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-right",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "I used to watch the stars from a tall tower in a town that was always humming.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "stars"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "The hum was in the streetlamps, the bread ovens and the wires between the roofs.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "town"
+      },
+      {
+       "do": "sway",
+       "who": "tower"
+      }
+     ]
+    },
+    {
+     "line": "It got into my feathers, and after a while I could not hear the stars anymore.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "stars"
+      },
+      {
+       "do": "shake",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I tapped my dented brass telescope three times, the way you knock on a door, but nobody answered.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "telescope"
+      },
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "So one evening I climbed the tower with a cup of cold tea and sat very still.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I counted the hum like a slow song, and the hum began to lose its place in the tune.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "shrink",
+       "who": "town"
+      }
+     ]
+    },
+    {
+     "line": "A small gap opened in the noise, and a single star came through it, bright as a button.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "moon"
+      },
+      {
+       "do": "glow",
+       "who": "stars"
+      }
+     ]
+    },
+    {
+     "line": "I did not finish my tea that night. I just listened, and the stars listened back.",
+     "actions": [
+      {
+       "do": "spin",
+       "who": "telescope"
+      },
+      {
+       "do": "grow",
+       "who": "stars"
+      }
+     ]
+    },
+    {
+     "line": "Some nights the hum still comes back, and I wonder what the sky will say next.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "town"
+      },
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Counting the Star Three Nights",
+   "mood": "night",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "owl",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "windowsill",
+     "kind": "house",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "star",
+     "kind": "star",
+     "layer": "far",
+     "at": "high"
+    },
+    {
+     "id": "lantern",
+     "kind": "lantern",
+     "layer": "mid",
+     "at": "sky-right"
+    },
+    {
+     "id": "cloud",
+     "kind": "cloud",
+     "layer": "far",
+     "at": "sky-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I took my dented brass telescope up onto the windowsill of the old house. I tapped it three times, the way I always do.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "glow",
+       "who": "lantern"
+      }
+     ]
+    },
+    {
+     "line": "The first night I counted one star above the chimney. It was a small, cold star with a slight wobble, like a cup that is not quite full.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "star"
+      }
+     ]
+    },
+    {
+     "line": "The second night the same star was there. I wrote the number down in the margin of my notebook, next to a smudge of blackberry jam.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "left"
+      },
+      {
+       "do": "sway",
+       "who": "star"
+      }
+     ]
+    },
+    {
+     "line": "Pip sat beside me on the sill and asked what I was waiting for. I said I was waiting for the star to change its mind.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "pip",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "On the third night the cloud drifted in slowly, carrying a faint smell of rain and warm bread from somewhere far below.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "cloud"
+      },
+      {
+       "do": "move",
+       "who": "cloud",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "Then the star blinked. It blinked once, paused, and blinked again. I put my tea down very carefully so I would not miss it.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "star"
+      },
+      {
+       "do": "glow",
+       "who": "star"
+      }
+     ]
+    },
+    {
+     "line": "I decided that was an answer. I did not know yet what the question was, but I felt sure the star had heard me.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me"
+      },
+      {
+       "do": "glow",
+       "who": "lantern"
+      }
+     ]
+    },
+    {
+     "line": "Pip fluffed up and went back to the nest. I stayed on the sill with the cloud beside me until my tea went cold.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "offstage-right"
+      },
+      {
+       "do": "sink",
+       "who": "cloud",
+       "to": "below"
+      }
+     ]
+    },
+    {
+     "line": "Tomorrow night I will look again. If the star blinks a third time, I will know it is trying to tell me something.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "star"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-baker-fox": [
+  {
+   "title": "The Tin Bathtub Oven",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "fox",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "tub",
+     "kind": "oven",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "rain",
+     "kind": "rain",
+     "layer": "far",
+     "at": "sky"
+    },
+    {
+     "id": "sea",
+     "kind": "sea",
+     "layer": "far",
+     "at": "far-left"
+    },
+    {
+     "id": "gull",
+     "kind": "gull",
+     "layer": "near",
+     "at": "sky-right",
+     "hidden": true
+    },
+    {
+     "id": "whale",
+     "kind": "whale",
+     "layer": "mid",
+     "at": "far-right",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "My first oven was a tin bathtub. I found it on a beach where the tide had left it sitting upright like a lazy old cat.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "tub"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "It had a hole where the plug used to be, and it smelled of old soap and seaweed. I scrubbed it with sand until it shone a little.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "tub"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Then the rain came, and by the end of the week the tin was rusting in orange freckles. I was sure I had lost my oven for good.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "rain",
+       "to": "center"
+      },
+      {
+       "do": "shake",
+       "who": "tub"
+      }
+     ]
+    },
+    {
+     "line": "But I had flour, a jar of wild yeast and a cold hard wish for bread. So I lit a fire under the tub, rain pattering on my ears.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "tub"
+      },
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I baked my first loaf inside it anyway. It came out crooked, dark on one side and smelling faintly of rust, but it was warm.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "tub"
+      },
+      {
+       "do": "fly",
+       "who": "gull",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "The gull landed beside me and ate the crust before I could say a word. Then it looked at the crumb, sniffed twice and asked for another piece.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "gull"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "That night the cloud whale drifted by, humming a low tune, and it stopped to listen to the crackle of the fire under the tin.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "whale",
+       "to": "sky"
+      },
+      {
+       "do": "sway",
+       "who": "whale"
+      }
+     ]
+    },
+    {
+     "line": "I still have that bathtub somewhere in a shed on the cliff. Someday I will show you the freckles, and tell you why the whale came back.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "tub"
+      },
+      {
+       "do": "turn",
+       "who": "me"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Loaf That Left",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "fox",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "loaf",
+     "kind": "bread",
+     "layer": "mid",
+     "at": "right"
+    },
+    {
+     "id": "gull",
+     "kind": "gull",
+     "layer": "near",
+     "at": "sky-right",
+     "hidden": true
+    },
+    {
+     "id": "cliff",
+     "kind": "rock",
+     "layer": "far",
+     "at": "far-right"
+    },
+    {
+     "id": "oven",
+     "kind": "oven",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I made a loaf one wet morning, so big I had to roll it out of the oven with my tail. It smelled of burnt honey and I was very proud of it.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "oven"
+      },
+      {
+       "do": "move",
+       "who": "loaf",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "I set it on the windowsill to cool, and it cooled a little too fast. The crust cracked like a dropped teacup, which is how I knew it was ready to leave.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "loaf",
+       "to": "right"
+      },
+      {
+       "do": "shake",
+       "who": "loaf"
+      }
+     ]
+    },
+    {
+     "line": "Then it rolled. Slowly at first, then with great confidence, straight off the edge of the cliff.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "loaf",
+       "to": "far-right"
+      },
+      {
+       "do": "sink",
+       "who": "loaf",
+       "to": "below"
+      }
+     ]
+    },
+    {
+     "line": "I flapped my ears and shouted, and I tapped flour off them out of pure habit, which did not help at all.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "me"
+      },
+      {
+       "do": "hop",
+       "who": "me",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "A gull came sweeping up from the cloud sea. He saw the loaf turning over in the wind and dived after it like it owed him money.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "gull",
+       "to": "sky-right"
+      },
+      {
+       "do": "fly",
+       "who": "gull",
+       "to": "above"
+      }
+     ]
+    },
+    {
+     "line": "He caught it in his beak, gave it one shake, and flew off over the clouds looking very pleased with himself.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "gull",
+       "to": "offstage-right"
+      },
+      {
+       "do": "fade",
+       "who": "loaf"
+      }
+     ]
+    },
+    {
+     "line": "I stood at the cliff edge with empty paws. I decided he deserved the loaf, since he had the nerve to take it, and I baked another before the moon came up.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      },
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "Last week that gull came back, sat on my fence, and gave me a crumb of the old loaf. I have no idea how he kept it that long.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "gull",
+       "to": "right"
+      },
+      {
+       "do": "sway",
+       "who": "gull"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-gardener-bear": [
+  {
+   "title": "The Sock of Seeds",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "bear",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "sock",
+     "kind": "basket",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "cloud",
+     "kind": "cloud",
+     "layer": "mid",
+     "at": "sky-left"
+    },
+    {
+     "id": "gull",
+     "kind": "gull",
+     "layer": "mid",
+     "at": "sky-right",
+     "hidden": true
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "sun",
+     "kind": "sun",
+     "layer": "far",
+     "at": "far-right"
+    }
+   ],
+   "beats": [
+    {
+     "line": "Hello there, little island. Mm, it is evening, so I will keep my voice low.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "sun"
+      },
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "Once I went up to a cloud with a sock full of seeds. I wanted to see if the cloud would be a good garden.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      },
+      {
+       "do": "appear",
+       "who": "cloud"
+      }
+     ]
+    },
+    {
+     "line": "I pressed the seeds into the wet white wool of it, one by one, and I hummed to them the whole time.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "shrink",
+       "who": "sock"
+      }
+     ]
+    },
+    {
+     "line": "Nothing grew. Not one green thing. The cloud just drifted off, as clouds do, looking pleased with itself.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "cloud",
+       "to": "far-right"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "But a gull came sliding down the wind to look at my sock. It tilted its head at me for a long while.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "gull",
+       "to": "center"
+      },
+      {
+       "do": "turn",
+       "who": "gull"
+      }
+     ]
+    },
+    {
+     "line": "I asked the gull how the wind had been treating it. It did not answer, but it did stay for three whole breaths.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "fly",
+       "who": "gull",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "So I counted that as a visit. A garden with no plants is still a garden, if someone stops to look.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "center"
+      },
+      {
+       "do": "glow",
+       "who": "sun"
+      }
+     ]
+    },
+    {
+     "line": "Pip thinks I should try again with radishes. I think the seeds would rather rest. We will see what the clouds say.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "pip"
+      },
+      {
+       "do": "fade",
+       "who": "gull"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Carrot Patches Mend",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "bear",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "balloon",
+     "kind": "balloon",
+     "layer": "mid",
+     "at": "sky-right"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "basket",
+     "kind": "basket",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "sun",
+     "kind": "sun",
+     "layer": "far",
+     "at": "far-right"
+    },
+    {
+     "id": "wind",
+     "kind": "wind",
+     "layer": "far",
+     "at": "sky-left",
+     "hidden": true
+    },
+    {
+     "id": "gull",
+     "kind": "gull",
+     "layer": "mid",
+     "at": "high",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "Hmm, let me settle in. My balloon has a basket with patches on it, and every patch is a carrot.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "sun"
+      },
+      {
+       "do": "sway",
+       "who": "balloon"
+      }
+     ]
+    },
+    {
+     "line": "I sewed them on one wet evening when the wind would not stop talking. Sewing keeps my paws busy while my head goes round.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      },
+      {
+       "do": "sway",
+       "who": "basket"
+      }
+     ]
+    },
+    {
+     "line": "The first patch was a tear the size of a plum. The second was a hole I made by sitting on a thistle.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "Pip thought the carrots were a joke. I thought so too, until a rabbit on a passing cloud asked for one.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "gull"
+      },
+      {
+       "do": "fly",
+       "who": "gull",
+       "to": "sky-left"
+      }
+     ]
+    },
+    {
+     "line": "I gave him a carrot from my pocket. He said it tasted of rain, which I took as praise.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Then the wind came back, pushing hard, and tore one patch clean away. It went spinning off over the sea.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "wind"
+      },
+      {
+       "do": "spin",
+       "who": "basket"
+      }
+     ]
+    },
+    {
+     "line": "I sat very still. Pip landed on my knee and said nothing, which is the kindest thing a bird can do.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "In the morning the lost carrot had snagged on the tower of a far island. I could just see it, orange as a lamp.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "wind"
+      },
+      {
+       "do": "rise",
+       "who": "gull"
+      }
+     ]
+    },
+    {
+     "line": "I have not gone to fetch it yet. Some nights a patch is worth more left where the wind put it.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "sun"
+      },
+      {
+       "do": "glow",
+       "who": "balloon"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-tinkerer-raccoon": [
+  {
+   "title": "The Music Box Kitchen",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "raccoon",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-left"
+    },
+    {
+     "id": "owner",
+     "kind": "mouse",
+     "layer": "near",
+     "at": "right",
+     "hidden": true
+    },
+    {
+     "id": "box",
+     "kind": "clock",
+     "layer": "mid",
+     "at": "right"
+    },
+    {
+     "id": "kettle",
+     "kind": "teapot",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "boat",
+     "kind": "paper-boat",
+     "layer": "mid",
+     "at": "sky-right"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I came in on a paper boat folded from a page of somebody else's instructions. The wind said this island looked like it needed a fixer, so here I am.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "boat",
+       "to": "sky-left"
+      },
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "Before the islands, I fixed things in a town where the rain came sideways. Every clock I touched ran a little faster out of pure nerves.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "box"
+      },
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "One day a mouse named Marisol brought me her music box. It had a dent in the lid and a tune that made her kitchen smell of burnt toast.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "owner",
+       "to": "right"
+      },
+      {
+       "do": "move",
+       "who": "box",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "I opened it, tapped the spring twice on my nose, and found the comb had been bent by a sad old song someone hummed over it for years.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me"
+      },
+      {
+       "do": "sway",
+       "who": "kettle"
+      }
+     ]
+    },
+    {
+     "line": "So I straightened the teeth and rewound it. The box now played only the sad songs, slow and low, the ones that make bread rise a little slower.",
+     "actions": [
+      {
+       "do": "spin",
+       "who": "box"
+      },
+      {
+       "do": "glow",
+       "who": "box"
+      }
+     ]
+    },
+    {
+     "line": "Marisol cried for a minute, then laughed, and said it was the best thing that had ever happened to her kitchen.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "owner"
+      },
+      {
+       "do": "sway",
+       "who": "kettle"
+      }
+     ]
+    },
+    {
+     "line": "I do not fully understand it. I think the house needed something honest to hum along to.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "owner"
+      }
+     ]
+    },
+    {
+     "line": "Pip says that is a fine answer for a raccoon who talks too fast. I picked a loose screw out of the air and left it at that.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "pip",
+       "to": "center"
+      },
+      {
+       "do": "turn",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "If you come back tomorrow, I will tell you why the boat has one wing folded the wrong way.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "boat",
+       "to": "sky-right"
+      },
+      {
+       "do": "fade",
+       "who": "moon"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Spring Jar on the Pier",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "raccoon",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "jar",
+     "kind": "basket",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "boat",
+     "kind": "paper-boat",
+     "layer": "mid",
+     "at": "sky-left"
+    },
+    {
+     "id": "lighthouse",
+     "kind": "lighthouse",
+     "layer": "far",
+     "at": "far-right"
+    },
+    {
+     "id": "rain",
+     "kind": "rain",
+     "layer": "far",
+     "at": "sky-right",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "Before the wind sent me here, I lived in a town on the far side of the sea, where my grandmother kept a glass jar of spare springs on the windowsill.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "jar"
+      },
+      {
+       "do": "enter",
+       "who": "me",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "She fixed clocks for everyone, and she said a spring is only a bit of wire that has decided to be patient.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "glow",
+       "who": "jar"
+      }
+     ]
+    },
+    {
+     "line": "When she gave me my first pocket knife, she tucked one small spring into each of my pockets, and she said, that is for luck, Fennel. Keep it there.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "hop",
+       "who": "pip"
+      }
+     ]
+    },
+    {
+     "line": "I did not understand luck then. I thought it was a thing you could drop down a drain, so I kept them very carefully and very tightly.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me"
+      },
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "sky-right"
+      }
+     ]
+    },
+    {
+     "line": "Then one night a storm came over the town and the lighthouse lamp went out. Ships were drifting toward the rocks, and I was the only one awake with a tool bag.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "rain"
+      },
+      {
+       "do": "shake",
+       "who": "lighthouse"
+      }
+     ]
+    },
+    {
+     "line": "I climbed the lighthouse stairs two at a time, talking to myself the whole way, the way I still do when I am proud of a word.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "right"
+      },
+      {
+       "do": "fly",
+       "who": "boat",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "The lamp had a broken catch, and the catch needed a spring the size of my smallest pocket spring. I pulled one out, and I held my breath, and I clicked it in.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "lighthouse"
+      },
+      {
+       "do": "move",
+       "who": "pip",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "The beam swung out across the water, and the ships turned away from the rocks one by one. My grandmother was right about luck, though I still think it was mostly patience.",
+     "actions": [
+      {
+       "do": "spin",
+       "who": "lighthouse"
+      },
+      {
+       "do": "fade",
+       "who": "rain"
+      }
+     ]
+    },
+    {
+     "line": "I still carry a spring in each pocket. I have not told Pip that I have started keeping a spare for the lighthouse, in case it ever needs one again.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "sky"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-storyteller-rabbit": [
+  {
+   "title": "The Fox Who Got Smaller",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "rabbit",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "fox",
+     "kind": "fox",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "kite",
+     "kind": "kite",
+     "layer": "mid",
+     "at": "sky-left"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-right"
+    },
+    {
+     "id": "town",
+     "kind": "town",
+     "layer": "far",
+     "at": "far-right"
+    },
+    {
+     "id": "tin",
+     "kind": "basket",
+     "layer": "near",
+     "at": "left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "Before I was a storyteller I was a bad one.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "Every night I told the same tale about a fox who lost his way home.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "fox"
+      },
+      {
+       "do": "move",
+       "who": "fox",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "I told it so often that the fox began to shrink.",
+     "actions": [
+      {
+       "do": "shrink",
+       "who": "fox"
+      }
+     ]
+    },
+    {
+     "line": "First he was the size of a bread loaf, then a teacup, then a button.",
+     "actions": [
+      {
+       "do": "shrink",
+       "who": "fox"
+      }
+     ]
+    },
+    {
+     "line": "The children at the edge of the meadow stopped clapping. They could no longer see him.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "One windy night the kite came past and I held out my hand to it.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "kite",
+       "to": "center"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "A tiny voice in my pocket asked me to please let him go home.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "I stopped, and I asked the fox what he wanted to be next.",
+     "actions": [
+      {
+       "do": "grow",
+       "who": "fox"
+      }
+     ]
+    },
+    {
+     "line": "He grew back slowly, a little more each night, as I listened to him.",
+     "actions": [
+      {
+       "do": "grow",
+       "who": "fox"
+      }
+     ]
+    },
+    {
+     "line": "Some nights I still wonder which of us he will decide to be tomorrow.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "fox"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Spoon Under the Bridge",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "rabbit",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "fox",
+     "kind": "fox",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "bridge",
+     "kind": "bridge",
+     "layer": "mid",
+     "at": "right"
+    },
+    {
+     "id": "kite",
+     "kind": "kite",
+     "layer": "near",
+     "at": "sky-right",
+     "hidden": true
+    },
+    {
+     "id": "spoon",
+     "kind": "key",
+     "layer": "near",
+     "at": "far-right",
+     "hidden": true
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "After the kite brought me here, I had one question I had carried all the way from the meadow. I wanted to ask the fox what he would like to be in the story.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "fox",
+       "to": "center"
+      },
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "He sat down slowly, the way a fox does when he already knows the answer is going to be a long one. He pulled his tail round his feet like a blanket.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "fox"
+      },
+      {
+       "do": "enter",
+       "who": "kite",
+       "to": "sky-right"
+      }
+     ]
+    },
+    {
+     "line": "I asked him, and he thought for so long that a moth landed on my ear. Then he said he wanted to be the one who finds the lost spoon.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "fox"
+      },
+      {
+       "do": "appear",
+       "who": "spoon"
+      }
+     ]
+    },
+    {
+     "line": "I did not know there was a lost spoon. It was a plain tin spoon, the kind my grandmother used to stir her clover tea, and it had dropped off the end of the bridge one windy morning.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "spoon",
+       "to": "right"
+      },
+      {
+       "do": "fly",
+       "who": "kite",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "So the fox went down to the water under the bridge, which smelled of wet stones and old bread. He searched by feel, the way he does with everything, pausing to listen between each step.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "fox",
+       "to": "right"
+      },
+      {
+       "do": "shake",
+       "who": "bridge"
+      }
+     ]
+    },
+    {
+     "line": "For a while nothing turned up but a button and a single bent leaf. He was almost ready to give up when the kite dipped low and dropped a little ring of light onto the reeds.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "kite",
+       "to": "right"
+      },
+      {
+       "do": "glow",
+       "who": "spoon"
+      }
+     ]
+    },
+    {
+     "line": "The fox lifted the spoon out of the mud and held it up to the moon. He did not say anything clever. He just smiled and looked very pleased with himself.",
+     "actions": [
+      {
+       "do": "rise",
+       "who": "spoon",
+       "to": "sky-left"
+      },
+      {
+       "do": "hop",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "I thought that was the end of it. But the fox says the spoon still goes missing every few nights, and he has started to suspect the wind is taking it on purpose.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "spoon",
+       "to": "below"
+      },
+      {
+       "do": "fade",
+       "who": "moon"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-tea-maker-deer": [
+  {
+   "title": "The Chipped Moon Teapot",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "deer",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "whale",
+     "kind": "whale",
+     "layer": "mid",
+     "at": "sky-right",
+     "hidden": true
+    },
+    {
+     "id": "teapot",
+     "kind": "teapot",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-left"
+    },
+    {
+     "id": "boat",
+     "kind": "boat",
+     "layer": "mid",
+     "at": "far-right",
+     "hidden": true
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "I came down the back of a cloud whale with a teapot in my lap. The whale hummed the whole way, so the tea never settled.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "whale",
+       "to": "sky-right"
+      },
+      {
+       "do": "appear",
+       "who": "teapot"
+      }
+     ]
+    },
+    {
+     "line": "My first teapot had a chip shaped like the moon. I kept it anyway, because it still poured in a straight line.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      },
+      {
+       "do": "move",
+       "who": "teapot",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "Before I pour, I tap the rim three times. One tap for the luck, two for the wind, three to hear if the cup rings true.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "teapot"
+      },
+      {
+       "do": "hop",
+       "who": "pip"
+      }
+     ]
+    },
+    {
+     "line": "The first cup I poured for a boat that had lost its way. It was a plain brown boat, and it sat down on my step as if it had always been there.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "boat",
+       "to": "far-right"
+      },
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "The boat did not talk much. It drank its tea with a sound like a slow page turning.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "boat"
+      }
+     ]
+    },
+    {
+     "line": "When the cup was empty it asked if I had more chipped teapots. I said I only had the one, and it was enough.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me"
+      },
+      {
+       "do": "fade",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "Then the boat said it was going on to another island, and I should keep the cup it had used, for when it came back.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "boat",
+       "to": "offstage-right"
+      },
+      {
+       "do": "fly",
+       "who": "whale",
+       "to": "above"
+      }
+     ]
+    },
+    {
+     "line": "I still have that cup on the shelf. The moon on my teapot is quiet tonight, but I think the boat will come back to hear the rim ring.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "teapot"
+      },
+      {
+       "do": "fade",
+       "who": "me"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Storm That Wanted Tea",
+   "mood": "storm",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "deer",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-right"
+    },
+    {
+     "id": "whale",
+     "kind": "whale",
+     "layer": "mid",
+     "at": "sky-left"
+    },
+    {
+     "id": "kettle",
+     "kind": "teapot",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "cloud",
+     "kind": "cloud",
+     "layer": "far",
+     "at": "sky"
+    },
+    {
+     "id": "rain",
+     "kind": "rain",
+     "layer": "mid",
+     "at": "sky",
+     "hidden": true
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "high",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "The sky over the sea went grey and loud. Thunder rolled like a barrel down a stair.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "cloud",
+       "to": "sky"
+      },
+      {
+       "do": "shake",
+       "who": "cloud"
+      }
+     ]
+    },
+    {
+     "line": "A storm front came in low, and it was cross. It had lost its way and it wanted someone to blame.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "cloud",
+       "to": "sky-left"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I did not run. I filled the old kettle from the rain barrel and set it on the stones.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      },
+      {
+       "do": "appear",
+       "who": "kettle"
+      }
+     ]
+    },
+    {
+     "line": "Pip landed on my shoulder and wet her feathers on my ear. She always does that when she is worried.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "right"
+      },
+      {
+       "do": "hop",
+       "who": "pip"
+      }
+     ]
+    },
+    {
+     "line": "I tapped the rim of the cup three times. It rang true, so I knew the tea would be honest.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "kettle"
+      },
+      {
+       "do": "turn",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I poured a cup of strong black tea with a pinch of dried thyme and a spoon of honey. The steam went up into the cloud.",
+     "actions": [
+      {
+       "do": "rise",
+       "who": "kettle"
+      },
+      {
+       "do": "sway",
+       "who": "cloud"
+      }
+     ]
+    },
+    {
+     "line": "The storm sniffed. Then it took a long slow breath and let the thunder fall asleep in its own folds.",
+     "actions": [
+      {
+       "do": "shrink",
+       "who": "cloud"
+      },
+      {
+       "do": "enter",
+       "who": "rain",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "It rained gently for a week after that, soft as a mouse walking on moss. The island grew the greenest it has ever been.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "rain",
+       "to": "below"
+      },
+      {
+       "do": "fade",
+       "who": "cloud"
+      }
+     ]
+    },
+    {
+     "line": "Some nights I still hear the storm grumble far off. I pour a little tea for it on the stones, and I leave the moon to keep watch.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "moon",
+       "to": "high"
+      },
+      {
+       "do": "fly",
+       "who": "whale",
+       "to": "offstage-left"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-beekeeper-penguin": [
+  {
+   "title": "The Teapot Hive",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "penguin",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "balloon",
+     "kind": "balloon",
+     "layer": "mid",
+     "at": "sky-right"
+    },
+    {
+     "id": "bees",
+     "kind": "bee",
+     "layer": "mid",
+     "at": "right",
+     "hidden": true
+    },
+    {
+     "id": "teapot",
+     "kind": "teapot",
+     "layer": "near",
+     "at": "right",
+     "hidden": true
+    },
+    {
+     "id": "rain",
+     "kind": "rain",
+     "layer": "far",
+     "at": "sky-left",
+     "hidden": true
+    },
+    {
+     "id": "sea",
+     "kind": "sea",
+     "layer": "far",
+     "at": "far-left"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I came down from the sky in a balloon full of cold air. It sank slowly, like it was tired of being up there.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "balloon",
+       "to": "center"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "My bees had been asking for a new place to visit. They are very hard to argue with, so here we are.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "bees"
+      },
+      {
+       "do": "fly",
+       "who": "bees",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "I had one old teapot with a crack in the lid. I stopped the spout with warm wax so nothing could leak out of it.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "teapot"
+      },
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "The bees thought this was very rude. They buzzed at me for most of an afternoon, and I hummed back to them, which did not help at all.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "bees"
+      },
+      {
+       "do": "shake",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Then a little rain came over the sea, and the bees walked into the teapot anyway. They said it was dry inside, and that was the only argument they needed.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "rain",
+       "to": "center"
+      },
+      {
+       "do": "move",
+       "who": "bees",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "The rain stopped and the moon came up over the water. I sat by the teapot and listened to the bees settle, one wing at a time.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      },
+      {
+       "do": "fade",
+       "who": "rain"
+      }
+     ]
+    },
+    {
+     "line": "In the morning there was honey on the lid, sticky and gold. I tasted it with my flippers still tucked behind my back.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "teapot"
+      },
+      {
+       "do": "turn",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I have never found out how they got in and out past the wax. The bees will not say, and I have decided I do not mind not knowing.",
+     "actions": [
+      {
+       "do": "spin",
+       "who": "bees"
+      },
+      {
+       "do": "sway",
+       "who": "teapot"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Clover Meadow Crossing",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "penguin",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "hives",
+     "kind": "hive",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "bees",
+     "kind": "bee",
+     "layer": "near",
+     "at": "sky-left"
+    },
+    {
+     "id": "cloud",
+     "kind": "cloud",
+     "layer": "far",
+     "at": "sky"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "boat",
+     "kind": "paper-boat",
+     "layer": "mid",
+     "at": "far-right",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "Every spring I carry my hives to the cloud meadows. I do it slowly, because my flippers do not like to hurry.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      },
+      {
+       "do": "move",
+       "who": "hives",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "The clouds there are sticky with clover. My boots leave little footprints of honey on the way across.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "cloud"
+      },
+      {
+       "do": "appear",
+       "who": "bees"
+      }
+     ]
+    },
+    {
+     "line": "The clouds never once complain about the bees. I think that is the kindest thing about them.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "cloud"
+      },
+      {
+       "do": "fly",
+       "who": "bees",
+       "to": "sky-right"
+      }
+     ]
+    },
+    {
+     "line": "This spring a gust blew my hive lid loose. Six honey frames tipped toward the edge of the sky.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "hives"
+      },
+      {
+       "do": "move",
+       "who": "pip",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "Pip grabbed the lid in her beak. She is small but she does not let go of things easily.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "center"
+      },
+      {
+       "do": "move",
+       "who": "hives",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "I hummed the way my grandmother hummed, to calm the bees. My own hum wobbled, which I was not proud of.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "bees"
+      },
+      {
+       "do": "shake",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "A paper boat came drifting through the clover, folded from a page of an old letter. It bumped gently against my hive.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "boat",
+       "to": "right"
+      },
+      {
+       "do": "move",
+       "who": "boat",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "Inside it sat nothing but a tiny jar of sunflower seeds. I put the lid back on the hive and kept the jar for the birds.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "boat"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "We set the hives down in the clover as the sun went low. The bees settled in, and so did I, with my flippers tucked behind my back.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "cloud"
+      },
+      {
+       "do": "exit",
+       "who": "boat",
+       "to": "far-right"
+      }
+     ]
+    },
+    {
+     "line": "Pip asked if the meadow would still be there next spring. I told her I do not know, but I will bring a jar of seeds to find out.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "pip"
+      },
+      {
+       "do": "fade",
+       "who": "bees"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-painter-frog": [
+  {
+   "title": "The Pond That Got a Picture",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "frog",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "easel",
+     "kind": "easel",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "pond",
+     "kind": "rock",
+     "layer": "far",
+     "at": "far-right"
+    },
+    {
+     "id": "fish",
+     "kind": "fish",
+     "layer": "near",
+     "at": "far-right",
+     "hidden": true
+    },
+    {
+     "id": "wind",
+     "kind": "wind",
+     "layer": "far",
+     "at": "sky-right"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "When I was small, I owned one easel and one brush. The brush was the color of wet clay, and I loved it more than anything.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "easel"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "One windy afternoon, my easel leaned too far and went tumbling into a pond. I hopped after it, and the water went blue, then green, then a blue I still hum today.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "easel",
+       "to": "right"
+      },
+      {
+       "do": "hop",
+       "who": "me",
+       "to": "right"
+      },
+      {
+       "do": "glow",
+       "who": "pond"
+      }
+     ]
+    },
+    {
+     "line": "The easel was gone, so I sat on the bank and painted the pond instead. My brush dipped and stroked, and I hummed the shade of every ripple.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "easel"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "A little fish came up to look at the picture. Then another, and then a whole crowd, all wriggling close to the wet paint.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "fish",
+       "to": "right"
+      },
+      {
+       "do": "move",
+       "who": "fish",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "They liked the painted pond better than the real one, which was cold and full of mud. So they swam right into my picture and stayed.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "fish",
+       "to": "below"
+      },
+      {
+       "do": "shake",
+       "who": "wind"
+      }
+     ]
+    },
+    {
+     "line": "I had to decide what to do with a pond full of fish that lived inside a painting. I decided they could keep it, as long as they shared the blue.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me"
+      },
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "So now, when the light goes soft, I paint a little more blue on the pond. The fish swim up to watch, and I tell them it is still their home.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "fish",
+       "to": "center"
+      },
+      {
+       "do": "hop",
+       "who": "me",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "Some nights I wonder if the fish have finished the picture yet. I will ask them tomorrow, if the wind does not take my brush first.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "move",
+       "who": "wind",
+       "to": "far-left"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Sunrise That Chased a Whale",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "frog",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "whale",
+     "kind": "whale",
+     "layer": "mid",
+     "at": "sky-right"
+    },
+    {
+     "id": "sunrise",
+     "kind": "sun",
+     "layer": "far",
+     "at": "sky-left"
+    },
+    {
+     "id": "boat",
+     "kind": "paper-boat",
+     "layer": "mid",
+     "at": "far-left"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "right"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I once painted a sunrise so bright that it made the clouds blush. I was not finished with the blue shadow under it.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "sunrise"
+      },
+      {
+       "do": "hop",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "The paint was a warm yellow, the color of butter left in the sun. I hummed its name twice, then mixed a little more blue.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "sunrise"
+      },
+      {
+       "do": "enter",
+       "who": "pip",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "I set the painting on the windowsill to dry. Then a shadow came over the sill, long and slow, and it was a cloud whale.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "whale",
+       "to": "sky-right"
+      },
+      {
+       "do": "fly",
+       "who": "whale",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "The whale sniffed the sunrise. Its mouth opened wide, and the wind went in with a sound like a kettle.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "whale"
+      },
+      {
+       "do": "move",
+       "who": "whale",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "I told it that paint is not food, but I said it in my slowest voice, and it did not believe me. It followed the sunrise for three days.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "whale",
+       "to": "sky"
+      },
+      {
+       "do": "enter",
+       "who": "boat",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "Pip rode in a paper boat beside it, sharing crumbs of bread. The whale turned its great eye toward every bite, a little blue, a little hopeful.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "boat",
+       "to": "center"
+      },
+      {
+       "do": "sway",
+       "who": "pip"
+      }
+     ]
+    },
+    {
+     "line": "On the third morning I stopped and looked at the color of the sky, the pale blue that comes before the sun. I thought about giving the whale something new to chase.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "sunrise"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "I painted a small blue moon on a scrap of cloud and let it drift. The whale swallowed nothing and lost interest, and the sunrise stayed on my sill.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "whale",
+       "to": "offstage-right"
+      },
+      {
+       "do": "fade",
+       "who": "sunrise"
+      }
+     ]
+    },
+    {
+     "line": "I still wonder where that whale is now, and whether the moon was blue enough. Tomorrow I may tell you what it did next.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "boat",
+       "to": "below"
+      },
+      {
+       "do": "hop",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-fisher-otter": [
+  {
+   "title": "Silver Mist and Sleepy Rain",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "otter",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "boat",
+     "kind": "boat",
+     "layer": "mid",
+     "at": "center"
+    },
+    {
+     "id": "net",
+     "kind": "net",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "rain",
+     "kind": "rain",
+     "layer": "mid",
+     "at": "sky-right"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I used to fish the cloud edges at dawn. That is where the mist goes thick and silver, and the sea below looks like someone spilled milk.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "me",
+       "to": "left"
+      },
+      {
+       "do": "sway",
+       "who": "boat"
+      }
+     ]
+    },
+    {
+     "line": "My net was made of spider silk. It is light, and it smells faintly of the pine needles I hang it on to dry.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "net",
+       "to": "center"
+      },
+      {
+       "do": "glow",
+       "who": "net"
+      }
+     ]
+    },
+    {
+     "line": "I would drop the net over the edge and wait. I always waited a long time, because I like to hear the clouds settle first.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      },
+      {
+       "do": "sink",
+       "who": "net",
+       "to": "below"
+      }
+     ]
+    },
+    {
+     "line": "Then I would pull up sleepy raindrops. They are slow and round, and they blink when the air touches them.",
+     "actions": [
+      {
+       "do": "rise",
+       "who": "net",
+       "to": "sky"
+      },
+      {
+       "do": "appear",
+       "who": "rain"
+      }
+     ]
+    },
+    {
+     "line": "One morning I caught a raindrop that was humming a tune I did not know. It was the sort of tune a kettle hums just before it boils.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "rain"
+      },
+      {
+       "do": "turn",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I did not want to let it go. So I tucked it in my hat, which is a folded tea cloth, and carried it home very carefully.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "shrink",
+       "who": "rain"
+      }
+     ]
+    },
+    {
+     "line": "Pip came to sit on my shoulder and listened to the hum with me. Then the sun came up, and the humming stopped, and the raindrop fell asleep again.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "right"
+      },
+      {
+       "do": "fade",
+       "who": "rain"
+      }
+     ]
+    },
+    {
+     "line": "I still have that tea cloth. Some mornings I can almost hear the tune in it, and I wonder what else the clouds are humming about.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "glow",
+       "who": "boat"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Polite Raindrop",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "otter",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "net",
+     "kind": "net",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "boat",
+     "kind": "paper-boat",
+     "layer": "mid",
+     "at": "sky-left"
+    },
+    {
+     "id": "raindrop",
+     "kind": "rain",
+     "layer": "near",
+     "at": "sky-right",
+     "hidden": true
+    },
+    {
+     "id": "sea",
+     "kind": "sea",
+     "layer": "far",
+     "at": "center"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "far-right"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I was out in my paper boat, mending the net, when the clouds went grey and soft.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "boat"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "A drop of rain came down, slow as a sleepy moth, and landed in my lap.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "raindrop",
+       "to": "sky-right"
+      },
+      {
+       "do": "move",
+       "who": "raindrop",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "It wriggled free of its cloud and said thank you. I had not expected a drop to be so polite.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "raindrop"
+      },
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "I thought about it for a long while. Then I tipped it back over the side, gently, into the sea.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "right"
+      },
+      {
+       "do": "sink",
+       "who": "raindrop",
+       "to": "below"
+      }
+     ]
+    },
+    {
+     "line": "Pip asked why I did not keep it for my tea. I said a drop that thanks you is not a drop for tea.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "pip"
+      },
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "The sea gave a small ripple, as if to say that was the right choice.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "sea"
+      },
+      {
+       "do": "appear",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "That night a gentle rain fell on the island while I slept, and it never once splashed my bread.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "moon"
+      },
+      {
+       "do": "shake",
+       "who": "net"
+      }
+     ]
+    },
+    {
+     "line": "So I have been polite to rain ever since. I wipe my feet and I say good evening to every cloud.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me"
+      },
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "Some nights I wonder which drop it was. I suspect it is still out there, waiting for its turn to say thank you.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      },
+      {
+       "do": "exit",
+       "who": "boat",
+       "to": "offstage-left"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-baker-rabbit": [
+  {
+   "title": "The Lopsided Loaf in a Hatbox",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "rabbit",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "oven",
+     "kind": "oven",
+     "layer": "mid",
+     "at": "right",
+     "hidden": false
+    },
+    {
+     "id": "river",
+     "kind": "sea",
+     "layer": "far",
+     "at": "far-left"
+    },
+    {
+     "id": "hatbox",
+     "kind": "basket",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "whale",
+     "kind": "whale",
+     "layer": "mid",
+     "at": "sky-right",
+     "hidden": true
+    },
+    {
+     "id": "gull",
+     "kind": "gull",
+     "layer": "mid",
+     "at": "sky-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I used to bake in a proper stone oven by a river. One spring the river got tired of waiting and carried the whole oven away.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "river"
+      },
+      {
+       "do": "sink",
+       "who": "oven",
+       "to": "below"
+      }
+     ]
+    },
+    {
+     "line": "I sat on the bank for a long time and sniffed the air. It smelled of wet bricks and nothing else.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "So I took my old hatbox, the round one with the blue ribbon, and I turned it into an oven. It was a poor oven, but it was mine.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "hatbox",
+       "to": "center"
+      },
+      {
+       "do": "glow",
+       "who": "hatbox"
+      }
+     ]
+    },
+    {
+     "line": "I mixed flour, a pinch of salt and river water that I had brought in a teacup. I kneaded it with my paws until it stopped complaining.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I pressed the dough into the hatbox and set it in the warm sun. The loaf rose unevenly, leaning like a tired gull.",
+     "actions": [
+      {
+       "do": "grow",
+       "who": "hatbox"
+      },
+      {
+       "do": "turn",
+       "who": "gull"
+      }
+     ]
+    },
+    {
+     "line": "The loaf came out lopsided, with one side brown and the other side pale. I still think it was the best bread I ever made.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "hatbox"
+      },
+      {
+       "do": "fly",
+       "who": "whale",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "A cloud whale drifted past, humming in its sleep, and it stopped to smell the crust. It hummed louder, which I took as a compliment.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "whale",
+       "to": "sky"
+      },
+      {
+       "do": "shake",
+       "who": "whale"
+      }
+     ]
+    },
+    {
+     "line": "I ate the crooked heel myself, slowly, and I did not share it. A rabbit should keep one thing that is entirely his own.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Tonight the loaf is still lopsided, and so am I. I am saving the next one for you, if you bring the flour.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "whale"
+      },
+      {
+       "do": "glow",
+       "who": "hatbox"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Agreement With the Dough",
+   "mood": "night",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "rabbit",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "oven",
+     "kind": "oven",
+     "layer": "mid",
+     "at": "right"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-left"
+    },
+    {
+     "id": "whale",
+     "kind": "whale",
+     "layer": "far",
+     "at": "sky-right",
+     "hidden": true
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "high"
+    },
+    {
+     "id": "flour",
+     "kind": "basket",
+     "layer": "mid",
+     "at": "left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "Every morning I wake before the birds. The island is still dark and cool, and I can smell the sea below us.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      },
+      {
+       "do": "sway",
+       "who": "pip"
+      }
+     ]
+    },
+    {
+     "line": "I sniff the air twice, then I pull the flour basket close. My paws know the way even when my eyes do not.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "move",
+       "who": "flour",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "The dough and I have an agreement. Nobody talks until it rises.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      },
+      {
+       "do": "turn",
+       "who": "oven"
+      }
+     ]
+    },
+    {
+     "line": "Pip tries to ask me a question anyway. She has a small voice that carries, so I put one floury finger to my lips.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "pip",
+       "to": "right"
+      },
+      {
+       "do": "shake",
+       "who": "pip"
+      }
+     ]
+    },
+    {
+     "line": "She sits on the oven rim and waits. Birds are better at waiting than they look.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "pip"
+      },
+      {
+       "do": "glow",
+       "who": "oven"
+      }
+     ]
+    },
+    {
+     "line": "Halfway through, a whale drifts in from the clouds, humming very softly. It is the same one that brought me here, and it always hums through its sleep.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "whale",
+       "to": "sky-right"
+      },
+      {
+       "do": "fly",
+       "who": "whale",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "The humming makes the dough rise faster, or maybe I only imagine it. I do not say so, because that would break the agreement.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "whale"
+      },
+      {
+       "do": "spin",
+       "who": "flour"
+      }
+     ]
+    },
+    {
+     "line": "When the loaf is ready, the sun is pushing up pink behind the clouds. I cut the bread and give Pip the crust end, which she pretends not to want.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "oven"
+      },
+      {
+       "do": "fade",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "Tomorrow I will tell you why the dough and I made that agreement. For now, the first slice is still warm.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "whale",
+       "to": "below"
+      },
+      {
+       "do": "sway",
+       "who": "pip"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-gardener-frog": [
+  {
+   "title": "The Pumpkin in the Boot",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "frog",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "boot",
+     "kind": "boot",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "pumpkin",
+     "kind": "pumpkin",
+     "layer": "mid",
+     "at": "left",
+     "hidden": true
+    },
+    {
+     "id": "balloon",
+     "kind": "balloon",
+     "layer": "mid",
+     "at": "sky-left"
+    },
+    {
+     "id": "island",
+     "kind": "island",
+     "layer": "far",
+     "at": "far-right"
+    },
+    {
+     "id": "spade",
+     "kind": "chair",
+     "layer": "near",
+     "at": "right"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I came down from the clouds in a balloon made of old tablecloths. The sky was pink and it smelled of bread.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "balloon",
+       "to": "sky-right"
+      },
+      {
+       "do": "enter",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "Your island had a lot of bare ground. Bare ground makes my hands itch, so I went looking for something to plant.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "In a shed by the cliff I found one boot. It was brown, cracked at the toe, and it had no partner anywhere I could see.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "boot"
+      }
+     ]
+    },
+    {
+     "line": "I was so pleased to own a boot that I put a seed in it, and a seed grew into a pumpkin. I apologised to the pumpkin for the cramped start, one word at a time.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "pumpkin"
+      },
+      {
+       "do": "sway",
+       "who": "pumpkin"
+      }
+     ]
+    },
+    {
+     "line": "The pumpkin grew so fat it pushed the boot off the step. I could not wear the boot after that, so I walked barefoot all season.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "boot"
+      },
+      {
+       "do": "grow",
+       "who": "pumpkin"
+      }
+     ]
+    },
+    {
+     "line": "My feet grew tough as bark. The birds laughed at me, and Pip sat on my shoulder and told me I looked like a root.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "When the pumpkin was ripe I cut it open with my bent spade. Inside was a small brass key, warm from the sun.",
+     "actions": [
+      {
+       "do": "shrink",
+       "who": "pumpkin"
+      },
+      {
+       "do": "enter",
+       "who": "spade"
+      }
+     ]
+    },
+    {
+     "line": "I do not know what the key opens. I keep it on a string by my bed, and some nights it hums like a kettle that is nearly ready.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "The last of the light is going now. The pumpkin seeds are drying on the step, and I think I will plant them in the boot again.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "balloon"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Whale That Stayed",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "frog",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "whale",
+     "kind": "whale",
+     "layer": "mid",
+     "at": "sky-right"
+    },
+    {
+     "id": "box",
+     "kind": "basket",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "mint",
+     "kind": "flower",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "mid",
+     "at": "sky-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I had one window box and one spade with a bent handle. That was my whole garden.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Then a cloud whale came drifting past my box. It was slow and it smelled of rain.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "whale",
+       "to": "center"
+      },
+      {
+       "do": "sway",
+       "who": "whale"
+      }
+     ]
+    },
+    {
+     "line": "I was planting mint in the box. I said sorry to the soil for the noise.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      },
+      {
+       "do": "appear",
+       "who": "mint"
+      }
+     ]
+    },
+    {
+     "line": "The whale bent down and sniffed. Then it sighed a long, soft sigh.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "whale",
+       "to": "right"
+      },
+      {
+       "do": "shake",
+       "who": "mint"
+      }
+     ]
+    },
+    {
+     "line": "Its eye closed, and it did not drift away. It only lay down over my island.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "whale",
+       "to": "below"
+      }
+     ]
+    },
+    {
+     "line": "Pip came down and counted the whale's breaths. Pip says it was twelve breaths a minute.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "I could not ask the whale to leave. So I gave it a window box to sit on.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "box",
+       "to": "right"
+      },
+      {
+       "do": "fly",
+       "who": "whale",
+       "to": "sky-right"
+      }
+     ]
+    },
+    {
+     "line": "The mint grew up its side like a green beard. Now every evening the whale hums when it smells the leaves.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "mint"
+      },
+      {
+       "do": "glow",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I still do not know where it goes in the day. But I know it will come back for tea.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "whale",
+       "to": "high"
+      },
+      {
+       "do": "fade",
+       "who": "whale"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-storyteller-cat": [
+  {
+   "title": "The Tin Cat in the Lighthouse",
+   "mood": "night",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "cat",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "lighthouse",
+     "kind": "lighthouse",
+     "layer": "far",
+     "at": "right"
+    },
+    {
+     "id": "tin-cat",
+     "kind": "cat",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-right"
+    },
+    {
+     "id": "kite",
+     "kind": "kite",
+     "layer": "mid",
+     "at": "sky-left",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "When I was small, I learned every story by heart. I did not learn them from books. I learned them from a tin cat who lived in a lighthouse.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "lighthouse"
+      },
+      {
+       "do": "appear",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "He was made of old biscuit tins, dented at the ears. He only told stories when the lamps were low, so every night I climbed the stairs at dusk and waited.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "tin-cat",
+       "to": "center"
+      },
+      {
+       "do": "sway",
+       "who": "tin-cat"
+      }
+     ]
+    },
+    {
+     "line": "He had one odd habit. He hummed a single note before each tale, and the note rattled in his chest like a spoon in an empty jar.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "tin-cat"
+      },
+      {
+       "do": "glow",
+       "who": "lighthouse"
+      }
+     ]
+    },
+    {
+     "line": "One night a storm came up and the sea went grey. A boat with a torn sail was out there, and its lamp was blinking.",
+     "actions": [
+      {
+       "do": "rise",
+       "who": "moon",
+       "to": "sky"
+      },
+      {
+       "do": "shake",
+       "who": "lighthouse"
+      }
+     ]
+    },
+    {
+     "line": "The tin cat stopped humming. He said, I cannot finish this story until someone tells me the boat is safe. So I said I would watch the lamp for him.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "tin-cat"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "I kept my eyes on that small blinking light until my paws went numb. Then it steadied, and the boat turned for the harbour.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "lighthouse"
+      },
+      {
+       "do": "fade",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "When I told him, he tapped his tin ear twice and said the story could go on now. He told me a tale about a mouse who swapped her shadow for a cup of tea.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "tin-cat"
+      },
+      {
+       "do": "enter",
+       "who": "kite",
+       "to": "sky-left"
+      }
+     ]
+    },
+    {
+     "line": "I still cannot tell that tale well until the lamps are low. I hum before I start, the way he did, and my voice rattles a little too.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "exit",
+       "who": "tin-cat",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "So if you hear a single rattling note on the wind tomorrow, that is me warming up. Come back another night, and I will tell you what the mouse did with her shadow.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "kite",
+       "to": "high"
+      },
+      {
+       "do": "fade",
+       "who": "lighthouse"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Moth and the Single Shoe",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "cat",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "moth",
+     "kind": "bird",
+     "layer": "mid",
+     "at": "center",
+     "hidden": true
+    },
+    {
+     "id": "gull",
+     "kind": "gull",
+     "layer": "mid",
+     "at": "sky-right",
+     "hidden": true
+    },
+    {
+     "id": "boot",
+     "kind": "boot",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "boat",
+     "kind": "paper-boat",
+     "layer": "mid",
+     "at": "far-right",
+     "hidden": true
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-left"
+    },
+    {
+     "id": "fire",
+     "kind": "lantern",
+     "layer": "near",
+     "at": "far-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I once sang a long tale about a moth who wanted a shoe. I sang it slowly, the way I sing everything, with a pause after each word.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "fire"
+      },
+      {
+       "do": "enter",
+       "who": "moth",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "The moth had one boot already, a green one, and she needed a partner. Her wings were too tired to carry her far, so she walked.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "moth",
+       "to": "right"
+      },
+      {
+       "do": "appear",
+       "who": "boot"
+      }
+     ]
+    },
+    {
+     "line": "On the second night a gull came by, dropping crumbs of its breakfast as it flew. It saw the moth dragging a green boot and laughed until it dropped the rest.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "gull",
+       "to": "center"
+      },
+      {
+       "do": "shake",
+       "who": "gull"
+      }
+     ]
+    },
+    {
+     "line": "I was the one who heard that laugh from the bottom of my coat pocket. I tapped my spoon against my teeth and thought, that is a good review.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "move",
+       "who": "moon",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "The moth did find her shoe in the end, but it was a red one, left behind on a bridge by a traveling hedgehog. The two boots never matched, and she walked happily in both.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "moth",
+       "to": "far-right"
+      },
+      {
+       "do": "fade",
+       "who": "boot"
+      }
+     ]
+    },
+    {
+     "line": "Some nights I wonder whether the moth has a third shoe waiting for her somewhere out in the clouds.",
+     "actions": [
+      {
+       "do": "spin",
+       "who": "moon"
+      },
+      {
+       "do": "glow",
+       "who": "fire"
+      }
+     ]
+    },
+    {
+     "line": "A paper boat came sailing past with a single red shoe in its hull. I did not ask where it was going.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "boat",
+       "to": "far-right"
+      },
+      {
+       "do": "move",
+       "who": "boat",
+       "to": "offstage-right"
+      }
+     ]
+    },
+    {
+     "line": "That is the end of the moth tale, for tonight. Keep your feet warm, and listen for the gull, because it still laughs when the wind is low.",
+     "actions": [
+      {
+       "do": "exit",
+       "who": "moth",
+       "to": "offstage-right"
+      },
+      {
+       "do": "sink",
+       "who": "moon",
+       "to": "below"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-tea-maker-hedgehog": [
+  {
+   "title": "The Staircase Tea Stall",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "hedgehog",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "stall",
+     "kind": "tent",
+     "layer": "mid",
+     "at": "right"
+    },
+    {
+     "id": "stairs",
+     "kind": "hill",
+     "layer": "mid",
+     "at": "far-right"
+    },
+    {
+     "id": "kettle",
+     "kind": "teapot",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "climber",
+     "kind": "goat",
+     "layer": "near",
+     "at": "far-right",
+     "hidden": true
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-right"
+    },
+    {
+     "id": "rain",
+     "kind": "rain",
+     "layer": "mid",
+     "at": "sky-left",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "I used to run a tea stall at the bottom of a long staircase of rocks.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "stall"
+      },
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "Every customer had to climb all of those rocks to reach me.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "climber",
+       "to": "right"
+      },
+      {
+       "do": "move",
+       "who": "climber",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "By the time they arrived, they were puffed and grumpy.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "climber"
+      },
+      {
+       "do": "sway",
+       "who": "stall"
+      }
+     ]
+    },
+    {
+     "line": "So I learned to brew something strong and a little sweet.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "kettle"
+      },
+      {
+       "do": "shake",
+       "who": "kettle"
+      }
+     ]
+    },
+    {
+     "line": "I added a pinch of honey and one dried orange peel, always the same.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "kettle"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "One evening a goat climbed up in a sudden downpour, soaked to the horns.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "rain"
+      },
+      {
+       "do": "fly",
+       "who": "climber",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "He sat down, drank, and did not say a single word for a long time.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "climber",
+       "to": "center"
+      },
+      {
+       "do": "sway",
+       "who": "kettle"
+      }
+     ]
+    },
+    {
+     "line": "Then he asked for a second cup, and I knew the tea had worked.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      },
+      {
+       "do": "fade",
+       "who": "rain"
+      }
+     ]
+    },
+    {
+     "line": "He left under the moon, and I still wonder where his path led.",
+     "actions": [
+      {
+       "do": "exit",
+       "who": "climber",
+       "to": "offstage-right"
+      },
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Whistling Dent",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "hedgehog",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "kettle",
+     "kind": "teapot",
+     "layer": "mid",
+     "at": "right"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-left"
+    },
+    {
+     "id": "storm",
+     "kind": "cloud",
+     "layer": "far",
+     "at": "sky-right"
+    },
+    {
+     "id": "windowsill",
+     "kind": "house",
+     "layer": "mid",
+     "at": "far-right"
+    },
+    {
+     "id": "rain",
+     "kind": "rain",
+     "layer": "far",
+     "at": "sky-right",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "I have a kettle with a dent in its side. It is a long story, and it starts on a windowsill.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "kettle"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "One stormy night the kettle fell off that sill. It hit the floor with a bang and a little sigh.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "rain",
+       "to": "sky"
+      },
+      {
+       "do": "sink",
+       "who": "kettle",
+       "to": "below"
+      }
+     ]
+    },
+    {
+     "line": "I ran down in my slippers. The rain was coming in sideways, and I was sure the kettle was ruined.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "shake",
+       "who": "storm"
+      }
+     ]
+    },
+    {
+     "line": "It was not ruined. It had a dent in its side, round and shallow, like a thumbprint in dough.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "kettle"
+      },
+      {
+       "do": "glow",
+       "who": "kettle"
+      }
+     ]
+    },
+    {
+     "line": "I thought about throwing it out. Then I filled it with water and set it on the stove anyway.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      },
+      {
+       "do": "appear",
+       "who": "pip"
+      }
+     ]
+    },
+    {
+     "line": "When the water boiled, the steam pushed through that dent and made the sharpest whistle you ever heard.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "kettle"
+      },
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "Pip flew in circles, and the rain stopped to listen. Even the storm seemed to go quiet for a moment.",
+     "actions": [
+      {
+       "do": "spin",
+       "who": "pip"
+      },
+      {
+       "do": "fade",
+       "who": "storm"
+      }
+     ]
+    },
+    {
+     "line": "I kept the kettle after that. A dented kettle makes the best whistle, and a good whistle is hard to find on a floating island.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "kettle"
+      },
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Next time the clouds are low, I will tell you what the kettle did on the day the wind took my hat.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "fade",
+       "who": "rain"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-musician-fox": [
+  {
+   "title": "The Storm That Stopped",
+   "mood": "storm",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "fox",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "boat",
+     "kind": "paper-boat",
+     "layer": "mid",
+     "at": "center"
+    },
+    {
+     "id": "rain",
+     "kind": "rain",
+     "layer": "far",
+     "at": "sky"
+    },
+    {
+     "id": "lighthouse",
+     "kind": "lighthouse",
+     "layer": "far",
+     "at": "right"
+    },
+    {
+     "id": "gull",
+     "kind": "gull",
+     "layer": "mid",
+     "at": "sky-right",
+     "hidden": true
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-left",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "I came down through the clouds with my umbrella held up like a roof. The wind was in a mood, so the rain came sideways.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "A paper boat I had folded from an old music sheet was bobbing near my feet. I tapped its rim with my claws to keep time.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "boat"
+      },
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "The storm was loud, so I took out my fiddle. I played the slowest tune I know, a dull one with a wobble in the middle.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "rain"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "The rain stopped to listen. It hung in the air in little beads, and I could hear the lighthouse ticking like a clock.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "rain"
+      },
+      {
+       "do": "glow",
+       "who": "lighthouse"
+      }
+     ]
+    },
+    {
+     "line": "It was rude of me to stop a storm mid-fall. I know that. I did not know what else to do with my hands.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      },
+      {
+       "do": "enter",
+       "who": "gull",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "A gull came in low, hoping for the tune. It landed on the boat and folded its wings like a wet shirt.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "gull",
+       "to": "right"
+      },
+      {
+       "do": "sway",
+       "who": "boat"
+      }
+     ]
+    },
+    {
+     "line": "The rain, wonderfully, forgave me. It drifted off in soft grey threads and left the sky washed clean.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "rain"
+      },
+      {
+       "do": "appear",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "The moon came up over the sea and laid a silver path to my island. The gull shook out its feathers and sang back.",
+     "actions": [
+      {
+       "do": "rise",
+       "who": "moon"
+      },
+      {
+       "do": "shake",
+       "who": "gull"
+      }
+     ]
+    },
+    {
+     "line": "I still have that tune. The rain asks for it sometimes, and I make it wait until morning.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me"
+      },
+      {
+       "do": "fade",
+       "who": "moon"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Jam Jar and the Spoon",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "fox",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "jar",
+     "kind": "bell",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "island",
+     "kind": "island",
+     "layer": "mid",
+     "at": "center"
+    },
+    {
+     "id": "rain",
+     "kind": "rain",
+     "layer": "far",
+     "at": "sky-left",
+     "hidden": true
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-right"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "far-right",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "My first instrument was a tin spoon and a jam jar. I was small then, and the spoon was bigger than my paw.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "jar"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I tapped the jar rim every evening, one two three, one two three. The sound went out over the wet grass like a hopping frog.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "glow",
+       "who": "jar"
+      }
+     ]
+    },
+    {
+     "line": "Then the rain came in sideways and the jar started to fill with water. I was so proud of it I did not want to let it go.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "rain",
+       "to": "center"
+      },
+      {
+       "do": "shake",
+       "who": "jar"
+      }
+     ]
+    },
+    {
+     "line": "I held the jar against my chest all night under my umbrella. It was cold and it rang every time I shivered.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      },
+      {
+       "do": "shake",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "In the morning Pip came down and looked at the jar with one round eye. Pip tipped its head, then sat on the rim and sang along.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "right"
+      },
+      {
+       "do": "sway",
+       "who": "jar"
+      }
+     ]
+    },
+    {
+     "line": "We made a tune out of that puddle sound and the spoon. It was not a good tune, but the clouds leaned in to hear it.",
+     "actions": [
+      {
+       "do": "spin",
+       "who": "me"
+      },
+      {
+       "do": "move",
+       "who": "pip",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "When the rain stopped I poured the water out and kept the last of the blackberry in the bottom. It is still there, I think.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "rain"
+      },
+      {
+       "do": "glow",
+       "who": "jar"
+      }
+     ]
+    },
+    {
+     "line": "I still keep the jar on my shelf, with that old purple stain inside. When the wind is quiet I tap it once to see if it still rings.",
+     "actions": [
+      {
+       "do": "rise",
+       "who": "moon",
+       "to": "sky"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Some nights it does. Tomorrow I will tell you what Pip did with the spoon.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      },
+      {
+       "do": "exit",
+       "who": "pip",
+       "to": "offstage-right"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-beekeeper-mouse": [
+  {
+   "title": "The Boot and the Bees",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "mouse",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "boot",
+     "kind": "boot",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "other-boot",
+     "kind": "boot",
+     "layer": "mid",
+     "at": "right"
+    },
+    {
+     "id": "hive",
+     "kind": "hive",
+     "layer": "mid",
+     "at": "center",
+     "hidden": true
+    },
+    {
+     "id": "bees",
+     "kind": "bee",
+     "layer": "near",
+     "at": "sky-right",
+     "hidden": true
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I want to tell you about my first hive. It was an old boot. Nobody else wanted it, so I took it home.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "I filled the boot with dry hay and a little beeswax. It smelled of rain on a barn roof, which I think the bees liked.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "hive"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "One warm evening the bees came in from the clover. They walked in one by one, counting their steps out loud.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "bees",
+       "to": "center"
+      },
+      {
+       "do": "fly",
+       "who": "bees",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "They did not mind the boot at all. They said it was the right size for a hive and a little too big for a mouse.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "But the other boot, the one I had left by the door, felt left out. It did not say so. It only sat there, looking at the hive.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "other-boot"
+      }
+     ]
+    },
+    {
+     "line": "For years I walked past it every morning and felt a little sorry. I would nod to it and say good morning.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "One night a storm came over the clouds. I brought the other boot inside, and I filled it with a cup of tea so it would not feel so empty.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "other-boot"
+      },
+      {
+       "do": "move",
+       "who": "other-boot",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "The bees were pleased and hummed a soft tune all night. I still hear it when the wind is quiet.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      },
+      {
+       "do": "fade",
+       "who": "bees"
+      }
+     ]
+    },
+    {
+     "line": "I have never told the bees about the second boot. Some stories are better kept for another night.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "me"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Comb and the Gulls",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "mouse",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "comb",
+     "kind": "hive",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "gulls",
+     "kind": "birds",
+     "layer": "mid",
+     "at": "sky-right"
+    },
+    {
+     "id": "boat",
+     "kind": "boat",
+     "layer": "mid",
+     "at": "far-right",
+     "hidden": true
+    },
+    {
+     "id": "lighthouse",
+     "kind": "lighthouse",
+     "layer": "far",
+     "at": "far-right"
+    },
+    {
+     "id": "sea",
+     "kind": "sea",
+     "layer": "far",
+     "at": "far-left"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I want to tell you about the comb I carried. Lift your cup slowly, the way I do, so the bees do not feel rushed.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "sea"
+      },
+      {
+       "do": "sway",
+       "who": "pip"
+      }
+     ]
+    },
+    {
+     "line": "It was a small piece of comb, heavy with honey, and I carried it in my hat across three islands.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "comb",
+       "to": "left"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "I did not spill a drop. My ears were tucked flat and I walked on the very tips of my toes.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      },
+      {
+       "do": "shake",
+       "who": "comb"
+      }
+     ]
+    },
+    {
+     "line": "The gulls came down from the clouds to follow me. They wheeled above my hat and screamed about the smell.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "gulls",
+       "to": "sky-right"
+      },
+      {
+       "do": "move",
+       "who": "gulls",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "A boat drifted past the lighthouse, and I tapped my cup twice to steady my nerves before I crossed its wake.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "boat",
+       "to": "center"
+      },
+      {
+       "do": "turn",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "On the second island the rain began, soft and sideways. I held my hat over my head and the honey stayed warm.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "gulls",
+       "to": "high"
+      },
+      {
+       "do": "fade",
+       "who": "boat"
+      }
+     ]
+    },
+    {
+     "line": "The gulls never said thank you. They only sat on the rail of the bridge, judging me with their small yellow eyes.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "gulls",
+       "to": "right"
+      },
+      {
+       "do": "sway",
+       "who": "pip"
+      }
+     ]
+    },
+    {
+     "line": "Pip said I was foolish to carry a whole comb anywhere. I think she was jealous of the honey.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "pip"
+      },
+      {
+       "do": "glow",
+       "who": "lighthouse"
+      }
+     ]
+    },
+    {
+     "line": "When I finally set the hat down by my own hive, the gulls were gone, and the comb was still whole.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "gulls"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "I have never asked the gulls for thanks since. Perhaps one night they will bring me something back, and we will see.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "comb"
+      },
+      {
+       "do": "glow",
+       "who": "sea"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-cartographer-raccoon": [
+  {
+   "title": "The Cloud I Apologized To",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "raccoon",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "cloud",
+     "kind": "cloud",
+     "layer": "mid",
+     "at": "sky-right"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "boat",
+     "kind": "paper-boat",
+     "layer": "mid",
+     "at": "far-right",
+     "hidden": true
+    },
+    {
+     "id": "lantern",
+     "kind": "lantern",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "sea",
+     "kind": "sea",
+     "layer": "far",
+     "at": "far-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I arrived in a paper boat, folded badly, with a wet map in my coat. The first thing I mapped was the sea, and it did not hold still.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "boat",
+       "to": "center"
+      },
+      {
+       "do": "sway",
+       "who": "sea"
+      }
+     ]
+    },
+    {
+     "line": "Out past the lighthouse rocks there was a cloud. It changed shape every time I looked away, and it had a habit of leaning toward my lantern.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "cloud"
+      },
+      {
+       "do": "move",
+       "who": "cloud",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "I drew it in pencil, because ink would not forgive me if I was wrong. Each morning I apologized to it for the lines I had got wrong the day before.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "lantern"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "Pip thought this was foolish. She sat on the rim of my lantern and counted the cloud's edges out loud, and got a different number every time.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "center"
+      },
+      {
+       "do": "shake",
+       "who": "cloud"
+      }
+     ]
+    },
+    {
+     "line": "I counted too, under my breath, because that is how I keep my hands from shaking. Seven edges. Then six. Then one long soft edge that I could not name.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "cloud"
+      },
+      {
+       "do": "turn",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "One night the cloud came down so close I could smell rain on it. It pressed a little damp patch onto the lower corner of my map, right over the place I had called home.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "cloud",
+       "to": "right"
+      },
+      {
+       "do": "fade",
+       "who": "cloud"
+      }
+     ]
+    },
+    {
+     "line": "I was cross for a whole breakfast. Then I saw the damp shape was better than my line, so I left it alone and said sorry to the cloud anyway.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "cloud"
+      },
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "The cloud drifted off toward the stars without a word. I still unfold that map some nights, and I still count its edges, and I still leave one line blank for it to fill.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "cloud",
+       "to": "sky-left"
+      },
+      {
+       "do": "exit",
+       "who": "boat",
+       "to": "offstage-right"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The kite that remembers mistakes",
+   "mood": "night",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "raccoon",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "kite",
+     "kind": "kite",
+     "layer": "mid",
+     "at": "sky-right"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-left"
+    },
+    {
+     "id": "island",
+     "kind": "island",
+     "layer": "far",
+     "at": "far-right"
+    },
+    {
+     "id": "gull",
+     "kind": "gull",
+     "layer": "mid",
+     "at": "far-right",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "I count the patches on my kite before it leaves the ground. There are eleven, and each one is old chart paper.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "kite",
+       "to": "sky-right"
+      }
+     ]
+    },
+    {
+     "line": "Pip hops onto my boot and asks why I always count. I tell her counting keeps my hands honest.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "The wind takes the kite higher. I look up and see the underside, where my own old mistakes are printed backwards.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "kite",
+       "to": "high"
+      },
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "There is a river drawn in the wrong place, and a cliff I swore was a meadow. I laugh and then I feel a little embarrassed.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "kite"
+      }
+     ]
+    },
+    {
+     "line": "A gull lands on the kite string, shakes its feathers, and reads the map upside down with great seriousness.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "gull",
+       "to": "sky-right"
+      }
+     ]
+    },
+    {
+     "line": "The gull says the cliff looks better as a meadow. I say the cliff is still a cliff, and we agree to disagree about it.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "gull"
+      }
+     ]
+    },
+    {
+     "line": "Pip counts the patches too, and gets twelve. We both look at the kite, and I decide twelve is the honest number now.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "kite"
+      }
+     ]
+    },
+    {
+     "line": "The island below us is small and warm, and I can smell the bread Pip left by the fire. I do not want to pull the kite down yet.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "island",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "I fold the kite string around my paw and tell the gull the next chapter is about a lighthouse that does not exist. The gull is very interested in that.",
+     "actions": [
+      {
+       "do": "exit",
+       "who": "gull",
+       "to": "offstage-right"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-stargazer-hedgehog": [
+  {
+   "title": "The Beetles on My Back",
+   "mood": "night",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "hedgehog",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "hill",
+     "kind": "hill",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-right"
+    },
+    {
+     "id": "beetles",
+     "kind": "birds",
+     "layer": "near",
+     "at": "center",
+     "hidden": true
+    },
+    {
+     "id": "stars",
+     "kind": "stars",
+     "layer": "far",
+     "at": "sky"
+    },
+    {
+     "id": "umbrella",
+     "kind": "umbrella",
+     "layer": "mid",
+     "at": "far-right",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "When I was small I lay down on a hill to watch the sky. I meant to lie there for only one hour.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "glow",
+       "who": "stars"
+      }
+     ]
+    },
+    {
+     "line": "I did not move. I wanted to keep my place in the sky, so I counted the stars as they came out one by one.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "Soon a family of beetles climbed up my spines and decided my back was a good hill for a picnic.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "beetles",
+       "to": "center"
+      },
+      {
+       "do": "move",
+       "who": "beetles",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "They spread a cloth on my back and set out crumbs of bread and a tiny teapot. I did not complain, because it tickled in a pleasant way.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "beetles"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "The wind came over the hill and tried to push me off my place. I held on by remembering the name of the brightest star, Vela, under my breath.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "me"
+      },
+      {
+       "do": "move",
+       "who": "umbrella",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "The umbrella that had blown past turned inside out in the gust and landed on the hill like a little bowl. The beetles used it as a cup to catch the rain.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "umbrella",
+       "to": "far-right"
+      },
+      {
+       "do": "sway",
+       "who": "umbrella"
+      }
+     ]
+    },
+    {
+     "line": "Morning came and the beetles packed their cloth and left. I was stiff and cold, but my notebook had three new star names in it.",
+     "actions": [
+      {
+       "do": "exit",
+       "who": "beetles",
+       "to": "offstage-left"
+      },
+      {
+       "do": "fade",
+       "who": "stars"
+      }
+     ]
+    },
+    {
+     "line": "I got up slowly and went looking for a warm place. I still think about that hill, and about the beetles, and what else might decide to picnic on a hedgehog.",
+     "actions": [
+      {
+       "do": "exit",
+       "who": "me",
+       "to": "offstage-right"
+      },
+      {
+       "do": "fade",
+       "who": "moon"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Sheet That Was Too Heavy",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "hedgehog",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-right"
+    },
+    {
+     "id": "stars",
+     "kind": "stars",
+     "layer": "far",
+     "at": "sky"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "paper",
+     "kind": "map",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "wind",
+     "kind": "wind",
+     "layer": "far",
+     "at": "sky-left",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "I once tried to draw the whole night sky on one large sheet of paper. I started the winter the wind first brought me here.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "paper"
+      },
+      {
+       "do": "glow",
+       "who": "stars"
+      }
+     ]
+    },
+    {
+     "line": "Every star got a dot, and every dot got a name said under my breath. It took me three winters of pencil and cold fingers.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "stars"
+      },
+      {
+       "do": "hop",
+       "who": "pip"
+      }
+     ]
+    },
+    {
+     "line": "By the third winter the sheet was as big as my bed. I rolled it up each morning and carried it to the cliff to dry.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "paper",
+       "to": "left"
+      },
+      {
+       "do": "enter",
+       "who": "wind"
+      }
+     ]
+    },
+    {
+     "line": "One evening I finished the last star in Cassiopeia and felt very pleased. Then I noticed the sheet had started to lift.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "paper"
+      },
+      {
+       "do": "fly",
+       "who": "paper",
+       "to": "sky-left"
+      }
+     ]
+    },
+    {
+     "line": "The wind had found it like a kite. It pulled hard, and I hung on to one corner while my feet left the ground.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      },
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "sky-left"
+      }
+     ]
+    },
+    {
+     "line": "Pip grabbed the other corner in her beak and shouted something very rude about heavy paper. We were both too stubborn to let go.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "pip"
+      },
+      {
+       "do": "sway",
+       "who": "paper"
+      }
+     ]
+    },
+    {
+     "line": "We came down slowly in the reeds by the pond. The sheet was torn along one edge, and the Big Dipper had a new gap in its handle.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "paper",
+       "to": "below"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "I sat there a long time, rubbing the tear and wondering whether a star can be redrawn. Then I thought of a smaller sheet and a much calmer wind.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      },
+      {
+       "do": "turn",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Tomorrow I will start again, one winter at a time. If you see a star winking strangely tonight, it is probably just me checking the gap.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "stars"
+      },
+      {
+       "do": "exit",
+       "who": "wind",
+       "to": "offstage-right"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-baker-cat": [
+  {
+   "title": "The Tin With The Hole",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "cat",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-right"
+    },
+    {
+     "id": "oven",
+     "kind": "oven",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "smoke",
+     "kind": "cloud",
+     "layer": "mid",
+     "at": "sky-left"
+    },
+    {
+     "id": "whale",
+     "kind": "whale",
+     "layer": "far",
+     "at": "far-right",
+     "hidden": true
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "high"
+    }
+   ],
+   "beats": [
+    {
+     "line": "Have you eaten. Good. I ask everyone that, even you.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "My first oven was a biscuit tin with a hole in the lid. I found it under a cloud that had gone soft.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "oven"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "It smoked so badly that the birds made me bake outdoors. Pip said the smoke was the color of wet wool.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "smoke"
+      },
+      {
+       "do": "hop",
+       "who": "pip"
+      }
+     ]
+    },
+    {
+     "line": "My first loaf came out black on the bottom and soft as a sock in the middle. I ate the good half anyway.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "smoke"
+      },
+      {
+       "do": "shake",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Then the wind blew the lid off the tin and sent it spinning over the edge of the island.",
+     "actions": [
+      {
+       "do": "spin",
+       "who": "oven",
+       "to": "far-right"
+      },
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "sky-right"
+      }
+     ]
+    },
+    {
+     "line": "A whale came up under the clouds to see what had landed. It held the tin on its back like a hat.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "whale",
+       "to": "right"
+      },
+      {
+       "do": "rise",
+       "who": "whale",
+       "to": "sky-right"
+      }
+     ]
+    },
+    {
+     "line": "I tapped my nose twice and told the whale the hole was a feature. The whale did not agree, but it stayed to watch me bake.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me"
+      },
+      {
+       "do": "sway",
+       "who": "whale"
+      }
+     ]
+    },
+    {
+     "line": "We baked together until the stars came out. The bread was not perfect, but the whale said it tasted of rain.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      },
+      {
+       "do": "fade",
+       "who": "smoke"
+      }
+     ]
+    },
+    {
+     "line": "I will tell you how I got the second tin another night. Have you eaten. Good.",
+     "actions": [
+      {
+       "do": "exit",
+       "who": "whale",
+       "to": "offstage-right"
+      },
+      {
+       "do": "hop",
+       "who": "pip"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Loaf for the Storm",
+   "mood": "storm",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "cat",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "oven",
+     "kind": "oven",
+     "layer": "mid",
+     "at": "center"
+    },
+    {
+     "id": "storm",
+     "kind": "cloud",
+     "layer": "far",
+     "at": "sky-right"
+    },
+    {
+     "id": "rain",
+     "kind": "rain",
+     "layer": "mid",
+     "at": "right"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-left"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-left",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "Have you eaten. I ask this even when you have, so please say yes.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Once a storm came over my small island, dark and loud, and it rained on my oven until the fire hissed.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "storm",
+       "to": "sky-right"
+      },
+      {
+       "do": "enter",
+       "who": "rain",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "I did what a baker does. I made a loaf, with the flour I had and a pinch of salt from the tin by the door.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "oven"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "Pip sat on the rim of the tin and told me the storm was too cross to eat anything. I said I would ask it anyway.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "pip",
+       "to": "sky-left"
+      },
+      {
+       "do": "move",
+       "who": "pip",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "I set the loaf on the wind, warm and smelling of bread. The storm did not eat it.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "sky"
+      },
+      {
+       "do": "shake",
+       "who": "storm"
+      }
+     ]
+    },
+    {
+     "line": "But the rain stopped for the length of one slice. I cut the slice myself, and the whole island went quiet to listen.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "rain"
+      },
+      {
+       "do": "shrink",
+       "who": "storm"
+      }
+     ]
+    },
+    {
+     "line": "In that quiet I heard the sea below us, slow and soft, like someone turning over in bed.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Then the storm grumbled and rolled away east, and the moon came up over the clouds to see what the fuss was.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "moon",
+       "to": "sky-left"
+      },
+      {
+       "do": "move",
+       "who": "storm",
+       "to": "far-right"
+      }
+     ]
+    },
+    {
+     "line": "I still have the end of that loaf in my tin. I will tell you what I did with it another night, if you have not eaten yet.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-stargazer-raccoon": [
+  {
+   "title": "The Notebook of Sleepy Names",
+   "mood": "night",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "raccoon",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-right"
+    },
+    {
+     "id": "star",
+     "kind": "star",
+     "layer": "far",
+     "at": "sky"
+    },
+    {
+     "id": "umbrella",
+     "kind": "umbrella",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "wind",
+     "kind": "wind",
+     "layer": "mid",
+     "at": "far-left"
+    },
+    {
+     "id": "notebook",
+     "kind": "book",
+     "layer": "near",
+     "at": "right"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I keep a notebook of every star I have named. Most of the names are silly, because I named them when I was sleepy.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "star"
+      },
+      {
+       "do": "appear",
+       "who": "notebook"
+      }
+     ]
+    },
+    {
+     "line": "The first star I named was a small one near the moon. I called it Biscuit, because my tummy was rumbling.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "star"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I wrote the name down in pencil. The pencil smelled of cedar and of the bread I had eaten at dusk.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "Then one night the wind came hard. It pulled my umbrella out of my paws and off toward the clouds.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "wind"
+      },
+      {
+       "do": "fly",
+       "who": "umbrella",
+       "to": "sky-left"
+      }
+     ]
+    },
+    {
+     "line": "I ran after it, but I stopped to look up. I had lost my place in the notebook, so I had to count the stars again.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me"
+      },
+      {
+       "do": "glow",
+       "who": "star"
+      }
+     ]
+    },
+    {
+     "line": "When I counted, I found a new star that nobody had named. It was very faint and winked twice.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "star"
+      },
+      {
+       "do": "glow",
+       "who": "star"
+      }
+     ]
+    },
+    {
+     "line": "I named it Tuesday, which is a silly name for a star. But it was the first thing that week that made me smile.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "star"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "The wind dropped the umbrella gently on the island beside me. I think it wanted me to stay and write down another name.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "umbrella",
+       "to": "center"
+      },
+      {
+       "do": "fade",
+       "who": "wind"
+      }
+     ]
+    },
+    {
+     "line": "I wrote Tuesday in the notebook tonight. Would you like to name a star with me, before we go to sleep?",
+     "actions": [
+      {
+       "do": "move",
+       "who": "notebook",
+       "to": "center"
+      },
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Rain Barrel Lid",
+   "mood": "night",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "raccoon",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "high"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "barrel",
+     "kind": "telescope",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "umbrella",
+     "kind": "umbrella",
+     "layer": "mid",
+     "at": "sky-right",
+     "hidden": true
+    },
+    {
+     "id": "gull",
+     "kind": "gull",
+     "layer": "mid",
+     "at": "far-right",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "I had no telescope when I first came here. I only had my eyes and a tin of dried plums.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Then I found an old rain barrel lid on the north shore. It had a rusty rim and it fit my paws well.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "barrel",
+       "to": "left"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "I poked a hole in the middle with a nail. It was not a neat hole, and I think about that still.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "barrel"
+      },
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "Pip said it looked like a bad soup bowl. I said a bowl can still show you the stars.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "pip"
+      },
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "On the first clear night I held it to my eye. The stars came through the hole in small bright coins.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "Then a cloud drifted by and the coins went grey. I waited, and the cloud slid off, and they came back.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "moon"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "A gull landed on the rim to see what I was doing. She said it looked like I was peering at a puddle.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "gull",
+       "to": "far-right"
+      },
+      {
+       "do": "move",
+       "who": "gull",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "I did not argue. I offered her a dried plum and let her look through the hole herself.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "right"
+      },
+      {
+       "do": "turn",
+       "who": "gull"
+      }
+     ]
+    },
+    {
+     "line": "Then my umbrella came drifting in on the wind, the same one that brought me here, and it settled beside me as if it wanted to see too.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "umbrella",
+       "to": "sky-right"
+      },
+      {
+       "do": "move",
+       "who": "umbrella",
+       "to": "far-right"
+      }
+     ]
+    },
+    {
+     "line": "We stayed up until the moon was tired of us. I still have the barrel lid, and the hole is still a little crooked.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-storyteller-bear": [
+  {
+   "title": "The Soup Stories",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "bear",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "mother",
+     "kind": "bear",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "grandmother",
+     "kind": "bear",
+     "layer": "mid",
+     "at": "far-left",
+     "hidden": true
+    },
+    {
+     "id": "pot",
+     "kind": "teapot",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-right"
+    },
+    {
+     "id": "kite",
+     "kind": "kite",
+     "layer": "mid",
+     "at": "sky-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "When I was small I could not sleep. My mother sat on the edge of my bed and told me stories about her own small mother.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "mother"
+      },
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "Most of her stories were about soup. Her mother made soup from whatever was left in the cupboard, and she never once wrote down the recipe.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "pot",
+       "to": "center"
+      },
+      {
+       "do": "sway",
+       "who": "mother"
+      }
+     ]
+    },
+    {
+     "line": "In one story the soup was so thick that a spoon stood up in it by itself. My mother would hold up one paw to show me how tall the spoon stood.",
+     "actions": [
+      {
+       "do": "grow",
+       "who": "pot"
+      },
+      {
+       "do": "turn",
+       "who": "mother"
+      }
+     ]
+    },
+    {
+     "line": "Here is the part I always tell you, the listener. Grandmother once put a wet hat in the soup by accident. Have you ever seen a wet hat? I have not, not in a soup.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "grandmother",
+       "to": "center"
+      },
+      {
+       "do": "hop",
+       "who": "grandmother"
+      }
+     ]
+    },
+    {
+     "line": "The hat made the soup taste of rain, and everyone agreed it was the best soup of the year. My grandmother was never sorry, only a little damp.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "grandmother"
+      },
+      {
+       "do": "glow",
+       "who": "pot"
+      }
+     ]
+    },
+    {
+     "line": "A kite came down the sky that night, carrying a jar of honey for the pot. My mother said it was the kite's own idea, and she believed it.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "kite",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "The honey went in, the spoon stood up, and I finally fell asleep with the smell of rain and honey in my fur.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "pot"
+      },
+      {
+       "do": "fade",
+       "who": "mother"
+      }
+     ]
+    },
+    {
+     "line": "I have never found that soup again. I think the recipe is still in the sky somewhere, waiting for a cold night and a wet hat.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "grandmother"
+      },
+      {
+       "do": "move",
+       "who": "kite",
+       "to": "sky-right"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Bridge and the Laughers",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "bear",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-left"
+    },
+    {
+     "id": "rope",
+     "kind": "bridge",
+     "layer": "mid",
+     "at": "far-right"
+    },
+    {
+     "id": "island",
+     "kind": "island",
+     "layer": "far",
+     "at": "far-right"
+    },
+    {
+     "id": "hat",
+     "kind": "umbrella",
+     "layer": "near",
+     "at": "right",
+     "hidden": true
+    },
+    {
+     "id": "gull",
+     "kind": "gull",
+     "layer": "near",
+     "at": "sky-right",
+     "hidden": true
+    },
+    {
+     "id": "sun",
+     "kind": "sun",
+     "layer": "far",
+     "at": "sky"
+    }
+   ],
+   "beats": [
+    {
+     "line": "Many seasons ago I walked the rope bridges between the floating islands. I carried a tin cup and a bag of stories that smelled of pine smoke.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "sun"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "far-right"
+      }
+     ]
+    },
+    {
+     "line": "Most of the people I told stories to fell asleep before the end. A few snored in a tune, which I did not mind.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "rope"
+      },
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "But a few laughed in the right places. Those are the ones I still remember, and I keep them in my coat pocket like loose buttons.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "gull",
+       "to": "right"
+      },
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Have you ever seen a wet hat? I once saw one drip for an entire story.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "hat",
+       "to": "center"
+      },
+      {
+       "do": "shake",
+       "who": "hat"
+      }
+     ]
+    },
+    {
+     "line": "A gull named Marrow sat on my bridge and laughed at the wet hat until she fell off her perch. She said the story was the best thing to happen to her all week.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "gull"
+      },
+      {
+       "do": "move",
+       "who": "gull",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "Her laugh was loud and sideways, like a door swinging in wind. I told her the next story was hers if she came back at dusk.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "gull"
+      },
+      {
+       "do": "fly",
+       "who": "gull",
+       "to": "sky-right"
+      }
+     ]
+    },
+    {
+     "line": "She came back, and so did the wet hat, which had learned some new tricks by then.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "gull",
+       "to": "sky"
+      },
+      {
+       "do": "exit",
+       "who": "hat",
+       "to": "offstage-right"
+      }
+     ]
+    },
+    {
+     "line": "We still tell that tale on the far island when the rain starts. Some nights the rain laughs too, and I count that as a good audience.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "sun"
+      },
+      {
+       "do": "spin",
+       "who": "pip"
+      }
+     ]
+    },
+    {
+     "line": "That is all for tonight, friends. Keep your hat dry, and I will tell you about the lighthouse keeper another evening.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "sun"
+      },
+      {
+       "do": "exit",
+       "who": "gull",
+       "to": "offstage-right"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-gardener-deer": [
+  {
+   "title": "The Carrots on the Sill",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "deer",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "town",
+     "kind": "town",
+     "layer": "far",
+     "at": "far-right"
+    },
+    {
+     "id": "rain",
+     "kind": "rain",
+     "layer": "mid",
+     "at": "sky-right"
+    },
+    {
+     "id": "sill",
+     "kind": "house",
+     "layer": "mid",
+     "at": "right"
+    },
+    {
+     "id": "boot",
+     "kind": "boot",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I want to tell you about the carrots I grew in a town where it rained every single day.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "town"
+      },
+      {
+       "do": "sway",
+       "who": "rain"
+      }
+     ]
+    },
+    {
+     "line": "I had a windowsill, a tin cup of soil, and a bag of seed I bought from a man who hummed while he counted.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "right"
+      },
+      {
+       "do": "appear",
+       "who": "sill"
+      }
+     ]
+    },
+    {
+     "line": "Everyone told me the rain would wash the seed away. I planted them anyway, one a finger deep.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      },
+      {
+       "do": "shake",
+       "who": "rain"
+      }
+     ]
+    },
+    {
+     "line": "The rain kept coming. Each morning I poked the soil to see if it was still wet, and it always was.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "rain"
+      },
+      {
+       "do": "turn",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "On the ninth day I saw one green tip, bent over like it was listening to something far off.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "pip"
+      },
+      {
+       "do": "glow",
+       "who": "sill"
+      }
+     ]
+    },
+    {
+     "line": "Pip flew down to look at it. I had named my boots after vegetables, so I called the boot by the door Turnip, and it seemed to agree.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "right"
+      },
+      {
+       "do": "enter",
+       "who": "boot"
+      }
+     ]
+    },
+    {
+     "line": "The carrots grew stubbornly, pushing up out of the tin cup like they had something to prove to the weather.",
+     "actions": [
+      {
+       "do": "grow",
+       "who": "sill"
+      },
+      {
+       "do": "sway",
+       "who": "rain"
+      }
+     ]
+    },
+    {
+     "line": "I never did get a single carrot the size of a fist. But I got enough to share, and the town smelled of earth for a week.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "rain"
+      },
+      {
+       "do": "glow",
+       "who": "town"
+      }
+     ]
+    },
+    {
+     "line": "The rain has not stopped in that town, I hear. But somewhere on that windowsill, a small orange root may still be trying.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "town"
+      },
+      {
+       "do": "exit",
+       "who": "pip",
+       "to": "offstage-left"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The marble under the rose",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "deer",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "girl",
+     "kind": "mouse",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "rosebush",
+     "kind": "flower",
+     "layer": "mid",
+     "at": "right"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-right"
+    },
+    {
+     "id": "marble",
+     "kind": "star",
+     "layer": "near",
+     "at": "right",
+     "hidden": true
+    },
+    {
+     "id": "boot",
+     "kind": "boot",
+     "layer": "near",
+     "at": "far-right"
+    }
+   ],
+   "beats": [
+    {
+     "line": "Before I was a gardener I was a girl's neighbour, and she was not a girl yet by much.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "girl",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "She gave me her marble one wet afternoon. It was green, with a bubble of air trapped in the middle like a tiny lost cloud.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "girl",
+       "to": "center"
+      },
+      {
+       "do": "glow",
+       "who": "marble"
+      }
+     ]
+    },
+    {
+     "line": "I did not know what to do with a marble. I dug a hole beside the rosebush and put it in, the way you would put a seed away.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      },
+      {
+       "do": "sink",
+       "who": "marble",
+       "to": "below"
+      }
+     ]
+    },
+    {
+     "line": "Then I watered it with the rain I was saving in my second-best boot, which I called Parsnip.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "boot"
+      },
+      {
+       "do": "fade",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "Nothing happened all that spring. The rosebush grew its usual thorns and I forgot the whole thing, mostly.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "rosebush"
+      }
+     ]
+    },
+    {
+     "line": "Then one morning in May, something shiny pushed up through the petals.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "marble"
+      },
+      {
+       "do": "rise",
+       "who": "marble",
+       "to": "high"
+      }
+     ]
+    },
+    {
+     "line": "It was the marble, or a small green sun that had grown out of it. It caught the light and held it a while.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "marble"
+      }
+     ]
+    },
+    {
+     "line": "The girl came running down the lane to see. She stood very still, the way you do before a deer.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "girl",
+       "to": "far-left"
+      },
+      {
+       "do": "move",
+       "who": "girl",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "I have not decided yet what that marble is, or what it wants from me. Perhaps I will ask the rosebush tomorrow, if it has finished its sleep.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "marble"
+      },
+      {
+       "do": "move",
+       "who": "girl",
+       "to": "far-left"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-lighthouse-keeper-penguin": [
+  {
+   "title": "The Lamp on the Small Rock",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "penguin",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "lighthouse",
+     "kind": "lighthouse",
+     "layer": "mid",
+     "at": "right"
+    },
+    {
+     "id": "gull",
+     "kind": "gull",
+     "layer": "near",
+     "at": "sky-right"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-left"
+    },
+    {
+     "id": "boat",
+     "kind": "paper-boat",
+     "layer": "mid",
+     "at": "far-left",
+     "hidden": true
+    },
+    {
+     "id": "sea",
+     "kind": "sea",
+     "layer": "far",
+     "at": "far-left"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "high",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "My lighthouse stands on a rock so small, the gulls use it as a stool. I say this slowly, so you can hold it.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "lighthouse"
+      },
+      {
+       "do": "sway",
+       "who": "gull"
+      }
+     ]
+    },
+    {
+     "line": "Every morning I polish the lamp. Every morning. Whether or not a ship is coming. Ship, or no ship.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      },
+      {
+       "do": "shake",
+       "who": "lighthouse"
+      }
+     ]
+    },
+    {
+     "line": "One grey afternoon, a paper boat came out of the fog. It was folded from a letter, and the ink said Dear Keeper.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "boat",
+       "to": "left"
+      },
+      {
+       "do": "move",
+       "who": "boat",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "Inside sat a tiny otter with a wet fishing net. He had a cough and no map. Very small, very wet, very sure he was lost.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "sky"
+      },
+      {
+       "do": "sway",
+       "who": "boat"
+      }
+     ]
+    },
+    {
+     "line": "I gave him my second-best scarf and a cup of cold tea. Cold tea is the only kind I make for strangers, so they know I mean it.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me"
+      },
+      {
+       "do": "move",
+       "who": "gull",
+       "to": "sky-left"
+      }
+     ]
+    },
+    {
+     "line": "The rain came hard, and the lamp went dim. I had forgotten to fill it. I stood very still and thought about my thumb in the sand tin.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "lighthouse"
+      },
+      {
+       "do": "shake",
+       "who": "sea"
+      }
+     ]
+    },
+    {
+     "line": "Then Pip flew down with the otter's net in her beak, full of dry driftwood. We lit the lamp together, and it burned clean and bright.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "center"
+      },
+      {
+       "do": "glow",
+       "who": "lighthouse"
+      }
+     ]
+    },
+    {
+     "line": "The moon came up, and the otter saw the beam and laughed. He said he had been steering by the wrong star all day.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "moon"
+      },
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "In the morning he was gone, but the boat was tied to my rock. Pip says that means he will come back. I think she is right. I will polish the lamp.",
+     "actions": [
+      {
+       "do": "exit",
+       "who": "boat",
+       "to": "offstage-left"
+      },
+      {
+       "do": "glow",
+       "who": "lighthouse"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Bell in the Porridge Fog",
+   "mood": "night",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "penguin",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "lighthouse",
+     "kind": "lighthouse",
+     "layer": "mid",
+     "at": "right"
+    },
+    {
+     "id": "bell",
+     "kind": "bell",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "fog",
+     "kind": "cloud",
+     "layer": "far",
+     "at": "sky"
+    },
+    {
+     "id": "whale",
+     "kind": "whale",
+     "layer": "mid",
+     "at": "far-right",
+     "hidden": true
+    },
+    {
+     "id": "boat",
+     "kind": "boat",
+     "layer": "mid",
+     "at": "far-left"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-right"
+    }
+   ],
+   "beats": [
+    {
+     "line": "Once a fog came in. It was thick as porridge. I could not see my own feet.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "fog",
+       "to": "center"
+      },
+      {
+       "do": "fade",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "No ship could see me. No ship could see the light. I say this slowly. No ship could see.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "lighthouse"
+      },
+      {
+       "do": "sway",
+       "who": "boat"
+      }
+     ]
+    },
+    {
+     "line": "So I took my little bell from the hook. I rang it all night. Ding, ding, ding, I rang it like a kettle that will not stop.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      },
+      {
+       "do": "shake",
+       "who": "bell"
+      }
+     ]
+    },
+    {
+     "line": "The sound went out into the wet white and did not come back. That is how I knew it was going somewhere.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "bell"
+      },
+      {
+       "do": "move",
+       "who": "boat",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "My cold feet slid on the stones. I pressed my thumb into the tin of sand to keep myself steady. The sand was damp and smelled of the sea.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Near dawn the fog thinned a little. Out of it came a cloud whale, slow as bread rising.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "whale",
+       "to": "sky-right"
+      },
+      {
+       "do": "fly",
+       "who": "whale",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "The whale stopped by my island. It said, thank you for the company. It said it had been following that bell all night.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "whale",
+       "to": "high"
+      },
+      {
+       "do": "turn",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I did not know what to say, so I said, you are welcome. Then I said it again, in case the fog took the first one.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "The whale drifted off, and the sun came up pink behind the last of the fog. I kept my bell on the hook, ready for the next thick morning.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "fog"
+      },
+      {
+       "do": "appear",
+       "who": "moon"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-painter-otter": [
+  {
+   "title": "The Sunset With a Green Dot",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "otter",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "whale",
+     "kind": "whale",
+     "layer": "mid",
+     "at": "sky-right"
+    },
+    {
+     "id": "sun",
+     "kind": "sun",
+     "layer": "far",
+     "at": "sky-left"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "brush",
+     "kind": "easel",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "sea",
+     "kind": "sea",
+     "layer": "far",
+     "at": "far-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I once painted a whole sunset on the underside of a cloud whale. It was a big job for one otter.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "whale",
+       "to": "sky"
+      },
+      {
+       "do": "glow",
+       "who": "sun"
+      }
+     ]
+    },
+    {
+     "line": "I mixed orange with a little pink. I hummed the whole time, the low kind that makes the paint settle.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "The whale was very still. It had a soft spot for warm colors, and it let me work for an hour.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "whale"
+      }
+     ]
+    },
+    {
+     "line": "Then I wiped my brush on my tail, as I always do, and the whale sneezed.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "whale"
+      },
+      {
+       "do": "shake",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "A small green dot landed in the bottom corner of my sunset. It has stayed there ever since.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "brush"
+      }
+     ]
+    },
+    {
+     "line": "Pip thought it was a leaf. I thought it was a sign that the whale liked the work.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "pip",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "The whale drifted off toward the west, slow and pleased, and the sunset went with it.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "whale",
+       "to": "offstage-left"
+      },
+      {
+       "do": "fade",
+       "who": "sun"
+      }
+     ]
+    },
+    {
+     "line": "I still look for it on evenings like this. The green dot is always a little brighter than I remember.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "sea"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The bread tin paint box",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "otter",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "bread-tin",
+     "kind": "basket",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "oven",
+     "kind": "oven",
+     "layer": "mid",
+     "at": "far-right"
+    },
+    {
+     "id": "gull",
+     "kind": "gull",
+     "layer": "mid",
+     "at": "sky-left"
+    },
+    {
+     "id": "lighthouse",
+     "kind": "lighthouse",
+     "layer": "far",
+     "at": "far-left"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-right",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "My paint box was once a bread tin. The lid still says Crust on the inside, in the baker's own pencil.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "bread-tin"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I mix with my nose in the tin. Ochre and blue go in, and every color comes out smelling faintly of crust.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "hop",
+       "who": "oven"
+      }
+     ]
+    },
+    {
+     "line": "A gull once told me the blue smelled of warm rolls. I told him it smelled of rain. We are still arguing about it.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "gull",
+       "to": "sky-right"
+      }
+     ]
+    },
+    {
+     "line": "Last spring I painted the lighthouse on the far island. The paint was too bready, so the lamp came out looking like a loaf.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "lighthouse"
+      },
+      {
+       "do": "turn",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "The keeper wrote to say the sailors kept stopping for lunch. I wrote back that I was sorry, and that I was not sorry at all.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "So I took the tin to the cloud edge at dusk and tried to paint the sky back to its own color. It would not come right.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "far-right"
+      },
+      {
+       "do": "fade",
+       "who": "oven"
+      }
+     ]
+    },
+    {
+     "line": "Then the moon came up, and the dark took all the bread out of the paint. For a moment the whole tin smelled of nothing but rain.",
+     "actions": [
+      {
+       "do": "rise",
+       "who": "moon",
+       "to": "sky-right"
+      },
+      {
+       "do": "glow",
+       "who": "bread-tin"
+      }
+     ]
+    },
+    {
+     "line": "I painted the sky that color, and the sailors came back for a proper look.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "I still wipe the brush on my tail when I am done. The keeper says it is a bad habit. I think the tail likes it.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Tomorrow I mean to try a paler blue, if you can spare me a cup of the warm rolls the gull keeps talking about.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "gull",
+       "to": "sky-left"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-cartographer-hedgehog": [
+  {
+   "title": "The River That Lied",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "hedgehog",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "river",
+     "kind": "rock",
+     "layer": "far",
+     "at": "far-left"
+    },
+    {
+     "id": "boat",
+     "kind": "boat",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "sky-right"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "lantern",
+     "kind": "lantern",
+     "layer": "mid",
+     "at": "right"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I once set out to measure a river. I had a pencil, a length of string and a very patient notebook.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "appear",
+       "who": "river"
+      }
+     ]
+    },
+    {
+     "line": "My plan was simple. I would walk beside the river and count my steps from the bridge to the mill.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      },
+      {
+       "do": "sway",
+       "who": "river"
+      }
+     ]
+    },
+    {
+     "line": "On the first walk I counted four hundred and twelve steps. I wrote it down and felt quite pleased.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      },
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "On the second walk the number was four hundred and thirty. I checked my boots and found a stone in one of them.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "far-left"
+      },
+      {
+       "do": "enter",
+       "who": "boat",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "On the third walk I counted three hundred and ninety. I was starting to suspect the river was moving its ends about.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me"
+      },
+      {
+       "do": "glow",
+       "who": "lantern"
+      }
+     ]
+    },
+    {
+     "line": "I sat on the bank and drew the river as a long blue line, then rubbed it out, then drew it again.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "boat",
+       "to": "below"
+      },
+      {
+       "do": "move",
+       "who": "pip",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "Pip asked me gently if the river might simply be longer on some days than others, like a cat that stretches.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "pip"
+      },
+      {
+       "do": "rise",
+       "who": "moon",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "I said that was exactly the problem. A river should not stretch. I still think it was lying to me, but I like it a little more for the trouble.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "fade",
+       "who": "river"
+      }
+     ]
+    },
+    {
+     "line": "So if you ever walk beside a river and get a strange number, do not argue with it. Come and tell me, and we will count again tomorrow.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "lantern"
+      },
+      {
+       "do": "exit",
+       "who": "me",
+       "to": "offstage-left"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Sticking Drawer and the Pinecone",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "hedgehog",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "pinecone",
+     "kind": "basket",
+     "layer": "near",
+     "at": "right"
+    },
+    {
+     "id": "drawer",
+     "kind": "chair",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-right"
+    },
+    {
+     "id": "kite",
+     "kind": "kite",
+     "layer": "mid",
+     "at": "sky-left"
+    },
+    {
+     "id": "lantern",
+     "kind": "lantern",
+     "layer": "mid",
+     "at": "sky",
+     "hidden": true
+    }
+   ],
+   "beats": [
+    {
+     "line": "My mapmaking table has one drawer that sticks. It sticks every time I pull it, and I always say a small word to it.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "drawer"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "Inside it I keep a pinecone. It is the only thing in the house that has never once asked me where I was going.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "pinecone"
+      },
+      {
+       "do": "move",
+       "who": "pinecone",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "Last week the drawer stuck halfway and would not close. I sat down on the floor with my pen and I was cross with myself for a while.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "drawer"
+      },
+      {
+       "do": "turn",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "Pip came to the window and tapped on the glass. She had a question about the wind, but she could see I was not in the mood to answer it.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "right"
+      },
+      {
+       "do": "hop",
+       "who": "pip"
+      }
+     ]
+    },
+    {
+     "line": "Then a lantern drifted in from the sky, slowly, the way a kind visitor comes up a path. It was carrying a small rolled chart in its handle.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "lantern",
+       "to": "center"
+      },
+      {
+       "do": "fly",
+       "who": "kite",
+       "to": "sky-right"
+      }
+     ]
+    },
+    {
+     "line": "The chart was of the far sea, and there was a blank patch in one corner. I looked at that blank patch for a long time before I drew a tiny lighthouse into it.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "glow",
+       "who": "lantern"
+      }
+     ]
+    },
+    {
+     "line": "Then I drew a small dragon beside the lighthouse, because I could not stop myself. The lantern seemed pleased with the dragon.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "lantern"
+      },
+      {
+       "do": "appear",
+       "who": "kite",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "When I went back to the drawer, I gave it one gentle pull. It slid open with a sigh, and the pinecone was sitting exactly where I had left it.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "drawer",
+       "to": "left"
+      },
+      {
+       "do": "glow",
+       "who": "pinecone"
+      }
+     ]
+    },
+    {
+     "line": "I have not yet worked out where the lantern came from or where it is going. I think I will ask it tomorrow, once I have finished my tea.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "lantern"
+      },
+      {
+       "do": "exit",
+       "who": "kite",
+       "to": "sky-left"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-painter-deer": [
+  {
+   "title": "The Nose and the Goat",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "deer",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "goat",
+     "kind": "goat",
+     "layer": "near",
+     "at": "right",
+     "hidden": true
+    },
+    {
+     "id": "easel",
+     "kind": "easel",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "balloon",
+     "kind": "balloon",
+     "layer": "far",
+     "at": "sky-right"
+    },
+    {
+     "id": "sun",
+     "kind": "sun",
+     "layer": "far",
+     "at": "far-right"
+    },
+    {
+     "id": "hill",
+     "kind": "hill",
+     "layer": "far",
+     "at": "far-left"
+    }
+   ],
+   "beats": [
+    {
+     "line": "My first painting was of my own nose. I had never looked at it properly before.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "sun"
+      },
+      {
+       "do": "sway",
+       "who": "balloon"
+      }
+     ]
+    },
+    {
+     "line": "I stood in front of the easel for a long time. The nose did not look like me at all.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me"
+      },
+      {
+       "do": "sway",
+       "who": "easel"
+      }
+     ]
+    },
+    {
+     "line": "It had the wrong number of freckles. I counted them twice to be sure.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I was not pleased with it. I rubbed at the corner with my thumb, and that made it worse.",
+     "actions": [
+      {
+       "do": "shrink",
+       "who": "easel"
+      },
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      }
+     ]
+    },
+    {
+     "line": "Then a goat came up the hill, chewing a sock. It looked at the painting for a very long time.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "goat",
+       "to": "right"
+      },
+      {
+       "do": "move",
+       "who": "goat",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "The goat said it was the finest nose it had ever seen. I did not argue. It took the painting home under one arm.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "goat"
+      },
+      {
+       "do": "exit",
+       "who": "goat",
+       "to": "offstage-right"
+      }
+     ]
+    },
+    {
+     "line": "I still have a smear of that paint behind my ear. It is the same blue as that sky.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "sun"
+      },
+      {
+       "do": "fade",
+       "who": "hill"
+      }
+     ]
+    },
+    {
+     "line": "Sometimes I wonder where the goat hangs it. I hope it is somewhere it can see the sunset.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "balloon",
+       "to": "sky"
+      },
+      {
+       "do": "sink",
+       "who": "sun",
+       "to": "below"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Green Field Problem",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "deer",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "easel",
+     "kind": "easel",
+     "layer": "near",
+     "at": "left"
+    },
+    {
+     "id": "field",
+     "kind": "hill",
+     "layer": "far",
+     "at": "far-right"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-left"
+    },
+    {
+     "id": "sun",
+     "kind": "sun",
+     "layer": "far",
+     "at": "sky-right"
+    }
+   ],
+   "beats": [
+    {
+     "line": "I once had a big canvas for a field, and only one small pot of brown paint.",
+     "actions": [
+      {
+       "do": "appear",
+       "who": "easel"
+      },
+      {
+       "do": "glow",
+       "who": "sun"
+      }
+     ]
+    },
+    {
+     "line": "Brown ran out at the edge of the grass, halfway through a sleepy afternoon.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "left"
+      },
+      {
+       "do": "sway",
+       "who": "field"
+      }
+     ]
+    },
+    {
+     "line": "So I did what any deer would do. I picked up the green pot and kept going.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "hop",
+       "who": "pip"
+      }
+     ]
+    },
+    {
+     "line": "By dusk the whole field was green. Even the rocks had a green hat on, which I did not plan.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "field"
+      },
+      {
+       "do": "fade",
+       "who": "sun"
+      }
+     ]
+    },
+    {
+     "line": "Pip flew down to look, and sat on the rim of my paint cup with one foot raised.",
+     "actions": [
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "center"
+      },
+      {
+       "do": "turn",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I asked the field if it minded. It did not say a word, which I took as a yes.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "field"
+      },
+      {
+       "do": "glow",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "The paint smell stayed on my fur for three days. The birds said I smelled like a meadow that had decided to become a deer.",
+     "actions": [
+      {
+       "do": "spin",
+       "who": "pip"
+      },
+      {
+       "do": "sway",
+       "who": "me"
+      }
+     ]
+    },
+    {
+     "line": "I still have the brown pot. I think I will look for brown tomorrow.",
+     "actions": [
+      {
+       "do": "fade",
+       "who": "easel"
+      },
+      {
+       "do": "glow",
+       "who": "sun"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "p-tinkerer-penguin": [
+  {
+   "title": "The Clock That Stopped",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "penguin",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "clock",
+     "kind": "clock",
+     "layer": "mid",
+     "at": "left"
+    },
+    {
+     "id": "town",
+     "kind": "town",
+     "layer": "far",
+     "at": "far-left"
+    },
+    {
+     "id": "rain",
+     "kind": "rain",
+     "layer": "far",
+     "at": "sky-right"
+    },
+    {
+     "id": "gull",
+     "kind": "gull",
+     "layer": "mid",
+     "at": "sky-left",
+     "hidden": true
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "high"
+    }
+   ],
+   "beats": [
+    {
+     "line": "Good morning, good morning. I used to mend the clock in a tall town where nobody ever looked up.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "glow",
+       "who": "clock"
+      }
+     ]
+    },
+    {
+     "line": "Its hands were brass and its face was cracked like old bread. Every hour it ticked so loudly that the rooftops rattled.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "clock"
+      },
+      {
+       "do": "shake",
+       "who": "town"
+      }
+     ]
+    },
+    {
+     "line": "I tapped my beak three times on the works and said good morning to every bolt. Then I fixed it so well that it stopped.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me"
+      },
+      {
+       "do": "shrink",
+       "who": "clock"
+      }
+     ]
+    },
+    {
+     "line": "Nobody came to shout at me. Instead the whole town went quiet, and into the quiet came the sound of rain on the slates.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "gull",
+       "to": "center"
+      },
+      {
+       "do": "fade",
+       "who": "clock"
+      }
+     ]
+    },
+    {
+     "line": "Tap, tap, said the rain. Drip, said the gutters. People stopped in the street and tipped their heads back to listen.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "rain",
+       "to": "center"
+      },
+      {
+       "do": "sway",
+       "who": "town"
+      }
+     ]
+    },
+    {
+     "line": "A baker came out with flour on her hands. A boy came out with a kite. They both looked up, maybe for the first time all year.",
+     "actions": [
+      {
+       "do": "glow",
+       "who": "moon"
+      },
+      {
+       "do": "fly",
+       "who": "gull",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "I had not meant to fix the town. I had only meant to fix the clock. But I suppose a stopped clock makes room for other things to be heard.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me",
+       "to": "right"
+      },
+      {
+       "do": "spin",
+       "who": "gull"
+      }
+     ]
+    },
+    {
+     "line": "They asked me to start the clock again, and I said I would, once I had found a way to keep the rain going too.",
+     "actions": [
+      {
+       "do": "turn",
+       "who": "me",
+       "to": "center"
+      },
+      {
+       "do": "shake",
+       "who": "clock"
+      }
+     ]
+    },
+    {
+     "line": "That is a story for another night. My beak is itching, and there is a loose bolt on your lantern I have been eyeing since I arrived.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "fade",
+       "who": "rain"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Rattling Coat Tin",
+   "mood": "dusk",
+   "cast": [
+    {
+     "id": "me",
+     "kind": "penguin",
+     "layer": "near",
+     "at": "center"
+    },
+    {
+     "id": "pip",
+     "kind": "bird",
+     "layer": "near",
+     "at": "sky-left"
+    },
+    {
+     "id": "lantern",
+     "kind": "lantern",
+     "layer": "mid",
+     "at": "right"
+    },
+    {
+     "id": "gull",
+     "kind": "gull",
+     "layer": "mid",
+     "at": "sky-right",
+     "hidden": true
+    },
+    {
+     "id": "boat",
+     "kind": "paper-boat",
+     "layer": "mid",
+     "at": "far-right"
+    },
+    {
+     "id": "sea",
+     "kind": "sea",
+     "layer": "far",
+     "at": "far-left"
+    },
+    {
+     "id": "moon",
+     "kind": "moon",
+     "layer": "far",
+     "at": "high"
+    }
+   ],
+   "beats": [
+    {
+     "line": "Good morning, bolt. Good evening, fire. I am Sprocket and I keep a tin of spare springs in my coat.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "me"
+      },
+      {
+       "do": "glow",
+       "who": "lantern"
+      }
+     ]
+    },
+    {
+     "line": "The tin rattles when I walk. Everyone on the island knows I am coming, which is a poor habit for a penguin who wants to sneak.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "me"
+      },
+      {
+       "do": "fly",
+       "who": "pip",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "One evening I tried to sneak up on a paper boat that had come down out of the clouds. It was carrying a sleepy gull.",
+     "actions": [
+      {
+       "do": "enter",
+       "who": "gull",
+       "to": "sky-right"
+      },
+      {
+       "do": "move",
+       "who": "boat",
+       "to": "right"
+      }
+     ]
+    },
+    {
+     "line": "I tapped my beak three times on the boat's rudder, as I do, and the tin went clink clink clink.",
+     "actions": [
+      {
+       "do": "shake",
+       "who": "me"
+      },
+      {
+       "do": "turn",
+       "who": "gull"
+      }
+     ]
+    },
+    {
+     "line": "The gull woke with a jump and dropped his tea. The tea landed in the sea with a small, sorry hiss.",
+     "actions": [
+      {
+       "do": "sink",
+       "who": "boat",
+       "to": "below"
+      },
+      {
+       "do": "fly",
+       "who": "gull",
+       "to": "sky"
+      }
+     ]
+    },
+    {
+     "line": "I felt bad about the tea. So I took out a spring, bent it into a little hook, and mended the boat's loose rope.",
+     "actions": [
+      {
+       "do": "move",
+       "who": "me",
+       "to": "right"
+      },
+      {
+       "do": "rise",
+       "who": "boat",
+       "to": "center"
+      }
+     ]
+    },
+    {
+     "line": "The gull gave me a biscuit for the trouble. It was a good biscuit, and it did not rattle at all.",
+     "actions": [
+      {
+       "do": "sway",
+       "who": "gull"
+      },
+      {
+       "do": "glow",
+       "who": "moon"
+      }
+     ]
+    },
+    {
+     "line": "Since then the birds tease me that I need a quieter coat. I think the tin is fine. Things that rattle are easy to find in a fog.",
+     "actions": [
+      {
+       "do": "hop",
+       "who": "pip"
+      },
+      {
+       "do": "fade",
+       "who": "gull"
+      }
+     ]
+    },
+    {
+     "line": "Tonight I will sneak very carefully, I promise. Probably I will rattle all the way there. Goodnight, lantern. Goodnight, moon.",
+     "actions": [
+      {
+       "do": "exit",
+       "who": "me",
+       "to": "offstage-left"
+      },
+      {
+       "do": "glow",
+       "who": "lantern"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -98,7 +98,7 @@
       "label": "a traveler arrives and the talk begins",
       "eval": "store.phase.value",
       "equals": "talk",
-      "within": 40
+      "within": 90
     },
     {
       "label": "three reply bubbles by the hand",

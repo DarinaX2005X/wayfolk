@@ -35,10 +35,12 @@ import { KINDS, drawKind } from './silhouettes';
 /** Size of the paper screen, metres. */
 export const STAGE = { width: 6.2, height: 3.5 } as const;
 const HALF = STAGE.width / 2;
-const LAYER_Z: Record<StageLayer, number> = { far: -0.9, mid: -0.45, near: 0 };
-const LAYER_SCALE: Record<StageLayer, number> = { far: 0.56, mid: 0.78, near: 1 };
+const LAYER_Z: Record<StageLayer, number> = { far: -0.7, mid: -0.36, near: 0 };
+const LAYER_SCALE: Record<StageLayer, number> = { far: 0.62, mid: 0.85, near: 1 };
+/** Cut-outs are drawn this much larger than their kind's height, so the folk read from the seat. */
+const CAST_SCALE = 1.45;
 /** The ground line of each layer (top of its ground row). */
-const LAYER_GROUND: Record<StageLayer, number> = { far: 0.72, mid: 0.42, near: 0.16 };
+const LAYER_GROUND: Record<StageLayer, number> = { far: 1.05, mid: 0.76, near: 0.48 };
 const PLACE_X: Record<StagePlace, number> = {
   'far-left': -2.25,
   left: -1.25,
@@ -54,14 +56,14 @@ const PLACE_X: Record<StagePlace, number> = {
   below: 0,
   above: 0,
 };
-const SKY_Y: Partial<Record<StagePlace, number>> = { 'sky-left': 2.35, sky: 2.55, 'sky-right': 2.35, high: 2.9 };
+const SKY_Y: Partial<Record<StagePlace, number>> = { 'sky-left': 2.2, sky: 2.35, 'sky-right': 2.2, high: 2.6 };
 
 type Palette = { center: string; mid: string; edge: string; far: string; middle: string; near: string; halo: string; cloud: string; ink: string };
 const MOODS: Record<StageMood, Palette> = {
-  dusk: { center: '#ffe0a6', mid: '#f6a970', edge: '#c9654b', far: '#e39468', middle: '#9a4e37', near: '#2a1611', halo: '#ffb070', cloud: '#fde9d0', ink: '#3a2418' },
-  night: { center: '#5d84ab', mid: '#2f4a72', edge: '#16223d', far: '#3a5880', middle: '#1f3150', near: '#0b111c', halo: '#7aa6d8', cloud: '#c9d6ea', ink: '#1f2a3d' },
+  dusk: { center: '#fff0c2', mid: '#f7b070', edge: '#c45a45', far: '#e39468', middle: '#9a4e37', near: '#2a1611', halo: '#ffb070', cloud: '#fde9d0', ink: '#3a2418' },
+  night: { center: '#7ea6d2', mid: '#34527e', edge: '#141f38', far: '#3a5880', middle: '#1f3150', near: '#0b111c', halo: '#7aa6d8', cloud: '#c9d6ea', ink: '#1f2a3d' },
   day: { center: '#fff4cf', mid: '#f9d690', edge: '#e2a867', far: '#e8b789', middle: '#ad7750', near: '#382317', halo: '#ffd890', cloud: '#fff6e6', ink: '#3a2418' },
-  storm: { center: '#d8d0c2', mid: '#9c96a0', edge: '#5e5b6c', far: '#857f8c', middle: '#504c5a', near: '#1b1a21', halo: '#c8c0d0', cloud: '#e6e2ea', ink: '#2b2833' },
+  storm: { center: '#f1d9ae', mid: '#8f93aa', edge: '#3d4561', far: '#7e8199', middle: '#4a4d63', near: '#17171f', halo: '#e8d2b0', cloud: '#e9e6ee', ink: '#2b2833' },
 };
 
 // ---------------------------------------------------------------- textures
@@ -247,17 +249,20 @@ function backdropTexture(p: Palette, seed: number): CanvasTexture {
   c.fillStyle = g;
   c.fillRect(0, 0, W, H);
   noise(c, W, H, 0.09, seed);
-  // Feathered, slightly wavy edge: the screen melts into the clouds.
+  // Feathered edge: the screen melts into the clouds instead of ending in a line.
+  const mask = document.createElement('canvas');
+  mask.width = W;
+  mask.height = H;
+  const m = mask.getContext('2d')!;
+  m.filter = `blur(${Math.round(W * 0.016)}px)`;
+  m.fillStyle = '#000';
+  m.beginPath();
+  const inset = W * 0.035;
+  m.roundRect(inset, inset, W - inset * 2, H - inset * 2, H * 0.12);
+  m.fill();
   c.globalCompositeOperation = 'destination-in';
-  const mask = c.createRadialGradient(W / 2, H / 2, H * 0.36, W / 2, H / 2, W * 0.56);
-  mask.addColorStop(0, 'rgba(0,0,0,1)');
-  mask.addColorStop(0.72, 'rgba(0,0,0,0.92)');
-  mask.addColorStop(1, 'rgba(0,0,0,0)');
-  c.save();
-  c.scale(1, H / W / 0.62);
-  c.fillStyle = mask;
-  c.fillRect(0, 0, W, H / (H / W / 0.62));
-  c.restore();
+  c.drawImage(mask, 0, 0);
+  c.globalCompositeOperation = 'source-over';
   const t = new CanvasTexture(canvas);
   t.colorSpace = SRGBColorSpace;
   return t;
@@ -381,8 +386,14 @@ type Actor = {
 export type StageOptions = {
   /** Where the stage hangs (the scene, or a root under it). */
   parent: Object3D;
-  /** Seconds the caption strip lingers is tied to the beat; less motion keeps end states. */
+  /** Less motion keeps the end states and drops the travel. */
   lessMotion?: () => boolean;
+  /**
+   * Draw over the island instead of behind what stands in front of it: the stage is a
+   * vision in the clouds, and a roof or a tree must not cut through it. Asked at each
+   * chapter (a page wants it; a headset keeps true depth, so hands stay in front).
+   */
+  overlay?: boolean | (() => boolean);
 };
 
 export type PlayOptions = {
@@ -435,8 +446,8 @@ export function createStage(opts: StageOptions): Stage {
   group.add(halo);
 
   const backdropMat = new MeshBasicMaterial({ transparent: true, depthWrite: false, toneMapped: false, fog: false, side: DoubleSide, opacity: 0 });
-  const backdrop = new Mesh(new PlaneGeometry(STAGE.width * 1.12, STAGE.height * 1.12), backdropMat);
-  backdrop.position.set(0, STAGE.height * 0.5, -1.15);
+  const backdrop = new Mesh(new PlaneGeometry(STAGE.width * 1.3, STAGE.height * 1.3), backdropMat);
+  backdrop.position.set(0, STAGE.height * 0.5, -0.95);
   backdrop.renderOrder = 2;
   group.add(backdrop);
 
@@ -447,7 +458,7 @@ export function createStage(opts: StageOptions): Stage {
   capTex.colorSpace = SRGBColorSpace;
   capTex.anisotropy = 4;
   const capMat = new MeshBasicMaterial({ map: capTex, transparent: true, depthWrite: false, toneMapped: false, fog: false, opacity: 0 });
-  const caption = new Mesh(new PlaneGeometry(4.4, (4.4 * 300) / 1600), capMat);
+  const caption = new Mesh(new PlaneGeometry(5.2, (5.2 * 300) / 1600), capMat);
   caption.name = 'theatre:caption';
   caption.position.set(0, -0.62, 0.35);
   caption.renderOrder = 30;
@@ -491,7 +502,7 @@ export function createStage(opts: StageOptions): Stage {
     if (place === 'above') return { x: a.x, y: STAGE.height + 1.5 };
     const sky = SKY_Y[place];
     if (sky !== undefined) return { x, y: sky - (1 - k) * 0.4 };
-    if (a.info.sky) return { x, y: a.member.kind === 'moon' || a.member.kind === 'sun' ? 2.3 : 2.2 };
+    if (a.info.sky) return { x, y: a.member.kind === 'moon' || a.member.kind === 'sun' ? 2.5 : 2.3 };
     return { x, y: groundY(a.layer) };
   };
 
@@ -535,11 +546,11 @@ export function createStage(opts: StageOptions): Stage {
 
     // Ground rows of each depth.
     const rowKey: Record<StageLayer, AtlasKey> = { far: 'row-far', mid: atSea ? 'row-sea' : 'row-mid', near: atSea ? 'row-sea' : 'row-near' };
-    const rowH: Record<StageLayer, number> = { far: 1.1, mid: 0.8, near: 0.42 };
+    const rowH: Record<StageLayer, number> = { far: 1.4, mid: 1.05, near: 0.64 };
     for (const layer of ['far', 'mid', 'near'] as StageLayer[]) {
       const cell = atlas.cells.get(rowKey[layer])!;
       const h = rowH[layer];
-      const w = STAGE.width * (layer === 'far' ? 1.05 : layer === 'mid' ? 1.1 : 1.2);
+      const w = STAGE.width * (layer === 'far' ? 0.92 : layer === 'mid' ? 0.98 : 1.08);
       const g = new PlaneGeometry(w, h);
       g.translate(0, h / 2, 0);
       const uv = g.attributes.uv;
@@ -561,8 +572,8 @@ export function createStage(opts: StageOptions): Stage {
       if (m.kind === 'rain' || m.kind === 'snow') {
         const tex = weatherTexture(m.kind);
         const mat = new MeshBasicMaterial({ map: tex, color: m.kind === 'rain' ? tintFor('mid') : new Color('#ffffff'), transparent: true, depthWrite: false, toneMapped: false, fog: false, opacity: 0 });
-        const mesh = new Mesh(new PlaneGeometry(STAGE.width * 0.98, STAGE.height * 0.95), mat);
-        mesh.position.set(0, STAGE.height * 0.5, LAYER_Z.mid + 0.1);
+        const mesh = new Mesh(new PlaneGeometry(STAGE.width * 0.76, STAGE.height * 0.66), mat);
+        mesh.position.set(0, STAGE.height * 0.56, LAYER_Z.mid + 0.1);
         mesh.renderOrder = 9;
         group.add(mesh);
         const actor = makeActor(m, info, mesh, mat.color.clone(), 1);
@@ -574,7 +585,7 @@ export function createStage(opts: StageOptions): Stage {
       }
       const cell = atlas.cells.get(m.kind)!;
       const k = LAYER_SCALE[m.layer];
-      const h = info.height * k * (m.size ?? 1) * (info.strip ? 1.2 : 1);
+      const h = info.height * k * (m.size ?? 1) * (info.strip ? 1.2 : 1) * (info.weather ? 1 : CAST_SCALE);
       const center = Boolean(info.sky) || Boolean(info.weather);
       const base = info.light ? new Color('#ffffff') : tintFor(m.layer);
       const mat = new MeshBasicMaterial({ map: atlas.texture, color: base.clone(), transparent: true, depthWrite: false, toneMapped: false, fog: false, opacity: 0, side: DoubleSide });
@@ -610,6 +621,23 @@ export function createStage(opts: StageOptions): Stage {
       group.add(mesh);
       clouds.push({ mesh, home: { x: f.x, y: f.y }, out: f.o });
     }
+    applyOverlay();
+  }
+
+  function applyOverlay(): void {
+    const on = typeof opts.overlay === 'function' ? opts.overlay() : Boolean(opts.overlay);
+    group.traverse((o) => {
+      const mat = (o as Mesh).material as MeshBasicMaterial | undefined;
+      if (mat && 'depthTest' in mat) mat.depthTest = !on;
+      if (!(o as Mesh).isMesh) return;
+      if (on && !o.userData.overlaid) {
+        o.renderOrder += 1000;
+        o.userData.overlaid = true;
+      } else if (!on && o.userData.overlaid) {
+        o.renderOrder -= 1000;
+        o.userData.overlaid = false;
+      }
+    });
   }
 
   function makeActor(m: CastMember, info: KindInfoLike, mesh: Mesh<PlaneGeometry, MeshBasicMaterial>, base: Color, h: number): Actor {
@@ -792,8 +820,8 @@ export function createStage(opts: StageOptions): Stage {
       }
     }
     const open = ending < 0 ? ease(t / 2.2) : 1 - ease((t - ending) / OUTRO);
-    backdropMat.opacity = open * 0.97;
-    (halo.material as MeshBasicMaterial).opacity = open * 0.55;
+    backdropMat.opacity = open;
+    (halo.material as MeshBasicMaterial).opacity = open * 0.35;
     capMat.opacity = ending < 0 ? ease((t - 0.8) / 1.2) : open;
     caption.position.y = -0.62 - (1 - open) * 0.25;
     for (const c of clouds) {
@@ -901,7 +929,9 @@ export function createStage(opts: StageOptions): Stage {
     // Hidden cut-outs leave quickly; a cut-out told to show comes in with its own tween.
     a.opacity += (visibleGoal - a.opacity) * Math.min(1, dt * (a.on ? 6 : 3));
     const sceneryIn = a.member.hidden ? 1 : Math.min(1, Math.max(0, (t - 1.2) * 1.5));
-    const o = a.opacity * fade * open * sceneryIn;
+    // Off the edge of the screen a cut-out is in the wings: it fades as it leaves the light.
+    const wings = Math.min(1, Math.max(0, (HALF + 0.1 - Math.abs(a.x)) / 0.9));
+    const o = a.opacity * fade * open * sceneryIn * (a.info.weather ? 1 : wings);
     const mesh = a.mesh;
     mesh.visible = o > 0.004;
     mesh.material.opacity = Math.min(1, o) * (a.layer === 'far' && !a.info.light ? 0.92 : 1);

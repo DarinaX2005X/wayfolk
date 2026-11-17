@@ -411,6 +411,40 @@ export class ResidentAgent {
         o[P.JAW] = 0.25;
         break;
       }
+      case 'dance': {
+        // To the island's beat: a sway on every beat, a bob on every step, arms up on the bar.
+        const b = beatPhase(t);
+        const step = Math.abs(Math.sin(b * Math.PI));
+        o[P.SWAY] = Math.sin(b * Math.PI) * 0.16;
+        o[P.BOB] = step * 0.05;
+        o[P.SQUASH] = 0.94 + step * 0.1;
+        o[P.HZ] = Math.sin(b * Math.PI) * 0.18;
+        o[P.ALZ] = 1.0 + Math.sin(b * Math.PI * 0.5) * 0.5;
+        o[P.ARZ] = -1.0 - Math.cos(b * Math.PI * 0.5) * 0.5;
+        o[P.ALX] = -0.4;
+        o[P.ARX] = -0.4;
+        o[P.LL] = -step * 0.25 * (Math.floor(b) % 2 ? 1 : 0);
+        o[P.LR] = -step * 0.25 * (Math.floor(b) % 2 ? 0 : 1);
+        o[P.EARS] = -0.15;
+        o[P.TAILW] = Math.sin(b * Math.PI * 2) * 0.9;
+        o[P.JAW] = 0.2;
+        break;
+      }
+      case 'play': {
+        // Playing an instrument held in front: one arm bows or strums to the beat.
+        const b = beatPhase(t);
+        o[P.ALX] = -1.15;
+        o[P.ALZ] = -0.35;
+        o[P.ARX] = -0.85 + Math.sin(b * Math.PI * 2) * 0.32;
+        o[P.ARZ] = 0.25;
+        o[P.HZ] = 0.12 + Math.sin(b * Math.PI) * 0.1;
+        o[P.HX] = 0.1;
+        o[P.SWAY] = Math.sin(b * Math.PI) * 0.09;
+        o[P.BOB] = Math.abs(Math.sin(b * Math.PI)) * 0.018;
+        o[P.BLINK] = 0.5;
+        o[P.TAILW] = Math.sin(b * Math.PI) * 0.5;
+        break;
+      }
       case 'hold-hat':
         o[P.ARX] = -2.6;
         o[P.ARZ] = 0.35;
@@ -628,7 +662,18 @@ export class ResidentAgent {
 
 const clamp = (x: number, a: number, b: number): number => (x < a ? a : x > b ? b : x);
 
+/** The island's shared beat (a concert sets it); without one, a calm 96 per minute. */
+let beatBpm = 96;
+export function setBeat(bpm: number): void {
+  beatBpm = Math.max(40, Math.min(180, bpm));
+}
+function beatPhase(t: number): number {
+  return (t * beatBpm) / 60;
+}
+
 const DURATION: Partial<Record<Emote, number>> = {
+  dance: 2.4,
+  play: 2.8,
   wave: 1.9,
   happy: 1.8,
   excited: 1.6,

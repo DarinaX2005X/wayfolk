@@ -272,14 +272,15 @@
 /* The next action: a paper tag with an arrow drawn by hand. */
 .desk-cue {
   position: absolute;
-  left: 0;
-  top: 0;
+  inset: 0;
   z-index: 3;
   pointer-events: none;
-  will-change: translate;
 }
 
 .desk-cue-text {
+  position: absolute;
+  left: 0;
+  top: 0;
   margin: 0;
   padding: 10px 16px 11px;
   background: #fff4e2;
@@ -291,29 +292,24 @@
   clip-path: polygon(0 4px, 6px 0, 100% 3px, calc(100% - 4px) 100%, 3px calc(100% - 2px));
   filter: drop-shadow(0 5px 0 rgba(90, 42, 23, 0.22));
   animation: desk-pulse 1.6s ease-in-out infinite;
+  will-change: translate;
 }
 
+/* Starts at its left middle (the tag's corner) and points along its length. */
 .desk-cue-arrow {
   position: absolute;
-  right: 40px;
-  bottom: -20px;
-  width: 76px;
-  height: 38px;
-  transform-origin: 0 50%;
-}
-
-.desk-cue[data-edge='yes'] .desk-cue-arrow {
-  left: 50%;
-  right: auto;
-  bottom: auto;
-  top: 50%;
-  margin-top: -19px;
+  display: block;
+  left: 0;
+  top: 0;
+  transform-origin: 0 25%;
+  filter: drop-shadow(0 2px 0 rgba(255, 244, 226, 0.9));
 }
 
 .desk-cue-arrow svg {
   width: 100%;
   height: 100%;
   display: block;
+  overflow: visible;
   animation: desk-nudge 1.6s ease-in-out infinite;
 }
 
@@ -477,5 +473,26 @@
   .desk-dots,
   .desk-mic[data-on='yes'] .desk-mic-dot {
     animation: none;
+  }
+}
+
+/* The evening tags at the desk: warmer paper than the rest. */
+.tag-warm {
+  --paper: #ffe2b8;
+}
+
+.home-show[hidden] {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .home-menu {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+  .home-menu .tag-small {
+    padding: 16px 12px 8px;
+    font-size: 14px;
   }
 }

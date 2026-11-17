@@ -183,7 +183,11 @@ export function createPlacement(app: App, hands: Hands, world: WorldPort, replie
       current = null;
       side = null;
       const s = placement.suggest();
-      if (s) suggested.position.set(s.x, groundY(), s.z);
+      if (s) {
+        suggested.position.set(s.x, world.groundY?.(s.x, s.z) ?? groundY(), s.z);
+        // In a page the ghost waits on the suggested spot until the pointer moves it.
+        if (app.store.mode.peek() === 'desk') aimAt(new Ray(new Vector3(s.x, groundY() + 6, s.z), new Vector3(0, -1, 0)));
+      }
       return new Promise((r) => {
         resolve = r;
       });

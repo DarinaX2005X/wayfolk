@@ -183,8 +183,9 @@ export function createGlide(app: App, hands: Hands, world: WorldPort, rig: Rig, 
       f.visible = desk && !near;
       if (f.visible) {
         f.rotation.set(0, Math.atan2(eye.x - f.position.x, eye.z - f.position.z), Math.sin(now / 900 + i) * 0.03);
+        // Larger with distance, so a far flag still reads as a thing to click.
         const d = Math.hypot(eye.x - f.position.x, eye.z - f.position.z);
-        f.scale.setScalar(Math.max(1, Math.min(2.2, d / 6)));
+        f.scale.setScalar(Math.max(1.3, Math.min(3.6, d / 4.5)) * (1 + Math.sin(now / 500 + i) * 0.03));
       }
     }
   });

@@ -69,7 +69,7 @@ export type HandLike =
 
 export type Emote =
   | 'idle' | 'walk' | 'talk' | 'wave' | 'happy' | 'sad' | 'sit' | 'work'
-  | 'shy' | 'curious' | 'excited' | 'think' | 'sleep';
+  | 'shy' | 'curious' | 'excited' | 'think' | 'sleep' | 'dance' | 'play';
 
 export type SoundKind = 'waves' | 'oven' | 'chimes' | 'bees' | 'wind' | 'stream' | 'fire' | 'birds' | 'night';
 
@@ -121,6 +121,10 @@ export interface Life {
   face(id: string, p?: PointLike): void;
   startDaily(): void;
   stopDaily(): void;
+  /** The flock circles a point (a concert), or goes back to its flock with null. */
+  flockCircle(at: Vector3 | null, radius?: number): void;
+  /** The beat residents dance to, per minute. */
+  setBeat(bpm: number): void;
   soundAt(pos: PointLike, kind: SoundKind, volume?: number): SoundHandle;
   /** Hurry the current line, arrival or build to its end (a pinch). */
   skip(): void;

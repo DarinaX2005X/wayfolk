@@ -1,0 +1,465 @@
+{
+  "name": "the demo path: through the clouds, a traveler, a house, a gift, a story by the fire, a concert, a lantern, a note, a postcard",
+  "route": "/?fresh=1",
+  "pace": 1,
+  "xr": true,
+  "device": "metaQuest3",
+  "environment": "home_office",
+  "mode": "hand",
+  "steps": [
+    {
+      "label": "the island has started",
+      "eval": "store.phase.value !== 'boot'",
+      "equals": true,
+      "within": 40
+    },
+    {
+      "label": "clouds in the room",
+      "eval": "store.look.value",
+      "equals": "entering",
+      "within": 10
+    },
+    {
+      "wait": 1.0
+    },
+    {
+      "shot": "demo-01-clouds.png"
+    },
+    {
+      "label": "right palm up early, so Pip can come down",
+      "run": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "position": {
+              "relativeTo": "head",
+              "x": 0.1,
+              "y": -0.32,
+              "z": -0.36
+            },
+            "anchor": "grasp",
+            "orientation": {
+              "fingers": [
+                0,
+                0,
+                -1
+              ],
+              "palm": [
+                0,
+                1,
+                0
+              ]
+            },
+            "duration": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "label": "the hand reads palm up",
+      "eval": "hands.state().right.palmUp",
+      "equals": true
+    },
+    {
+      "label": "seated on the island",
+      "eval": "store.look.value",
+      "equals": "island",
+      "within": 25
+    },
+    {
+      "shot": "demo-02-island.png"
+    },
+    {
+      "label": "Pip lands on the open palm",
+      "eval": "flow.pipSide()",
+      "equals": "right",
+      "within": 25
+    },
+    {
+      "wait": 0.6
+    },
+    {
+      "shot": "demo-03-pip-on-palm.png"
+    },
+    {
+      "label": "a hand lost for a moment: nothing jumps",
+      "lose": {
+        "hand": "right",
+        "seconds": 0.8
+      }
+    },
+    {
+      "label": "the hand is back",
+      "eval": "hands.state().right.tracked",
+      "equals": true,
+      "within": 3
+    },
+    {
+      "label": "a traveler arrives and the talk begins",
+      "eval": "store.phase.value",
+      "equals": "talk",
+      "within": 90
+    },
+    {
+      "label": "three reply bubbles by the hand",
+      "eval": "store.choices.value.length",
+      "equals": 3,
+      "within": 10
+    },
+    {
+      "wait": 0.8
+    },
+    {
+      "shot": "demo-04-bubbles.png"
+    },
+    {
+      "label": "touch the middle bubble with the left index finger",
+      "run": {
+        "device": "hand-left",
+        "steps": [
+          {
+            "target": "bubble:1",
+            "anchor": "index-tip",
+            "approach": {
+              "distance": 0.05
+            },
+            "duration": 0.6
+          },
+          {
+            "position": {
+              "relativeTo": "head",
+              "x": -0.25,
+              "y": -0.45,
+              "z": -0.2
+            },
+            "anchor": "grasp",
+            "duration": 0.4
+          }
+        ]
+      }
+    },
+    {
+      "label": "the touch was taken: new choices come",
+      "eval": "store.choices.value.length",
+      "equals": 3,
+      "within": 25
+    },
+    {
+      "label": "speak instead: a short clip goes to the traveler",
+      "eval": "(test.clip(), true)",
+      "equals": true
+    },
+    {
+      "label": "the answer to the voice comes with new choices",
+      "eval": "store.choices.value.length",
+      "equals": 3,
+      "within": 25
+    },
+    {
+      "label": "a stay choice is on offer",
+      "eval": "flow.stayIndex() >= 0",
+      "equals": true,
+      "within": 25
+    },
+    {
+      "label": "ask them to stay",
+      "eval": "(test.reply(flow.stayIndex()), true)",
+      "equals": true
+    },
+    {
+      "label": "Pip asks where the house goes",
+      "eval": "store.phase.value",
+      "equals": "place",
+      "within": 30
+    },
+    {
+      "label": "point at a free spot with the right hand ray",
+      "mode": "hand-ray",
+      "run": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "target": "spot:suggested"
+          }
+        ]
+      }
+    },
+    {
+      "wait": 0.5
+    },
+    {
+      "label": "the ghost footprint is on valid ground",
+      "eval": "placement.valid()",
+      "equals": true,
+      "within": 5
+    },
+    {
+      "shot": "demo-05-ghost.png"
+    },
+    {
+      "label": "pinch to place",
+      "mode": "hand-ray",
+      "run": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "target": "spot:suggested",
+            "press": true
+          }
+        ]
+      }
+    },
+    {
+      "label": "the flock builds",
+      "eval": "store.phase.value",
+      "equals": "build",
+      "within": 8
+    },
+    {
+      "wait": 1.5
+    },
+    {
+      "shot": "demo-06-building.png"
+    },
+    {
+      "label": "the light comes on and Pip says goodnight",
+      "eval": "store.phase.value",
+      "equals": "goodnight",
+      "within": 60
+    },
+    {
+      "shot": "demo-07-lit.png"
+    },
+    {
+      "label": "the island is free to wander",
+      "eval": "store.phase.value",
+      "equals": "free",
+      "within": 30
+    },
+    {
+      "label": "the house was remembered",
+      "eval": "modules.mind.state.houses.length",
+      "atLeast": 1
+    },
+    {
+      "label": "draw calls per eye inside the budget",
+      "eval": "perf.info().calls",
+      "atMost": 150
+    },
+    {
+      "label": "triangles per eye inside the budget",
+      "eval": "perf.info().triangles",
+      "atMost": 350000
+    },
+    {
+      "label": "a gift: a fruit for the new neighbour",
+      "eval": "test.give(modules.mind.state.residents[0].id, 'fruit').then(() => true)",
+      "equals": true,
+      "within": 20
+    },
+    {
+      "wait": 1.0
+    },
+    {
+      "shot": "demo-11-gift.png"
+    },
+    {
+      "label": "sit back and look out over the island",
+      "head": {
+        "position": [
+          0,
+          1.2,
+          0
+        ],
+        "yaw": 0,
+        "pitch": 8
+      }
+    },
+    {
+      "label": "the evening: a story by the fire",
+      "eval": "(test.story(), true)",
+      "equals": true
+    },
+    {
+      "label": "the paper theatre opens in the clouds",
+      "eval": "evening.stage.playing",
+      "equals": true,
+      "within": 60
+    },
+    {
+      "wait": 6
+    },
+    {
+      "shot": "demo-12-story-open.png"
+    },
+    {
+      "wait": 9
+    },
+    {
+      "shot": "demo-13-story.png"
+    },
+    {
+      "label": "draw calls during the story inside the budget",
+      "eval": "perf.info().calls",
+      "atMost": 150
+    },
+    {
+      "label": "triangles during the story inside the budget",
+      "eval": "perf.info().triangles",
+      "atMost": 350000
+    },
+    {
+      "label": "a pinch hurries the story to its next line",
+      "run": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "pinch": 1,
+            "duration": 0.15
+          },
+          {
+            "pinch": 0,
+            "duration": 0.15
+          }
+        ]
+      }
+    },
+    {
+      "label": "the next line is told",
+      "eval": "evening.stage.beat",
+      "atLeast": 1,
+      "within": 10
+    },
+    {
+      "wait": 5
+    },
+    {
+      "shot": "demo-14-story-later.png"
+    },
+    {
+      "label": "that is enough for tonight",
+      "eval": "(test.storyStop(), true)",
+      "equals": true
+    },
+    {
+      "label": "the theatre folds away",
+      "eval": "evening.playing === null",
+      "equals": true,
+      "within": 40
+    },
+    {
+      "label": "the concert at sunset",
+      "eval": "(test.concert(), true)",
+      "equals": true
+    },
+    {
+      "label": "the music plays",
+      "eval": "evening.playing",
+      "equals": "concert",
+      "within": 10
+    },
+    {
+      "wait": 14
+    },
+    {
+      "shot": "demo-15-concert.png"
+    },
+    {
+      "label": "the music stops",
+      "eval": "(test.storyStop(), true)",
+      "equals": true
+    },
+    {
+      "label": "the island is quiet again",
+      "eval": "evening.playing === null",
+      "equals": true,
+      "within": 40
+    },
+    {
+      "label": "look down at the hands",
+      "head": {
+        "position": [
+          0,
+          1.2,
+          0
+        ],
+        "yaw": 0,
+        "pitch": -25,
+        "recenter": false
+      }
+    },
+    {
+      "label": "a paper lantern on the palm",
+      "eval": "(test.lantern(), true)",
+      "equals": true
+    },
+    {
+      "wait": 2.5
+    },
+    {
+      "shot": "demo-16-lantern.png"
+    },
+    {
+      "wait": 7
+    },
+    {
+      "shot": "demo-17-lantern-off.png"
+    },
+    {
+      "label": "look out again",
+      "head": {
+        "position": [
+          0,
+          1.2,
+          0
+        ],
+        "yaw": 0,
+        "pitch": 0,
+        "recenter": false
+      }
+    },
+    {
+      "label": "the painter paints the island and hangs it by the door",
+      "eval": "test.paint().then(() => true)",
+      "equals": true,
+      "within": 90
+    },
+    {
+      "shot": "demo-17b-painting.png"
+    },
+    {
+      "label": "a note from a neighbour hangs on the mailbox",
+      "eval": "test.note()",
+      "equals": true
+    },
+    {
+      "label": "a neighbour comes to read it aloud",
+      "eval": "(test.readNote(), true)",
+      "equals": true
+    },
+    {
+      "wait": 6
+    },
+    {
+      "shot": "demo-18-note.png"
+    },
+    {
+      "label": "the note was read",
+      "eval": "modules.mind.notes().length",
+      "equals": 0,
+      "within": 60
+    },
+    {
+      "label": "a postcard with a link",
+      "eval": "test.postcard().then((p) => /\\/p\\//.test(p?.url ?? ''))",
+      "equals": true,
+      "within": 15
+    },
+    {
+      "wait": 0.6
+    },
+    {
+      "shot": "demo-19-postcard.png"
+    }
+  ]
+}
