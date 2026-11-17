@@ -1,11 +1,7 @@
 /*
- * Page shell: the field, the font, the reset, the focus ring and the buttons of the
- * browser pages (DESIGN "Браузер", "Типографика"). Every page inherits this file; values
- * come from src/tokens/tokens.css only.
+ * Page shell of Wayfolk: the font, the reset, the warm palette, buttons. Every page
+ * inherits this file.
  */
-@import '../tokens/tokens.css';
-
-/* ------------------------------------------------------------------ font */
 
 @font-face {
   font-family: 'Atkinson Hyperlegible Next';
@@ -13,9 +9,6 @@
   font-display: swap;
   font-weight: 400;
   src: url('/fonts/atkinson-hyperlegible-next-latin-400-normal.woff2') format('woff2');
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
-    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
@@ -24,16 +17,8 @@
   font-display: swap;
   font-weight: 700;
   src: url('/fonts/atkinson-hyperlegible-next-latin-700-normal.woff2') format('woff2');
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
-    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/*
- * A local face with the width and the vertical metrics of Atkinson Hyperlegible Next, so
- * text keeps its lines when the web font swaps in. Measured with fontTools against Arial
- * on a line of English text: advance 99.06 %, ascent 984 and descent 316 of 1000.
- */
 @font-face {
   font-family: 'Atkinson Fallback';
   src: local('Arial'), local('ArialMT'), local('Liberation Sans'), local('Arimo'), local('Roboto');
@@ -43,7 +28,22 @@
   line-gap-override: 0%;
 }
 
-/* ------------------------------------------------------------------ reset */
+:root {
+  --wf-dusk: #2b3550;
+  --wf-dusk-2: #3d5f86;
+  --wf-sunset: #f2a66b;
+  --wf-peach: #ffd9b0;
+  --wf-paper: #fff8ec;
+  --wf-paper-rim: #e8c9a0;
+  --wf-ink: #3a2c22;
+  --wf-ink-soft: #6e5442;
+  --wf-ember: #e9724c;
+  --wf-ember-deep: #c4532f;
+  --wf-grass: #7fb24a;
+  --wf-radius: 18px;
+  --wf-shadow: 0 10px 30px rgba(60, 35, 20, 0.22);
+  color-scheme: light;
+}
 
 *,
 *::before,
@@ -51,264 +51,108 @@
   box-sizing: border-box;
 }
 
-html {
-  background: var(--role-canvas);
-  color: var(--role-text);
-  font-family: 'Atkinson Hyperlegible Next', 'Atkinson Fallback', system-ui, sans-serif;
-  font-size: var(--text-body);
-  font-weight: var(--body-weight);
-  font-variant-numeric: tabular-nums;
-  line-height: var(--body-leading);
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-  -webkit-font-smoothing: antialiased;
-  -webkit-tap-highlight-color: transparent;
-}
-
+html,
 body {
   margin: 0;
-  min-height: 100vh;
-  min-height: 100dvh;
-  background: var(--role-canvas);
+  height: 100%;
+  background: var(--wf-dusk);
+  color: var(--wf-ink);
+  font-family: 'Atkinson Hyperlegible Next', 'Atkinson Fallback', system-ui, sans-serif;
+  font-size: 18px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
 }
 
 #app {
-  min-height: 100vh;
-  min-height: 100dvh;
-  isolation: isolate;
+  height: 100%;
 }
 
 h1,
 h2,
-h3,
-p,
-figure,
-blockquote,
-dl,
-dd,
-ol,
-ul {
-  margin: 0;
-}
-
-ol,
-ul {
-  padding: 0;
-  list-style: none;
-}
-
-h1,
-h2,
-h3 {
-  font-weight: var(--heading-weight);
-  letter-spacing: var(--heading-tracking);
-  line-height: var(--heading-leading);
-  text-wrap: balance;
-}
-
-h1 {
-  font-size: var(--text-heading);
-}
-
 p {
-  max-width: 68ch;
-  text-wrap: pretty;
-}
-
-img,
-svg,
-canvas,
-video {
-  display: block;
-  max-width: 100%;
+  margin: 0;
 }
 
 button,
-input,
-select,
-textarea {
-  margin: 0;
-  color: inherit;
+a.wf-button {
   font: inherit;
-  letter-spacing: inherit;
 }
 
-button {
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-}
-
-a {
-  color: var(--role-link);
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 0.18em;
-}
-
-::selection {
-  background: var(--color-highlight);
-  color: var(--color-ink);
-}
-
-[hidden] {
-  display: none !important;
-}
-
-/* ------------------------------------------------------------------ focus */
-
-:focus-visible {
-  outline: var(--focus-ring) solid var(--role-focus);
-  outline-offset: var(--focus-offset);
-}
-
-.on-dark :focus-visible,
-.on-dark:focus-visible {
-  outline-color: var(--role-focus-on-dark);
-}
-
-:focus:not(:focus-visible) {
-  outline: none;
-}
-
-/* ------------------------------------------------------------------ buttons */
-
-/*
- * Primary: cobalt with paper text (5.96 : 1), the one action of a view. Secondary: a
- * paper chip with an edge. Text: a plain link-like button. All of them 56 or 48 px tall.
- */
-.button {
-  position: relative;
+.wf-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: var(--control-height);
-  padding: 0 20px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-card);
-  font-size: var(--text-body);
-  font-weight: var(--label-weight);
-  line-height: 1.2;
-  text-align: center;
+  min-height: 52px;
+  padding: 0 26px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  font-weight: 700;
   text-decoration: none;
-  white-space: nowrap;
   cursor: pointer;
-  user-select: none;
   transition:
-    transform var(--dur-release) var(--ease-release),
-    box-shadow var(--dur-hover) var(--ease),
-    background-color var(--dur-hover) var(--ease);
+    transform 120ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
-.button-primary {
-  min-height: var(--button-height);
-  padding: 0 28px;
-  background: var(--role-action);
-  box-shadow: var(--shadow-raised);
-  color: var(--role-action-text);
-  font-size: var(--text-lead);
+.wf-button:active {
+  transform: translateY(1px) scale(0.99);
 }
 
-.button-secondary {
-  background: var(--role-surface);
-  border-color: var(--role-border);
-  box-shadow: var(--shadow-rest);
-  color: var(--role-text);
+.wf-button:focus-visible {
+  outline: 3px solid var(--wf-peach);
+  outline-offset: 3px;
 }
 
-.button-text {
-  min-height: 44px;
-  padding: 0 4px;
-  color: var(--role-link);
-  text-decoration: underline;
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 0.2em;
+.wf-primary {
+  background: var(--wf-ember);
+  color: #fffaf3;
+  box-shadow: 0 6px 18px rgba(196, 83, 47, 0.35);
 }
 
-@media (hover: hover) {
-  .button-primary:hover,
-  .button-secondary:hover {
-    transform: translateY(calc(-1 * var(--hover-lift)));
-    box-shadow: var(--shadow-overlay);
-    transition:
-      transform var(--dur-hover) var(--ease),
-      box-shadow var(--dur-hover) var(--ease);
-  }
+.wf-primary:hover {
+  background: var(--wf-ember-deep);
 }
 
-.button:active {
-  transform: scale(var(--press-scale));
-  transition: transform var(--dur-press) var(--ease);
+.wf-secondary {
+  background: rgba(255, 248, 236, 0.92);
+  color: var(--wf-ink);
+  border-color: var(--wf-paper-rim);
 }
 
-.button:disabled,
-.button[aria-disabled='true'] {
-  box-shadow: none;
-  cursor: not-allowed;
-  transform: none;
+.wf-secondary:hover {
+  background: #fff;
+}
+
+.wf-button[disabled] {
   opacity: 0.55;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .button,
-  .button:hover,
-  .button:active {
-    transform: none;
-    transition: none;
-  }
-}
-
-@media (forced-colors: active) {
-  .button {
-    border-color: ButtonText;
-  }
-}
-
-/* ------------------------------------------------------------------ shared helpers */
-
-/* A scene container that fills the viewport. The canvas takes its size from it. */
-.stage {
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
-}
-
-.stage canvas {
-  width: 100%;
-  height: 100%;
-  touch-action: none;
+  cursor: default;
 }
 
 .visually-hidden {
   position: absolute;
   width: 1px;
   height: 1px;
-  margin: -1px;
-  padding: 0;
   overflow: hidden;
-  clip-path: inset(50%);
-  border: 0;
+  clip: rect(0 0 0 0);
   white-space: nowrap;
 }
 
-/* A short page with the logo and one line or one action. */
 .shell-note {
+  min-height: 100%;
   display: grid;
-  gap: 28px;
-  justify-items: start;
-  align-content: center;
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding: 24px max(16px, 6vw);
+  place-content: center;
+  gap: 20px;
+  padding: 24px;
+  text-align: center;
+  background: linear-gradient(180deg, var(--wf-dusk-2), var(--wf-sunset));
+  color: var(--wf-paper);
 }
 
-.shell-logo {
-  width: 220px;
-  height: auto;
-}
-
-.shell-note h1 {
-  max-width: 22ch;
-  font-size: clamp(var(--text-heading), 4.4vw, var(--text-title));
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

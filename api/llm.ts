@@ -5,7 +5,7 @@
  */
 import { FUNCTIONS } from './_bundle.js';
 
-const routes = FUNCTIONS.llm!;
+const routes = FUNCTIONS.llm;
 
 export function GET(request: Request): Promise<Response> {
   return routes.GET!(request);

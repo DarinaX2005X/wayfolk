@@ -21,6 +21,14 @@ export const SPECIES: Species[] = [
 
 export type Vehicle = 'balloon' | 'paper-boat' | 'kite' | 'cloud-whale' | 'umbrella' | 'lantern';
 
+export const VEHICLES: Vehicle[] = ['balloon', 'paper-boat', 'kite', 'cloud-whale', 'umbrella', 'lantern'];
+
+/** What the person can hand to a resident. `Resident.likes` holds values of this list. */
+export type GiftKind =
+  | 'fruit' | 'star' | 'flower' | 'shell' | 'feather' | 'pebble' | 'honey' | 'tea' | 'book' | 'map' | 'bell' | 'mushroom';
+
+export const GIFT_KINDS: GiftKind[] = ['fruit', 'star', 'flower', 'shell', 'feather', 'pebble', 'honey', 'tea', 'book', 'map', 'bell', 'mushroom'];
+
 export interface P2 { x: number; z: number }
 
 export interface Voice { pitch: number; rate: number; timbre: 'soft' | 'bright' | 'croaky' | 'warm' }
@@ -32,7 +40,7 @@ export interface Story {
   revealed: number;   // how many beats have been shown
 }
 
-export interface Trip { to: string; toName: string; leftAt: number; returnsAt: number; story?: string; souvenir?: string }
+export interface Trip { to: string; toName: string; leftAt: number; returnsAt: number; story?: string; souvenir?: string; met?: string[] }
 
 export interface Resident {
   id: string;
@@ -50,7 +58,16 @@ export interface Resident {
   trip?: Trip;
   arrivedAt: number;
   prepared?: boolean;          // came from the prepared set, not generated live
+  tagline?: string;            // a few words for the name card
+  house?: HousePlan;           // what their house should look like (recipe = trade)
+  visits?: number;             // conversations on separate visits
+  lastTalkAt?: number;
+  secretKnown?: boolean;       // the secret has been told to the person
+  from?: { islandId: string; islandName: string; returnsAt: number }; // a guest from another island
 }
+
+/** The model's (or the prepared set's) choice for a resident's house; app copies it into HouseSpec. */
+export interface HousePlan { colors: { wall: string; roof: string; trim: string }; sign: string; props: string[] }
 
 export interface HouseSpec {
   id: string;
@@ -91,8 +108,38 @@ export interface IslandState {
   createdAt: number;
   lastVisit: number;
   pending?: Resident;          // traveler waiting at the pier
+  met?: string[];              // ids of travelers already met (no repeats)
+  visitors?: Resident[];       // residents of other islands visiting right now
+  mail?: MailItem[];           // gifts and notes left in this island's mailbox
+  published?: { id: string; ownerKey: string; rev: number; at: number };
+}
+
+/** A gift or note left in an island's mailbox by someone visiting it. */
+export interface MailItem { id: string; at: number; from: string; fromIsland?: string; kind: 'gift' | 'note'; item?: GiftKind; text: string }
+
+/** One island on the horizon. */
+export interface IslandSummary {
+  id: string;
+  name: string;
+  residents: number;
+  houses: number;
+  updatedAt: number;
+  demo?: boolean;
+  faces: { name: string; species: Species; trade: Trade; main: string }[];
 }
 
 export type Intent = 'stay' | 'leave' | 'chat' | 'gift' | 'secret' | 'trip';
 
-export interface Reply { text: string; choices: string[]; intent: Intent; mood?: 'happy' | 'shy' | 'sad' | 'curious' | 'excited' }
+export interface Reply {
+  text: string;
+  choices: string[];
+  intent: Intent;
+  mood?: 'happy' | 'shy' | 'sad' | 'curious' | 'excited';
+  heard?: string;              // what the person said (transcribed from audio), for subtitles
+  choiceIntents?: Intent[];    // the intent of each choice, same order
+  secret?: boolean;            // this reply tells the secret
+  prepared?: boolean;          // an offline line, not a live model answer
+  ms?: number;                 // time to the answer
+}
+
+export interface GiveResult { text: string; prop?: string; loved: boolean; secret?: string; prepared?: boolean }

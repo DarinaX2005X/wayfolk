@@ -1,16 +1,13 @@
 /**
- * Reading `POST /api/llm`: `{ task, index, attempt, messages, schema, audio?, fixture?,
- * runId? }` (PLAN "API"). Everything is checked before a counter moves or a provider is
- * called; a client that still sends `payload` is not refused, the field is dropped.
+ * Reading `POST /api/llm`: `{ task, index, attempt, messages, schema, audio?, runId?,
+ * maxTokens? }`. Everything is checked before a counter moves or a provider is called;
+ * unknown fields are dropped.
  */
 import type { ChatMessage, JsonSchema, LlmCallBody, LlmTask } from '../contracts';
 import { isRecord } from '../http';
 import { schemaProblem } from './schema';
 
-export const TASKS: readonly LlmTask[] = ['plan', 'step', 'recheck', 'intent', 'dictate', 'extract', 'reconcile', 'wishes', 'mark'];
-
-/** `harbor-street/full/extract/3/1`: example, set, task, index, attempt. */
-export const FIXTURE_KEY = /^([a-z0-9-]{1,40})\/(full|late)\/([a-z]+)\/(\d{1,4})\/(\d{1,3})$/;
+export const TASKS: readonly LlmTask[] = ['traveler', 'talk', 'events', 'gift', 'trip'];
 const RUN_ID = /^[A-Za-z0-9_-]{1,64}$/;
 const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 const MAX_MESSAGES = 16;
@@ -71,9 +68,9 @@ export function parseLlmRequest(value: unknown): ParsedRequest {
     if (typeof value.audio !== 'string' || value.audio.length === 0 || !BASE64.test(value.audio)) return { ok: false, problem: 'audio' };
     body.audio = value.audio;
   }
-  if (value.fixture !== undefined) {
-    if (typeof value.fixture !== 'string' || !FIXTURE_KEY.test(value.fixture)) return { ok: false, problem: 'fixture' };
-    body.fixture = value.fixture;
+  if (value.maxTokens !== undefined) {
+    if (!Number.isInteger(value.maxTokens) || (value.maxTokens as number) < 16 || (value.maxTokens as number) > 4000) return { ok: false, problem: 'maxTokens' };
+    body.maxTokens = value.maxTokens as number;
   }
   if (value.runId !== undefined) {
     if (typeof value.runId !== 'string' || !RUN_ID.test(value.runId)) return { ok: false, problem: 'runId' };

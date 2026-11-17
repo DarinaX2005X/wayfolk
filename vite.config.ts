@@ -76,7 +76,8 @@ export default defineConfig({
   plugins: underTest
     ? []
     : [iwsdkDev(), devApi(), ...(serveDist ? [distServer()] : [])],
-  server: { host: '0.0.0.0', port: 8081, open: false },
+  // No error overlay: module packages land in parallel, and a half-written module must not cover the frames.
+  server: { host: '0.0.0.0', port: 8081, open: false, hmr: { overlay: false } },
   build: {
     outDir: 'dist',
     sourcemap: process.env.NODE_ENV !== 'production',

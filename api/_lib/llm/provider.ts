@@ -13,19 +13,17 @@ export type Usage = {
 };
 
 export type Outcome =
-  /** `text`: the model's raw answer; `json`: an answer that is already a value (fixtures). */
+  /** `text`: the model's raw answer; `json`: an answer that is already a value (test adapters). */
   | { ok: true; text?: string; json?: unknown; model: string; usage: Usage; ms?: number }
   | { ok: false; kind: 'rate-limited'; retryAfter: number; usage?: Usage }
   /** Overloaded, 5xx, network trouble on the way to the provider: worth a later retry. */
   | { ok: false; kind: 'busy'; usage?: Usage }
-  /** Needs a person: a key, credit, or a recorded answer. */
-  | { ok: false; kind: 'offline'; need: 'key' | 'credit' | 'fixture'; usage?: Usage }
+  /** Needs a person: a key or credit. */
+  | { ok: false; kind: 'offline'; need: 'key' | 'credit'; usage?: Usage }
   /** The model is unknown or no provider serves it with these parameters. */
   | { ok: false; kind: 'model'; usage?: Usage }
   /** The provider refused this request for another reason (moderation, bad parameters). */
   | { ok: false; kind: 'error'; usage?: Usage }
-  /** A recorded answer that was itself a failed call. */
-  | { ok: false; kind: 'bad-output'; usage?: Usage }
   | { ok: false; kind: 'timeout'; usage?: Usage };
 
 export type ProviderCall = {

@@ -23,6 +23,8 @@ export type AppHandle = {
   everyFrame(fn: (dt: number, now: number) => void): () => void;
   /** The head (camera) of the person, world space. */
   head(): Object3D;
+  /** Multiplier of waits (1 normally, smaller in scenarios). */
+  pace?(): number;
 };
 
 export type BuildStep = { object3d: Object3D; target: { pos: Vector3; quat: Quaternion; scale: Vector3 } };
@@ -81,7 +83,20 @@ export type MindPort = {
   save(): Promise<void> | void;
   readonly state: IslandState;
   nextTraveler(): Promise<Resident> | Resident;
-  talk(id: string, input: { text?: string; audio?: Blob }): Promise<Reply>;
+  /** audio: a base64 WAV clip, 16 kHz mono (src/app/hands/voice.ts makes it). */
+  talk(id: string, input: { text?: string; audio?: string }): Promise<Reply>;
+  /** First words of a conversation without a model call, when offered. */
+  greet?(id: string): Reply;
+  /** Writes the memory notes of a finished conversation, when offered. */
+  endTalk?(id: string): Promise<void>;
+  /** The traveler at the pier leaves without staying. */
+  dismiss?(id: string): Promise<void>;
+  /** Marks events as told. */
+  seen?(events: WorldEvent[]): Promise<void>;
+  /** Starts a fresh island. */
+  reset?(name?: string): Promise<IslandState>;
+  /** During a visit: trips that came back, new mail and guests. */
+  tick?(now?: number): Promise<WorldEvent[]>;
   settle(resident: Resident, spec: HouseSpec): Promise<unknown> | unknown;
   whileAway(now: number): Promise<WorldEvent[]> | WorldEvent[];
   give(id: string, item: string): Promise<{ text: string; prop?: string }> | { text: string; prop?: string };

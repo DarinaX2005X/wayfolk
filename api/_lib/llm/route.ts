@@ -1,10 +1,12 @@
 /**
- * `GET /api/llm` and `POST /api/llm` (PLAN "API", stage 01.5.1).
+ * `GET /api/llm` and `POST /api/llm`: one model call for the mind module (travelers,
+ * talk, events, gifts, trips).
  *
  * GET answers `LlmStatus` and never fails: without a key, a model, shared counters or a
  * reachable store it says `live: false` with zero counts.
  *
- * POST reads and checks the request (400, 413), picks the provider from LLM_PROVIDER,
+ * POST reads and checks the request (400, 413), picks the provider from LLM_PROVIDER and
+ * the model from the task (config.ts `modelsFor`),
  * passes the spending guard (./guard.ts), makes one provider call (a second only when the
  * provider refused the model, with the next model of the list), reads JSON out of the
  * answer and checks it against the request's schema. A misfit is 422 `bad-output` and is
@@ -26,8 +28,7 @@ import type { Env } from '../env';
 import { describeError, fail, hashAddress, json, readBody, sameHash, sha256 } from '../http';
 import { KvError, getKv, type KV } from '../kv';
 import { testFailure } from '../test-fail';
-import { paid, readLlmConfig, type LlmConfig } from './config';
-import { createFixtures } from './fixtures';
+import { modelsFor, paid, readLlmConfig, type LlmConfig } from './config';
 import { createGemini } from './gemini';
 import { admit, budgetStatus, costMicros, refund, settle, type Caller, type Ticket } from './guard';
 import { createOpenRouter } from './openrouter';
@@ -77,12 +78,12 @@ export function createLlmRoutes(deps: LlmDeps = {}) {
   const log = deps.log ?? defaultLog;
   const kvOf = deps.kv ?? (() => getKv(env()));
 
-  const adapterFor = (cfg: LlmConfig): ProviderAdapter => {
+  const adapterFor = (cfg: LlmConfig): ProviderAdapter | null => {
     const custom = deps.adapters?.[cfg.provider];
     if (custom) return custom(cfg);
-    if (cfg.provider === 'openrouter') return createOpenRouter({ key: cfg.key, siteUrl: cfg.siteUrl, fetch: deps.fetch });
+    if (cfg.provider === 'openrouter') return createOpenRouter({ key: cfg.key, siteUrl: cfg.siteUrl, fetch: deps.fetch, sort: cfg.sort });
     if (cfg.provider === 'gemini') return createGemini({ key: cfg.key, fetch: deps.fetch });
-    return createFixtures();
+    return null;
   };
 
   const callerOf = (request: Request, cfg: LlmConfig): Caller => {
@@ -108,7 +109,7 @@ export function createLlmRoutes(deps: LlmDeps = {}) {
     if (!paid(cfg.provider) || !cfg.key || cfg.models.length === 0) return json(200, status);
     try {
       const kv = kvOf();
-      if (!kv.sharedCounters) return json(200, status);
+      if (!kv.sharedCounters && !cfg.instanceCounters) return json(200, status);
       const numbers = await budgetStatus(kv, cfg, hashAddress(request, cfg.addressSalt), now());
       return json(200, { ...status, ...numbers, audio: numbers.live && cfg.audioModels.length > 0 });
     } catch (err) {
@@ -142,10 +143,11 @@ export function createLlmRoutes(deps: LlmDeps = {}) {
     const body: LlmCallBody = parsed.body;
     line.task = body.task;
 
-    if (paid(cfg.provider) && !cfg.key) return finish(fail(503, 'agents-offline', { need: 'key' }));
-    const models = hasAudio(body) && cfg.audioModels.length > 0 ? cfg.audioModels : cfg.models;
+    const adapter = adapterFor(cfg);
+    if (!adapter || (paid(cfg.provider) && !cfg.key)) return finish(fail(503, 'agents-offline', { need: 'key' }));
+    const audio = hasAudio(body);
+    const models = modelsFor(cfg, body.task, audio);
     if (models.length === 0) return finish(fail(503, 'agents-offline', { need: 'model' }));
-    if (cfg.provider === 'fixtures' && !body.fixture) return finish(fail(503, 'agents-offline', { need: 'fixture' }));
     if (mode === 'daily-cap') return finish(fail(429, 'daily-cap'));
 
     // Counters. Without them nothing may be spent; recorded answers cost nothing and go on.
@@ -154,7 +156,7 @@ export function createLlmRoutes(deps: LlmDeps = {}) {
     try {
       if (mode === 'storage-busy') throw new KvError('storage-busy', 'test');
       kv = kvOf();
-      const admission = await admit(kv, cfg, { caller: callerOf(request, cfg), task: body.task, runId: body.runId, provider: cfg.provider, now: now() });
+      const admission = await admit(kv, cfg, { caller: callerOf(request, cfg), task: body.task, audio, runId: body.runId, provider: cfg.provider, now: now() });
       if (!admission.ok) {
         const { status, error, extra } = admission.refusal;
         return finish(fail(status, error, extra));
@@ -166,7 +168,6 @@ export function createLlmRoutes(deps: LlmDeps = {}) {
       kv = null;
     }
 
-    const adapter = adapterFor(cfg);
     const signal = AbortSignal.timeout(deps.deadlineMs ?? PROVIDER_DEADLINE_MS);
     const callStarted = now();
     let list = models;
@@ -212,8 +213,6 @@ export function createLlmRoutes(deps: LlmDeps = {}) {
       case 'error':
         await giveBack();
         return finish(fail(502, 'provider-error'));
-      case 'bad-output':
-        return finish(fail(422, 'bad-output'), { problem: 'recorded failure' });
       case 'timeout':
         // The provider may still bill a call it did not finish: count the estimate.
         await charge(paid(cfg.provider) ? cfg.estCallMicros : 0);

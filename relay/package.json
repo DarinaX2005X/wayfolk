@@ -1,0 +1,12 @@
+{
+  "name": "wayfolk-relay",
+  "private": true,
+  "type": "module",
+  "description": "Live visits relay for Wayfolk: a Cloudflare Worker with one Durable Object per room.",
+  "scripts": {
+    "deploy": "npx wrangler deploy",
+    "dev": "npx wrangler dev",
+    "types": "npx wrangler types",
+    "typecheck": "node ../node_modules/typescript/bin/tsc --noEmit -p tsconfig.json"
+  }
+}

@@ -1,0 +1,58 @@
+.pc {
+  position: relative;
+  height: 100%;
+  min-height: 100svh;
+  overflow: hidden;
+  background: linear-gradient(180deg, #3d5f86 0%, #f2a66b 70%, #ffd9b0 100%);
+}
+
+.pc-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.pc-stage canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.pc-card {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  max-width: 440px;
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 22px;
+  background: rgba(255, 248, 236, 0.92);
+  border: 2px solid var(--wf-paper-rim);
+  box-shadow: var(--wf-shadow);
+}
+
+.pc-title {
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.pc-line {
+  color: var(--wf-ink-soft);
+}
+
+.pc-hint {
+  font-size: 15px;
+  color: var(--wf-ink-soft);
+}
+
+.pc-card .wf-button {
+  justify-self: start;
+}
+
+@media (min-width: 700px) {
+  .pc-card {
+    left: 32px;
+    bottom: 32px;
+  }
+}

@@ -1,8 +1,8 @@
 /**
  * Small preferences in localStorage, remembered on this device: settings
- * (`gw.settings.v1`), the owner key of the world (`gw.ownerKey`), the world name
+ * (`wf.settings.v1`), the owner key of the world (`gw.ownerKey`), the world name
  * (`gw.worldName`) and what the first session has already shown (`gw.seen`). Keys are
- * `gw.*` (PLAN "Где живут данные"). Projects and runs live in IndexedDB (persist.ts).
+ * `wf.*` (PLAN "Где живут данные"). Projects and runs live in IndexedDB (persist.ts).
  *
  * Storage is an input boundary. A value can be missing, cut short, written by an older
  * build, edited by hand, or unreadable because the browser blocks storage. None of
@@ -12,7 +12,7 @@
  */
 import type { Signal } from '@preact/signals-core';
 
-const PREFIX = 'gw.';
+const PREFIX = 'wf.';
 
 /** Changes are written at most once per this many milliseconds. */
 export const WRITE_INTERVAL_MS = 300;

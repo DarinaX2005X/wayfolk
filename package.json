@@ -1,5 +1,5 @@
 {
-  "name": "groundwork",
+  "name": "wayfolk",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -22,10 +22,6 @@
     "web": "node scripts/web.mjs",
     "tokens": "node scripts/build-tokens.mjs",
     "font": "node scripts/font.mjs",
-    "answers": "tsx scripts/run-example.ts",
-    "fixtures": "tsx scripts/build-fixtures.ts",
-    "record": "tsx scripts/record-live.ts",
-    "capture": "node tools/capture/record.mjs",
     "reference:status": "iwsdk reference status",
     "reference:warmup": "iwsdk reference warmup"
   },

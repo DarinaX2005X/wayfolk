@@ -1,38 +1,32 @@
 /**
- * Spending protection of the model proxy (stage 01.5.1, PLAN "Записанные ответы, ключ
- * ИИ, прокси и живой прогон"). Counters live in the store of small records (./../kv.ts)
- * through `incr` with an expiry, so every instance of the function sees the same
- * numbers. Money is counted in whole micro-dollars because counters are integers.
+ * Spending protection of the model proxy. Counters live in the store of small records
+ * (../kv.ts) through `incr` with an expiry, so every instance of the function sees the
+ * same numbers when the store is Redis. Money is counted in whole micro-dollars.
  *
  *   llm:total                       all spending of the deployment
  *   llm:<UTC date>:usd              spending of the day;  llm:<date>:calls  paid calls of the day
- *   llm:<date>:runs:<address hash>  live runs started from an address today
- *   llm:<date>:voice:<address hash> voice requests from an address today
- *   llm:run:<runId>:calls           calls of one run;  llm:run:<runId>:ok  the run was admitted
+ *   llm:<date>:runs:<address hash>  app sessions with live calls from an address today
+ *   llm:<date>:voice:<address hash> calls carrying the person's voice from an address today
+ *   llm:run:<runId>:calls           calls of one session;  llm:run:<runId>:ok  the session was admitted
  *   llm:dev:<item>:usd, :calls      development spending by budget item
  *
  * Before a paid call of a visitor: (1) total under LLM_TOTAL_USD; (2) the day under
- * LLM_DAILY_USD; (3) the first call of a run needs at least LLM_RUN_RESERVE_USD left of
- * both, and the address under LLM_DAILY_RUNS_PER_ADDRESS runs today; (4) the run under
- * LLM_RUN_CALLS calls; (5) a voice request (`intent`) under LLM_VOICE_CALLS_PER_ADDRESS
- * from the address today. Any of them answers 429 `daily-cap` and the provider is not
- * called. Calls of a run must carry its `runId`, so the per-run and per-address limits
- * cannot be skipped by leaving it out.
+ * LLM_DAILY_USD; (3) a call with audio under LLM_VOICE_CALLS_PER_ADDRESS from the
+ * address today; (4) the first call of a session needs at least LLM_RUN_RESERVE_USD left
+ * and the address under LLM_DAILY_RUNS_PER_ADDRESS sessions today; (5) the session under
+ * LLM_RUN_CALLS calls. Any of them answers 429 `daily-cap` and the provider is not
+ * called. Every call carries the session's `runId` (the mind sends it).
  *
- * A later call of a run is accepted only after its first call was admitted (the `ok`
- * mark), so two requests racing on a new run id cannot slip one past the checks; the
- * loser is told to retry in two seconds. A call that got no answer from the provider
- * (rate limit, overload, network) gives its run slot back, so waiting out a rate limit
- * does not eat the run's allowance.
+ * A later call of a session is accepted only after its first call was admitted (the
+ * `ok` mark), so two requests racing on a new id cannot slip one past the checks. A call
+ * that got no answer (rate limit, overload, network) gives its slot back.
  *
- * Development calls (a correct x-dev-token) are counted apart by their budget item and do
- * not touch the judging limits; the run-calls limit still applies. Without the token the
- * item header means nothing. The `fixtures` provider spends nothing but checks the
- * run-calls limit, so that limit can be tried without credit.
+ * Development calls (a correct x-dev-token) are counted apart by budget item and do not
+ * touch the visitors' limits; the session limit still applies.
  *
  * Without shared counters (blob-json, or memory on a deployment) paid calls of visitors
- * are refused with 503 `agents-offline`, `need: 'credit'`: without a counter nothing may
- * be spent. The same happens when the store fails.
+ * are refused with 503 `agents-offline`, `need: 'credit'`, unless LLM_INSTANCE_COUNTERS=1
+ * accepts the counters of one instance.
  */
 import type { ApiErrorCode, LlmStatus, LlmTask, Provider } from '../contracts';
 import type { KV } from '../kv';
@@ -68,12 +62,12 @@ const asNumber = (value: unknown): number => (typeof value === 'number' && Numbe
 export async function admit(
   kv: KV,
   cfg: LlmConfig,
-  input: { caller: Caller; task: LlmTask; runId?: string; provider: Provider; now: number },
+  input: { caller: Caller; task: LlmTask; audio: boolean; runId?: string; provider: Provider; now: number },
 ): Promise<Admission> {
   const day = utcDay(input.now);
   const ticket: Ticket = { provider: input.provider, caller: input.caller, day, runKey: null };
 
-  // Calls that spend nothing of the judging budget: only the per-run limit.
+  // Calls that spend nothing of the visitors' budget: only the per-session limit.
   if (!paid(input.provider) || input.caller.kind === 'dev') {
     if (input.runId) {
       ticket.runKey = keys.runCalls(input.runId);
@@ -83,18 +77,19 @@ export async function admit(
     return { ok: true, ticket };
   }
 
-  if (!kv.sharedCounters) return { ok: false, refusal: { status: 503, error: 'agents-offline', extra: { need: 'credit' } } };
+  if (!kv.sharedCounters && !cfg.instanceCounters) {
+    return { ok: false, refusal: { status: 503, error: 'agents-offline', extra: { need: 'credit' } } };
+  }
   const address = input.caller.address;
   const [total, spent] = (await Promise.all([kv.get(keys.total), kv.get(keys.dayUsd(day))])).map(asNumber);
   if (total >= cfg.totalMicros || spent >= cfg.dailyMicros) return cap();
+  if (!input.runId) return { ok: false, refusal: { status: 400, error: 'bad-request', extra: { need: 'runId' } } };
 
-  if (input.task === 'intent') {
+  if (input.audio) {
     const voice = await kv.incr(keys.voice(day, address), 1, { ex: DAY_TTL });
     if (voice > cfg.voicePerAddress) return cap();
-    return { ok: true, ticket };
   }
 
-  if (!input.runId) return { ok: false, refusal: { status: 400, error: 'bad-request', extra: { need: 'runId' } } };
   const runKey = keys.runCalls(input.runId);
   const calls = await kv.incr(runKey, 1, { ex: RUN_TTL });
   if (calls > cfg.runCalls) return cap();

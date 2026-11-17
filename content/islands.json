@@ -1,0 +1,1110 @@
+{
+ "islands": [
+  {
+   "id": "demo-saltloaf",
+   "name": "Saltloaf",
+   "seed": 1000,
+   "radius": 12,
+   "residents": [
+    {
+     "id": "d-lighthouse-keeper-cat",
+     "name": "Ottoline Brisk",
+     "species": "cat",
+     "trade": "lighthouse-keeper",
+     "vehicle": "balloon",
+     "personality": "She speaks in slow, careful sentences and always counts out loud before she says something important. Her habit is winding her tail around her wrist when she is thinking, and she forgets to let go.",
+     "voice": {
+      "pitch": 1.2,
+      "rate": 0.9,
+      "timbre": "soft"
+     },
+     "colors": {
+      "main": "#c9a77c",
+      "accent": "#2f6f73"
+     },
+     "story": {
+      "intro": "I am a keeper of lights, and that was my first balloon. Saltloaf had a dark corner that needed a lamp.",
+      "beats": [
+       "My lighthouse stands on a rock so small that the gulls use it as a footstool. I painted its door blue because blue is easy to find in fog.",
+       "Every night I climb ninety-one steps and count them aloud. My neighbors on the cloud banks say they can hear the numbers drift past.",
+       "Once a paper boat sailed into my light and got stuck spinning. I sat with it until morning, and it turned out to be a letter from my sister.",
+       "I keep a logbook of every ship I have guided, with a little drawing beside each one. Most are fish, and a few are kettles I hope someday to meet."
+      ],
+      "secret": "I still cannot whistle, so when I am lonely I hum the foghorn song very quietly into my scarf.",
+      "revealed": 1
+     },
+     "likes": [
+      "star",
+      "map",
+      "bell"
+     ],
+     "arrivedAt": 1794700800000,
+     "tagline": "I keep a light for lost friends",
+     "house": {
+      "colors": {
+       "wall": "#f4ecd8",
+       "roof": "#2f6f73",
+       "trim": "#d9a441"
+      },
+      "sign": "Saltloaf Light",
+      "props": [
+       "lantern",
+       "map",
+       "telescope"
+      ]
+     },
+     "visits": 2,
+     "houseId": "h-lighthouse-keeper-cat"
+    },
+    {
+     "id": "d-fisher-fox",
+     "name": "Ember Sable",
+     "species": "fox",
+     "trade": "fisher",
+     "vehicle": "lantern",
+     "personality": "I talk in small, careful sentences and always pause before the punchline. I keep a tin of mismatched hooks and I tap each one twice before I cast, for luck and because my grandmother did.",
+     "voice": {
+      "pitch": 1.15,
+      "rate": 0.92,
+      "timbre": "warm"
+     },
+     "colors": {
+      "main": "#c8643a",
+      "accent": "#2f5d7c"
+     },
+     "story": {
+      "intro": "Hello, Saltloaf. I am a fisher from the cloud sea, and the wind pushed my lantern here tonight.",
+      "beats": [
+       "I caught a moon once, a small one, and let it go because it was too heavy to carry home.",
+       "My net is patched with old kite string, which pulls the cloud fish in better than new string does.",
+       "Every dawn I count the fish I did not catch, which somehow makes me feel rich.",
+       "When the sea is calm I row out on a paper boat and listen for the bells under the water.",
+       "Last winter a cloud whale asked me to teach it to whistle. It never learned, but it kept trying all season."
+      ],
+      "secret": "I still hum the wrong lullaby to myself when I cannot sleep, and I think the stars have started to like it.",
+      "revealed": 2
+     },
+     "likes": [
+      "shell",
+      "star",
+      "tea"
+     ],
+     "arrivedAt": 1794614400000,
+     "tagline": "I fish for lost stars, mostly",
+     "house": {
+      "colors": {
+       "wall": "#e8d3b0",
+       "roof": "#2f5d7c",
+       "trim": "#c8643a"
+      },
+      "sign": "Lantern Net",
+      "props": [
+       "lantern",
+       "fishing-rod",
+       "shell"
+      ]
+     },
+     "visits": 3,
+     "houseId": "h-fisher-fox"
+    },
+    {
+     "id": "d-baker-bear",
+     "name": "Barnaby Thrumble",
+     "species": "bear",
+     "trade": "baker",
+     "vehicle": "cloud-whale",
+     "personality": "I talk slowly and say good morning even at night, because the dough does not know the difference. I hum while I knead and stop to tap the counter twice whenever I am thinking.",
+     "voice": {
+      "pitch": 0.8,
+      "rate": 0.9,
+      "timbre": "warm"
+     },
+     "colors": {
+      "main": "#8b5a3c",
+      "accent": "#e8c547"
+     },
+     "story": {
+      "intro": "I came down on the back of a cloud whale that smelled faintly of cinnamon. I think it wanted me to bake something.",
+      "beats": [
+       "Before I ever baked a loaf, I carried a jar of starter under my coat, and it went everywhere with me.",
+       "My oven was a dented iron pot with a crooked lid, and I never once managed to get it level.",
+       "On cold mornings I would leave a warm roll on the windowsill for whichever bird came by first.",
+       "I once baked a loaf so big it rolled off the cart and bounced across three hills before anyone caught it.",
+       "The cloud whale and I used to share a plate of toast every evening while the sun went down behind the clouds."
+      ],
+      "secret": "I still keep the crooked pot, because it makes the bread come out with a little curl on top that I secretly think is handsome.",
+      "revealed": 1
+     },
+     "likes": [
+      "honey",
+      "fruit",
+      "tea"
+     ],
+     "arrivedAt": 1794528000000,
+     "tagline": "Warm bread for anyone drifting by",
+     "house": {
+      "colors": {
+       "wall": "#f5e6c8",
+       "roof": "#b5562f",
+       "trim": "#7a4a2a"
+      },
+      "sign": "Thrumble Loaves",
+      "props": [
+       "fruit-basket",
+       "teapot",
+       "lantern"
+      ]
+     },
+     "visits": 4,
+     "houseId": "h-baker-bear"
+    }
+   ],
+   "houses": [
+    {
+     "id": "h-lighthouse-keeper-cat",
+     "residentId": "d-lighthouse-keeper-cat",
+     "recipe": "lighthouse-keeper",
+     "pos": {
+      "x": -4.76,
+      "z": 2.75
+     },
+     "rotY": 2.095,
+     "colors": {
+      "wall": "#f4ecd8",
+      "roof": "#2f6f73",
+      "trim": "#d9a441"
+     },
+     "props": [
+      "lantern",
+      "map",
+      "telescope"
+     ],
+     "sign": "Saltloaf Light",
+     "builtAt": 1794700800000
+    },
+    {
+     "id": "h-fisher-fox",
+     "residentId": "d-fisher-fox",
+     "recipe": "fisher",
+     "pos": {
+      "x": -4.76,
+      "z": -2.75
+     },
+     "rotY": 1.047,
+     "colors": {
+      "wall": "#e8d3b0",
+      "roof": "#2f5d7c",
+      "trim": "#c8643a"
+     },
+     "props": [
+      "lantern",
+      "fishing-rod",
+      "shell"
+     ],
+     "sign": "Lantern Net",
+     "builtAt": 1794614400000
+    },
+    {
+     "id": "h-baker-bear",
+     "residentId": "d-baker-bear",
+     "recipe": "baker",
+     "pos": {
+      "x": -0.0,
+      "z": -5.5
+     },
+     "rotY": 0.0,
+     "colors": {
+      "wall": "#f5e6c8",
+      "roof": "#b5562f",
+      "trim": "#7a4a2a"
+     },
+     "props": [
+      "fruit-basket",
+      "teapot",
+      "lantern"
+     ],
+     "sign": "Thrumble Loaves",
+     "builtAt": 1794528000000
+    }
+   ],
+   "paths": [
+    [
+     "h-lighthouse-keeper-cat",
+     "pier"
+    ],
+    [
+     "h-fisher-fox",
+     "h-lighthouse-keeper-cat"
+    ],
+    [
+     "h-baker-bear",
+     "h-fisher-fox"
+    ]
+   ],
+   "props": [
+    {
+     "id": "p-saltloaf-0",
+     "kind": "lantern",
+     "pos": {
+      "x": -3.35,
+      "z": 0.59
+     }
+    },
+    {
+     "id": "p-saltloaf-1",
+     "kind": "flower-patch",
+     "pos": {
+      "x": -2.79,
+      "z": -1.95
+     }
+    },
+    {
+     "id": "p-saltloaf-2",
+     "kind": "fruit-tree",
+     "pos": {
+      "x": -0.59,
+      "z": -3.35
+     }
+    },
+    {
+     "id": "p-saltloaf-3",
+     "kind": "lantern",
+     "pos": {
+      "x": 1.95,
+      "z": -2.79
+     }
+    }
+   ],
+   "createdAt": 1794787200000
+  },
+  {
+   "id": "demo-lowtide",
+   "name": "Lowtide Rock",
+   "seed": 1077,
+   "radius": 12,
+   "residents": [
+    {
+     "id": "d-lighthouse-keeper-owl",
+     "name": "Nightjar Ames",
+     "species": "owl",
+     "trade": "lighthouse-keeper",
+     "vehicle": "lantern",
+     "personality": "I speak slowly and count my words like coins, pausing before every full stop. I cannot pass a sleeping bird without tucking a loose feather back under its wing.",
+     "voice": {
+      "pitch": 0.9,
+      "rate": 0.85,
+      "timbre": "soft"
+     },
+     "colors": {
+      "main": "#8a6d4f",
+      "accent": "#d9a441"
+     },
+     "story": {
+      "intro": "I am Nightjar. The wind pushed my lantern this way one dark night and I did not argue.",
+      "beats": [
+       "Every night I climb forty-one steps to light my lamp. I counted them so often I now count them in my sleep.",
+       "Once a moth came to my window and stayed all winter. I named him Lint, and he never once complained about the draft.",
+       "A boy on a far island once sent me a paper boat with a note inside. The note said only, thank you for the light, and I keep it in my hat.",
+       "On stormy nights I hum the same three notes to the sea. I am not certain it helps the sea, but it helps me.",
+       "I have a small brass bell that rings when the lamp is lit. I have not rung it since the spring I lost my spectacles."
+      ],
+      "secret": "I still write letters to ships that have already passed. I think they might like to know someone was watching.",
+      "revealed": 1
+     },
+     "likes": [
+      "star",
+      "bell",
+      "tea"
+     ],
+     "arrivedAt": 1794700800000,
+     "tagline": "I keep the light for lost things",
+     "house": {
+      "colors": {
+       "wall": "#f4ead6",
+       "roof": "#7a4b3a",
+       "trim": "#d9a441"
+      },
+      "sign": "Ames Light",
+      "props": [
+       "lantern",
+       "star-lamp",
+       "books"
+      ]
+     },
+     "visits": 2,
+     "houseId": "h-lighthouse-keeper-owl"
+    },
+    {
+     "id": "d-fisher-penguin",
+     "name": "Gulli Fenwick",
+     "species": "penguin",
+     "trade": "fisher",
+     "vehicle": "paper-boat",
+     "personality": "I talk slowly and count things out loud, even when nobody asked for a count. I keep a pocket of dried shrimp and offer one to anyone who looks hungry.",
+     "voice": {
+      "pitch": 1.25,
+      "rate": 0.9,
+      "timbre": "soft"
+     },
+     "colors": {
+      "main": "#2b3340",
+      "accent": "#e8b04b"
+     },
+     "story": {
+      "intro": "I came down the cloud shelf in a paper boat that leaks a little. Lowtide Rock looked like the only dry thing out here.",
+      "beats": [
+       "My nets are made of spider silk and sea wind. I cast them at dusk, when the stars are close enough to tangle.",
+       "Last month one star wriggled free and landed on my boat. It was warm, like toast, and it hummed a little tune.",
+       "I tried to sell it a bucket of cold rain, but it said it preferred the shell I found in the tide pools.",
+       "Since then I have been trying to learn how stars swim, which is harder than it sounds on a boat that leaks."
+      ],
+      "secret": "I have not caught a single fish in three seasons. I just like sitting out here while the water talks to itself.",
+      "revealed": 2
+     },
+     "likes": [
+      "shell",
+      "star",
+      "fruit"
+     ],
+     "arrivedAt": 1794614400000,
+     "tagline": "I catch stars, mostly by accident",
+     "house": {
+      "colors": {
+       "wall": "#c9e4ea",
+       "roof": "#3d5a73",
+       "trim": "#e8b04b"
+      },
+      "sign": "Gulli's Net Shed",
+      "props": [
+       "lantern",
+       "fishing-rod",
+       "shell"
+      ]
+     },
+     "visits": 3,
+     "houseId": "h-fisher-penguin"
+    },
+    {
+     "id": "d-beekeeper-otter",
+     "name": "Sedge Pilling",
+     "species": "otter",
+     "trade": "beekeeper",
+     "vehicle": "balloon",
+     "personality": "I talk slowly and count my words like honey spoons, and I often stop mid-sentence to listen to something far away. My habit is tapping my front teeth with a smooth river pebble whenever I am thinking hard.",
+     "voice": {
+      "pitch": 1.15,
+      "rate": 0.9,
+      "timbre": "warm"
+     },
+     "colors": {
+      "main": "#7a5c42",
+      "accent": "#e8b930"
+     },
+     "story": {
+      "intro": "I came down from the clouds in a balloon shaped like a teapot. The wind said this rock needed someone who knows bees, and it was right.",
+      "beats": [
+       "My hives were on a floating meadow, but the meadow drifted off without me. I watched it go and waved it a polite goodbye.",
+       "The bees did not mind the drift at all. They simply flew after the meadow and came back each evening with the same stubborn sweetness.",
+       "I once kept a jar of honey under my bed for a whole winter. When I opened it in spring it tasted of the moon, and I still do not know why.",
+       "My best friend is a heron who sleeps on one leg. We talk about nothing at all, and that is the finest kind of talk I know."
+      ],
+      "secret": "I sometimes sing to my bees at night so they will dream of clover. Please do not tell the others, they would tease me until the stars went out.",
+      "revealed": 1
+     },
+     "likes": [
+      "honey",
+      "pebble",
+      "flower"
+     ],
+     "arrivedAt": 1794528000000,
+     "tagline": "I keep bees that hum in harmony",
+     "house": {
+      "colors": {
+       "wall": "#f4e4c1",
+       "roof": "#8b5a2b",
+       "trim": "#e8b930"
+      },
+      "sign": "Honey and Pebbles",
+      "props": [
+       "beehive",
+       "lantern",
+       "flower-pot"
+      ]
+     },
+     "visits": 4,
+     "houseId": "h-beekeeper-otter"
+    }
+   ],
+   "houses": [
+    {
+     "id": "h-lighthouse-keeper-owl",
+     "residentId": "d-lighthouse-keeper-owl",
+     "recipe": "lighthouse-keeper",
+     "pos": {
+      "x": -5.06,
+      "z": 2.15
+     },
+     "rotY": 1.973,
+     "colors": {
+      "wall": "#f4ead6",
+      "roof": "#7a4b3a",
+      "trim": "#d9a441"
+     },
+     "props": [
+      "lantern",
+      "star-lamp",
+      "books"
+     ],
+     "sign": "Ames Light",
+     "builtAt": 1794700800000
+    },
+    {
+     "id": "h-fisher-penguin",
+     "residentId": "d-fisher-penguin",
+     "recipe": "fisher",
+     "pos": {
+      "x": -4.39,
+      "z": -3.31
+     },
+     "rotY": 0.925,
+     "colors": {
+      "wall": "#c9e4ea",
+      "roof": "#3d5a73",
+      "trim": "#e8b04b"
+     },
+     "props": [
+      "lantern",
+      "fishing-rod",
+      "shell"
+     ],
+     "sign": "Gulli's Net Shed",
+     "builtAt": 1794614400000
+    },
+    {
+     "id": "h-beekeeper-otter",
+     "residentId": "d-beekeeper-otter",
+     "recipe": "beekeeper",
+     "pos": {
+      "x": 0.67,
+      "z": -5.46
+     },
+     "rotY": -0.122,
+     "colors": {
+      "wall": "#f4e4c1",
+      "roof": "#8b5a2b",
+      "trim": "#e8b930"
+     },
+     "props": [
+      "beehive",
+      "lantern",
+      "flower-pot"
+     ],
+     "sign": "Honey and Pebbles",
+     "builtAt": 1794528000000
+    }
+   ],
+   "paths": [
+    [
+     "h-lighthouse-keeper-owl",
+     "pier"
+    ],
+    [
+     "h-fisher-penguin",
+     "h-lighthouse-keeper-owl"
+    ],
+    [
+     "h-beekeeper-otter",
+     "h-fisher-penguin"
+    ]
+   ],
+   "props": [
+    {
+     "id": "p-lowtide-0",
+     "kind": "lantern",
+     "pos": {
+      "x": -3.4,
+      "z": -0.06
+     }
+    },
+    {
+     "id": "p-lowtide-1",
+     "kind": "flower-patch",
+     "pos": {
+      "x": -2.36,
+      "z": -2.45
+     }
+    },
+    {
+     "id": "p-lowtide-2",
+     "kind": "fruit-tree",
+     "pos": {
+      "x": 0.06,
+      "z": -3.4
+     }
+    },
+    {
+     "id": "p-lowtide-3",
+     "kind": "lantern",
+     "pos": {
+      "x": 2.45,
+      "z": -2.36
+     }
+    }
+   ],
+   "createdAt": 1794787200000
+  },
+  {
+   "id": "demo-brindle",
+   "name": "Brindle Isle",
+   "seed": 1154,
+   "radius": 12,
+   "residents": [
+    {
+     "id": "d-painter-raccoon",
+     "name": "Smudge Larkin",
+     "species": "raccoon",
+     "trade": "painter",
+     "vehicle": "kite",
+     "personality": "I talk slowly and stop to look at the stars in the middle of sentences. I keep a jar of old brush bristles and tap it whenever I am thinking.",
+     "voice": {
+      "pitch": 1.1,
+      "rate": 0.9,
+      "timbre": "warm"
+     },
+     "colors": {
+      "main": "#7a7a80",
+      "accent": "#e0a33a"
+     },
+     "story": {
+      "intro": "Hello, hello, I am Smudge. The wind pulled my kite here because it thought I needed a better view.",
+      "beats": [
+       "I painted the same sunset eleven times once, and each one came out a different shade of sad. I gave the last one to a gull, who was not impressed.",
+       "My paint box has a dent in the lid from falling off a cliff. I still use it, because the dent holds the lid shut better than the latch ever did.",
+       "I once drew a map of a sky island from memory, and a cloud whale followed the map for three days. It is the only thing I have ever painted that anyone followed.",
+       "I am afraid of painting a sky that is finished. Every sky I know is still changing, and I do not want to be the one who says it stopped.",
+       "Sometimes I stay up late with a candle and paint whatever the stars are doing. They never seem to mind the mess."
+      ],
+      "secret": "I have never once painted the same star twice. I think that is why I keep looking up.",
+      "revealed": 1
+     },
+     "likes": [
+      "star",
+      "feather",
+      "honey"
+     ],
+     "arrivedAt": 1794700800000,
+     "tagline": "I paint the sky, badly, every night",
+     "house": {
+      "colors": {
+       "wall": "#f4e4c1",
+       "roof": "#4a5d7a",
+       "trim": "#e0a33a"
+      },
+      "sign": "Smudge's Studio",
+      "props": [
+       "easel",
+       "star-lamp",
+       "books"
+      ]
+     },
+     "visits": 2,
+     "houseId": "h-painter-raccoon"
+    },
+    {
+     "id": "d-cartographer-owl",
+     "name": "Orrin Tallow",
+     "species": "owl",
+     "trade": "cartographer",
+     "vehicle": "balloon",
+     "personality": "I talk slowly and measure every sentence before I say it, as if it were a distance. I keep a brass compass in my left pocket and tap it twice whenever I am about to be wrong.",
+     "voice": {
+      "pitch": 1.1,
+      "rate": 0.85,
+      "timbre": "soft"
+     },
+     "colors": {
+      "main": "#7a5c3e",
+      "accent": "#d9a441"
+     },
+     "story": {
+      "intro": "I came down out of the cloud on a balloon that smelled of wet string. The wind said this island was a blank spot on my chart, and I could not leave a blank spot alone.",
+      "beats": [
+       "I have mapped four hundred coastlines, and every one of them moved while I was drawing it.",
+       "My first chart was of my grandmother's kitchen table, and I still get the corners wrong.",
+       "I once sailed for nine days after a rumor of an island that turned out to be a cloud wearing a hat.",
+       "I keep a pencil behind each ear, because a cartographer should always be ready for a coast that wants drawing.",
+       "Last spring I drew the stars for a boy who could not sleep, and he fell asleep halfway through the second constellation."
+      ],
+      "secret": "I sometimes draw a small island with no name, just to have a place to keep my hopes. I have never once told the chart what to call it.",
+      "revealed": 2
+     },
+     "likes": [
+      "map",
+      "star"
+     ],
+     "arrivedAt": 1794614400000,
+     "tagline": "I draw the sea before it moves",
+     "house": {
+      "colors": {
+       "wall": "#f3e6c8",
+       "roof": "#3d5a73",
+       "trim": "#d9a441"
+      },
+      "sign": "Orrin's Charts",
+      "props": [
+       "map",
+       "telescope",
+       "lantern"
+      ]
+     },
+     "visits": 3,
+     "houseId": "h-cartographer-owl"
+    },
+    {
+     "id": "d-musician-rabbit",
+     "name": "Melody Thrum",
+     "species": "rabbit",
+     "trade": "musician",
+     "vehicle": "umbrella",
+     "personality": "I talk in little tunes, so my sentences often end on a note that makes you want to finish them. I tap my foot against anything solid, including the pier, the teapot and once a sleeping goose.",
+     "voice": {
+      "pitch": 1.25,
+      "rate": 1.05,
+      "timbre": "bright"
+     },
+     "colors": {
+      "main": "#c9b8a4",
+      "accent": "#e0884a"
+     },
+     "story": {
+      "intro": "I am a rabbit who plays the fiddle badly and the wind told me this island needed a tune. I rode my umbrella down through the clouds with the fiddle tucked under one arm.",
+      "beats": [
+       "My first tune was a lullaby for my grandmother's bread oven, which always rose better after I hummed at it.",
+       "I once played for a crowd of frogs at a pond, and they croaked along so loudly I lost track of my own song.",
+       "A cloud whale asked me to play while it swam, so I sat on its back and played until my bow frayed into a broom.",
+       "I still have the first sock I ever darned, and I keep it on my fiddle case so the fiddle feels less alone."
+      ],
+      "secret": "Sometimes I practice only the quiet parts, because nobody ever asks me to play softly and I miss being asked.",
+      "revealed": 1
+     },
+     "likes": [
+      "bell",
+      "honey",
+      "book"
+     ],
+     "arrivedAt": 1794528000000,
+     "tagline": "I hum before I knock, always",
+     "house": {
+      "colors": {
+       "wall": "#f3e6cf",
+       "roof": "#8a5a3c",
+       "trim": "#e0884a"
+      },
+      "sign": "Thrum & Tune",
+      "props": [
+       "bell",
+       "books",
+       "teapot"
+      ]
+     },
+     "visits": 4,
+     "houseId": "h-musician-rabbit"
+    }
+   ],
+   "houses": [
+    {
+     "id": "h-painter-raccoon",
+     "residentId": "d-painter-raccoon",
+     "recipe": "painter",
+     "pos": {
+      "x": -5.29,
+      "z": 1.52
+     },
+     "rotY": 1.851,
+     "colors": {
+      "wall": "#f4e4c1",
+      "roof": "#4a5d7a",
+      "trim": "#e0a33a"
+     },
+     "props": [
+      "easel",
+      "star-lamp",
+      "books"
+     ],
+     "sign": "Smudge's Studio",
+     "builtAt": 1794700800000
+    },
+    {
+     "id": "h-cartographer-owl",
+     "residentId": "d-cartographer-owl",
+     "recipe": "cartographer",
+     "pos": {
+      "x": -3.96,
+      "z": -3.82
+     },
+     "rotY": 0.803,
+     "colors": {
+      "wall": "#f3e6c8",
+      "roof": "#3d5a73",
+      "trim": "#d9a441"
+     },
+     "props": [
+      "map",
+      "telescope",
+      "lantern"
+     ],
+     "sign": "Orrin's Charts",
+     "builtAt": 1794614400000
+    },
+    {
+     "id": "h-musician-rabbit",
+     "residentId": "d-musician-rabbit",
+     "recipe": "musician",
+     "pos": {
+      "x": 1.33,
+      "z": -5.34
+     },
+     "rotY": -0.244,
+     "colors": {
+      "wall": "#f3e6cf",
+      "roof": "#8a5a3c",
+      "trim": "#e0884a"
+     },
+     "props": [
+      "bell",
+      "books",
+      "teapot"
+     ],
+     "sign": "Thrum & Tune",
+     "builtAt": 1794528000000
+    }
+   ],
+   "paths": [
+    [
+     "h-painter-raccoon",
+     "pier"
+    ],
+    [
+     "h-cartographer-owl",
+     "h-painter-raccoon"
+    ],
+    [
+     "h-musician-rabbit",
+     "h-cartographer-owl"
+    ]
+   ],
+   "props": [
+    {
+     "id": "p-brindle-0",
+     "kind": "lantern",
+     "pos": {
+      "x": -3.33,
+      "z": -0.71
+     }
+    },
+    {
+     "id": "p-brindle-1",
+     "kind": "flower-patch",
+     "pos": {
+      "x": -1.85,
+      "z": -2.85
+     }
+    },
+    {
+     "id": "p-brindle-2",
+     "kind": "fruit-tree",
+     "pos": {
+      "x": 0.71,
+      "z": -3.33
+     }
+    },
+    {
+     "id": "p-brindle-3",
+     "kind": "lantern",
+     "pos": {
+      "x": 2.85,
+      "z": -1.85
+     }
+    }
+   ],
+   "createdAt": 1794787200000
+  },
+  {
+   "id": "demo-kettle",
+   "name": "Kettle Key",
+   "seed": 1231,
+   "radius": 12,
+   "residents": [
+    {
+     "id": "d-tea-maker-raccoon",
+     "name": "Tamsin Rue",
+     "species": "raccoon",
+     "trade": "tea-maker",
+     "vehicle": "cloud-whale",
+     "personality": "I talk in slow bursts and pause to think about what I just said. I wash everything twice, even my own paws, and I hum while I do it.",
+     "voice": {
+      "pitch": 1.15,
+      "rate": 0.9,
+      "timbre": "warm"
+     },
+     "colors": {
+      "main": "#7a6f66",
+      "accent": "#c8553d"
+     },
+     "story": {
+      "intro": "I am a tea maker and the cloud whale brought me here. It hummed the whole way, so I think it wanted me to stop.",
+      "beats": [
+       "I used to run a tea stall at the bottom of a valley where the fog came up every morning. Nobody bought tea before breakfast, so I drank it all myself.",
+       "I keep a tin of leaves from a hillside that no longer exists. A cloud took the hillside, but the leaves still taste like wet stone and rain.",
+       "My kettle is dented on one side from a fall off a cart. I kept it because it whistles in a lower voice now, and I think it sounds happier.",
+       "Once I brewed a pot for a passing lantern. It said nothing, but it glowed brighter for a long time, and I counted that as a compliment."
+      ],
+      "secret": "I still keep one cup empty on the table at night. I have never told anyone who I am waiting for, and I am not sure I know.",
+      "revealed": 1
+     },
+     "likes": [
+      "tea",
+      "honey",
+      "bell"
+     ],
+     "arrivedAt": 1794700800000,
+     "tagline": "Strong tea, sticky hands, good stories",
+     "house": {
+      "colors": {
+       "wall": "#f3e3c3",
+       "roof": "#6b4f3a",
+       "trim": "#c8553d"
+      },
+      "sign": "Rue Tea Rooms",
+      "props": [
+       "teapot",
+       "lantern",
+       "beehive"
+      ]
+     },
+     "visits": 2,
+     "houseId": "h-tea-maker-raccoon"
+    },
+    {
+     "id": "d-gardener-hedgehog",
+     "name": "Ferris Thorn",
+     "species": "hedgehog",
+     "trade": "gardener",
+     "vehicle": "umbrella",
+     "personality": "I talk slowly and pat the nearest flowerpot after every sentence, as if to say it was a good one.",
+     "voice": {
+      "pitch": 1.3,
+      "rate": 0.9,
+      "timbre": "soft"
+     },
+     "colors": {
+      "main": "#8a6a4f",
+      "accent": "#6fa37a"
+     },
+     "story": {
+      "intro": "Hello, I am Ferris, and I came down out of the clouds holding my umbrella like a sail. The wind said this island looked like it needed someone to dig in it.",
+      "beats": [
+       "I was born under a hedge that smelled of wet bark and warm bread from the village bakery. My mother said I would be prickly, and I have been ever since.",
+       "I once spent a whole summer growing one potato in a boot. It came up a bit crooked, like a man who has been sitting too long.",
+       "I am afraid of the big wind that blows over the cloud sea. I keep a pinecone in my pocket for courage and it has gone quite soft from holding.",
+       "I have a habit of talking to my seedlings in a low voice, asking them if they are warm enough. They never answer, but they grow a little faster when I ask.",
+       "Last spring I planted a row of beans and forgot where, so every week I dig up a new surprise. The birds have started to wait for me at the end of each row."
+      ],
+      "secret": "I still have the first seed I ever planted, in a tin in my coat. I have never been brave enough to put it in the soil, in case it grows and I have to say goodbye to it.",
+      "revealed": 2
+     },
+     "likes": [
+      "flower",
+      "pebble",
+      "fruit"
+     ],
+     "arrivedAt": 1794614400000,
+     "tagline": "I grow rain-proof tomatoes, mostly",
+     "house": {
+      "colors": {
+       "wall": "#e8d9b5",
+       "roof": "#7a5c46",
+       "trim": "#a8d5ba"
+      },
+      "sign": "Ferris Greens",
+      "props": [
+       "flower-pot",
+       "fruit-basket",
+       "lantern"
+      ]
+     },
+     "visits": 3,
+     "houseId": "h-gardener-hedgehog"
+    },
+    {
+     "id": "d-tinkerer-mouse",
+     "name": "Gilt Pennywhistle",
+     "species": "mouse",
+     "trade": "tinkerer",
+     "vehicle": "kite",
+     "personality": "I talk fast and then stop to listen for a ticking sound nobody else can hear. I always carry a spoon in my pocket and tap it on things to see if they are hollow.",
+     "voice": {
+      "pitch": 1.3,
+      "rate": 1.15,
+      "timbre": "bright"
+     },
+     "colors": {
+      "main": "#9c8a7a",
+      "accent": "#d9a441"
+     },
+     "story": {
+      "intro": "The wind pulled me all the way from the cloud fields. My kite snagged on a gutter and I only just got free.",
+      "beats": [
+       "I used to mend the clocks in a tall house by the sea. The old woman who owned them kept winding them late at night so they would not feel lonely.",
+       "One clock had a crack shaped like a river. I glued it with a paste made of boiled oats, and it kept perfect time for nine years.",
+       "I left that house in a hurry because a cat wanted my sock drawer. I still think about the spring I left behind in the drawer.",
+       "Last week I found a bell that rang on its own when the tide turned. I have been trying to work out how it knows.",
+       "I keep a small brass key behind my ear. It opens nothing I have found yet, but I cannot make myself throw it away."
+      ],
+      "secret": "The brass key came from the old woman's clock. I think it was a gift, and I have never told anyone that I miss her.",
+      "revealed": 1
+     },
+     "likes": [
+      "bell",
+      "pebble",
+      "map"
+     ],
+     "arrivedAt": 1794528000000,
+     "tagline": "I can fix that clock, probably",
+     "house": {
+      "colors": {
+       "wall": "#f2e3c6",
+       "roof": "#7a5c4a",
+       "trim": "#d9a441"
+      },
+      "sign": "Gilt's Workshop",
+      "props": [
+       "telescope",
+       "lantern",
+       "bell"
+      ]
+     },
+     "visits": 4,
+     "houseId": "h-tinkerer-mouse"
+    }
+   ],
+   "houses": [
+    {
+     "id": "h-tea-maker-raccoon",
+     "residentId": "d-tea-maker-raccoon",
+     "recipe": "tea-maker",
+     "pos": {
+      "x": -5.43,
+      "z": 0.86
+     },
+     "rotY": 1.728,
+     "colors": {
+      "wall": "#f3e3c3",
+      "roof": "#6b4f3a",
+      "trim": "#c8553d"
+     },
+     "props": [
+      "teapot",
+      "lantern",
+      "beehive"
+     ],
+     "sign": "Rue Tea Rooms",
+     "builtAt": 1794700800000
+    },
+    {
+     "id": "h-gardener-hedgehog",
+     "residentId": "d-gardener-hedgehog",
+     "recipe": "gardener",
+     "pos": {
+      "x": -3.46,
+      "z": -4.27
+     },
+     "rotY": 0.681,
+     "colors": {
+      "wall": "#e8d9b5",
+      "roof": "#7a5c46",
+      "trim": "#a8d5ba"
+     },
+     "props": [
+      "flower-pot",
+      "fruit-basket",
+      "lantern"
+     ],
+     "sign": "Ferris Greens",
+     "builtAt": 1794614400000
+    },
+    {
+     "id": "h-tinkerer-mouse",
+     "residentId": "d-tinkerer-mouse",
+     "recipe": "tinkerer",
+     "pos": {
+      "x": 1.97,
+      "z": -5.13
+     },
+     "rotY": -0.367,
+     "colors": {
+      "wall": "#f2e3c6",
+      "roof": "#7a5c4a",
+      "trim": "#d9a441"
+     },
+     "props": [
+      "telescope",
+      "lantern",
+      "bell"
+     ],
+     "sign": "Gilt's Workshop",
+     "builtAt": 1794528000000
+    }
+   ],
+   "paths": [
+    [
+     "h-tea-maker-raccoon",
+     "pier"
+    ],
+    [
+     "h-gardener-hedgehog",
+     "h-tea-maker-raccoon"
+    ],
+    [
+     "h-tinkerer-mouse",
+     "h-gardener-hedgehog"
+    ]
+   ],
+   "props": [
+    {
+     "id": "p-kettle-0",
+     "kind": "lantern",
+     "pos": {
+      "x": -3.13,
+      "z": -1.33
+     }
+    },
+    {
+     "id": "p-kettle-1",
+     "kind": "flower-patch",
+     "pos": {
+      "x": -1.27,
+      "z": -3.15
+     }
+    },
+    {
+     "id": "p-kettle-2",
+     "kind": "fruit-tree",
+     "pos": {
+      "x": 1.33,
+      "z": -3.13
+     }
+    },
+    {
+     "id": "p-kettle-3",
+     "kind": "lantern",
+     "pos": {
+      "x": 3.15,
+      "z": -1.27
+     }
+    }
+   ],
+   "createdAt": 1794787200000
+  }
+ ]
+}

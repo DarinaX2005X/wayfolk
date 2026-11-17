@@ -6,6 +6,9 @@
  *   usage: { include: true }   (the answer carries `usage.cost` in USD; the docs now say
  *                               usage is always included, the flag is harmless)
  *   models: [...]              the whole remaining list, so OpenRouter falls back itself
+ *   reasoning: { enabled: false }  no hidden thinking (it cost 1 000 tokens and 4 s a call)
+ *   max_tokens                 from the request's `maxTokens`
+ *   provider: { sort }         LLM_PROVIDER_SORT=latency asks for the fastest host of the model
  *
  * Every object of the schema gets `additionalProperties: false` (strict mode requires
  * it). Audio goes as an `input_audio` part with bare base64 and `format: 'wav'`.
@@ -50,7 +53,7 @@ function refusal(status: number, message: string, model: string, retryHeader: st
   return { ok: false, kind: 'error' };
 }
 
-export function createOpenRouter(options: { key: string; siteUrl?: string; fetch?: typeof fetch; url?: string }): ProviderAdapter {
+export function createOpenRouter(options: { key: string; siteUrl?: string; fetch?: typeof fetch; url?: string; sort?: 'latency' | 'throughput' | 'price' }): ProviderAdapter {
   const doFetch = options.fetch ?? fetch;
   return async ({ body, model, fallbacks, signal }) => {
     const request: Record<string, unknown> = {
@@ -62,11 +65,16 @@ export function createOpenRouter(options: { key: string; siteUrl?: string; fetch
       },
       usage: { include: true },
     };
+    if (body.maxTokens) request.max_tokens = body.maxTokens;
+    // Our jobs are short replies; models that think by default (Claude Haiku 5.5) would
+    // spend most of the budget and the time on hidden reasoning.
+    request.reasoning = { enabled: false };
+    if (options.sort) request.provider = { sort: options.sort };
     if (fallbacks.length > 0) request.models = [model, ...fallbacks];
     const headers: Record<string, string> = {
       authorization: `Bearer ${options.key}`,
       'content-type': 'application/json',
-      'X-Title': 'Groundwork',
+      'X-Title': 'Wayfolk',
     };
     if (options.siteUrl) headers['HTTP-Referer'] = options.siteUrl;
 

@@ -1,0 +1,614 @@
+{
+ "fisher": {
+  "greet": [
+   "Hello there. Mind the step, the top rung is loose.",
+   "Oh, a visitor. Pull up a stool, the tea is still warm.",
+   "Morning. I was just counting my hooks, lost one to a cloud again."
+  ],
+  "chat": [
+   "I got three silver fish today. One of them bit my sleeve and would not let go.",
+   "The clouds were thick this morning, so I fished mostly by the smell of rain.",
+   "I sang to the nets for an hour. The fish seem to like a bit of humming.",
+   "Slow day. I mended a torn net and ate half a loaf of bread while waiting."
+  ],
+  "stay": [
+   "Yes, that would be lovely. Put it on the north side, where the wind is soft.",
+   "Yes, please. A house by the lantern pole would be nice, close to the nets.",
+   "Yes, I would like that. Build it near the stilts, so I can hear the birds at dawn."
+  ],
+  "leave": [
+   "Safe travels. Keep your lantern lit so the clouds do not swallow you.",
+   "Off you go then. Come back when the fish are biting.",
+   "Goodbye, friend. Watch the drift on the way down, it pulls left."
+  ],
+  "giftLove": [
+   "Oh, {gift}. That goes right by the window of my {place}, where I will see it every morning.",
+   "{Gift}, for me? I have wanted one for ages. It is going on the shelf above my bed.",
+   "You remembered. I love {gift}, and now my {place} will have one too.",
+   "This is perfect. I will find it the best spot in my {place}, and then move it twice."
+  ],
+  "giftLike": [
+   "{Gift}. How kind of you. I will find it a cozy spot in my {place}.",
+   "Thank you, that is thoughtful. I do not know much about {gift}, which makes it interesting.",
+   "For me? You are very kind. I will keep it safe until I work out what it is for.",
+   "That is lovely of you. I will put it where the morning light can find it."
+  ],
+  "hint": [
+   "I have been hiding something under the loose floorboard. Do not ask yet.",
+   "Last week I found a shiny thing in a fish. I have not told anyone about it.",
+   "There is a reason I always stand with my back to the north window. It is a secret."
+  ],
+  "news": [
+   "{name} caught a cloud shark yesterday and tied it to the mast as a joke.",
+   "{name} has been humming the same song for three days and nobody can stop it.",
+   "{name} sold a basket of dried fish to a passing kite and got paid in buttons.",
+   "{name} fell into the fog at dusk but climbed back up with a fish on the hook."
+  ],
+  "tripStory": [
+   "I went to {island} last month. The bread there is salty and the wind talks back.",
+   "I visited {island} and got lost in a garden of kites. A small goat guided me home.",
+   "On {island} I was given a hat made of moss. It still smells of rain and tea."
+  ]
+ },
+ "stargazer": {
+  "greet": [
+   "Oh, hello there. Mind the loose step by the telescope, it squeaks.",
+   "Hello, neighbor. You caught me with my cocoa gone cold again.",
+   "Well hello. Pip just told me you were coming up the cloud path."
+  ],
+  "chat": [
+   "I counted six shooting stars tonight. One of them was a bit late to the party.",
+   "My lens cap fell in the teapot again. Tea tastes faintly of brass today.",
+   "I spent the afternoon trying to find the star that owes me a sock. No luck yet.",
+   "The sky looked thin this morning, so I polished the dome twice. It still looked thin."
+  ],
+  "stay": [
+   "Yes, I would like that very much. A house just past the big rock would catch the evening light.",
+   "Oh, I was hoping you would ask. Put it near the observatory so I can hear the clicks.",
+   "Yes. Somewhere with a window facing north, so the bright star can peek in while I sleep."
+  ],
+  "leave": [
+   "Safe drifting, friend. Keep an eye out for falling stars on your way home.",
+   "Goodbye for now. Come back when the clouds are purple, that is when I am at my best.",
+   "Off you go then. Mind the wind on the way down, it likes to hum at you."
+  ],
+  "giftLove": [
+   "Oh, {gift}. That goes right by the window of my {place}, where I will see it every morning.",
+   "{Gift}, for me? I have wanted one for ages. It is going on the shelf above my bed.",
+   "You remembered. I love {gift}, and now my {place} will have one too.",
+   "This is perfect. I will find it the best spot in my {place}, and then move it twice."
+  ],
+  "giftLike": [
+   "{Gift}. How kind of you. I will find it a cozy spot in my {place}.",
+   "Thank you, that is thoughtful. I do not know much about {gift}, which makes it interesting.",
+   "For me? You are very kind. I will keep it safe until I work out what it is for.",
+   "That is lovely of you. I will put it where the morning light can find it."
+  ],
+  "hint": [
+   "I have a little something tucked under my telescope that I have not shown anyone yet.",
+   "Pip keeps looking at me funny. I think he knows a thing or two I do not know he knows.",
+   "There is a letter I wrote a long time ago, and one day I may read it to you."
+  ],
+  "news": [
+   "{name} has been up late every night this week, sorting the star maps by color.",
+   "{name} brought a kettle to the observatory and now the whole dome smells like peppermint.",
+   "{name} was seen dancing with a kite on the east cloud, and nobody could say why.",
+   "{name} finally fixed the squeaky step by the telescope, though the squeak came back by Tuesday."
+  ],
+  "tripStory": [
+   "I drifted over to {island} last month. They have a bell that rings whenever someone tells a joke.",
+   "When I visited {island}, I slept in a hammock made from old sails and woke up with a feather in my ear.",
+   "I stopped by {island} and watched their sunrise. It was the color of toast, and it lasted all morning."
+  ]
+ },
+ "baker": {
+  "greet": [
+   "Morning. The bread is still warm, so you get the first heel.",
+   "Oh, hello. Mind the flour on the step, it gets everywhere.",
+   "You caught me mid knead. Come in before the cold gets the dough."
+  ],
+  "chat": [
+   "I burned the first tray today, so the crust is extra crunchy for the birds.",
+   "The oven clicks when it hits the right heat. I have been listening to it all morning.",
+   "Rye is slow this week. It sulks when the wind is damp.",
+   "I wrote a new loaf on the board today. It is called the lumpy one and it sells fine."
+  ],
+  "stay": [
+   "Yes, I would like that. Put the house by the oven side of the island so I can sleep near the warmth.",
+   "Yes. Somewhere with a flat patch for a proving shelf, and a window that faces the sunrise.",
+   "Yes, if the house has room for a long table. Bread needs a place to rest and so do I."
+  ],
+  "leave": [
+   "Take a heel of the rye with you. It keeps well in a paper bag.",
+   "Mind the wind on the way out. It likes to steal the crumbs.",
+   "Come back tomorrow. I will have the cinnamon ones out early."
+  ],
+  "giftLove": [
+   "Oh, {gift}. That goes right by the window of my {place}, where I will see it every morning.",
+   "{Gift}, for me? I have wanted one for ages. It is going on the shelf above my bed.",
+   "You remembered. I love {gift}, and now my {place} will have one too.",
+   "This is perfect. I will find it the best spot in my {place}, and then move it twice."
+  ],
+  "giftLike": [
+   "{Gift}. How kind of you. I will find it a cozy spot in my {place}.",
+   "Thank you, that is thoughtful. I do not know much about {gift}, which makes it interesting.",
+   "For me? You are very kind. I will keep it safe until I work out what it is for.",
+   "That is lovely of you. I will put it where the morning light can find it."
+  ],
+  "hint": [
+   "I have been baking something special behind the curtain for a few days now. It is not ready to be seen.",
+   "There is a small box under my bench that I keep checking on. You will find out one day.",
+   "I have a plan for the big festival loaf. It involves three secret ingredients and a lot of humming."
+  ],
+  "news": [
+   "{name} has started baking at night, and the birds keep finding crumbs on the roof in the morning.",
+   "{name} traded a whole sack of flour for a set of wind chimes and says the sound makes the dough rise better.",
+   "{name} burned the cinnamon rolls twice this week and still gave them all away to the neighbors.",
+   "{name} has been teaching the small birds how to shape rolls, and the results are mostly lopsided and very happy."
+  ],
+  "tripStory": [
+   "I went to {island} last week on a paper boat. They have a bakery there with a sourdough older than my oven.",
+   "When I visited {island}, the bakers gave me a jar of honey and a recipe written on a leaf. I still have both.",
+   "I got back from {island} with a sack of their wild oats and a story about a cloud whale that ate a whole tray of buns."
+  ]
+ },
+ "gardener": {
+  "greet": [
+   "Oh, hello there. Mind the watering can, it drips on the step.",
+   "Hello. Pip just sneezed into my seed tray, so forgive the mess.",
+   "Well hello. Come in out of the wind, the greenhouse keeps the warm in."
+  ],
+  "chat": [
+   "I spent the morning picking slugs off the beans. They are very polite about it, they only sulk.",
+   "The tomatoes are red today, all at once. I did not plan that, but I will take it.",
+   "I dropped a whole packet of pea seeds this morning. Now the bench has a green fuzz on it.",
+   "The rain came sideways, so I moved the seedlings under the table. They did not complain, which is more than I can say for the table."
+  ],
+  "stay": [
+   "Yes, I would like that. Put the house by the east wall, where the morning sun comes in.",
+   "Yes, please. A house near the rhubarb would suit me, and I can hear the wind in the leaves.",
+   "Yes. I would like a little house on the north side, away from the kettle, so I can sleep."
+  ],
+  "leave": [
+   "Off you go, then. Mind the gate, it sticks when it is damp.",
+   "Goodbye for now. Come back when the squash flowers open.",
+   "Take care on the way out. Pip will show you where the path gets slippery."
+  ],
+  "giftLove": [
+   "Oh, {gift}. That goes right by the window of my {place}, where I will see it every morning.",
+   "{Gift}, for me? I have wanted one for ages. It is going on the shelf above my bed.",
+   "You remembered. I love {gift}, and now my {place} will have one too.",
+   "This is perfect. I will find it the best spot in my {place}, and then move it twice."
+  ],
+  "giftLike": [
+   "{Gift}. How kind of you. I will find it a cozy spot in my {place}.",
+   "Thank you, that is thoughtful. I do not know much about {gift}, which makes it interesting.",
+   "For me? You are very kind. I will keep it safe until I work out what it is for.",
+   "That is lovely of you. I will put it where the morning light can find it."
+  ],
+  "hint": [
+   "I have been sneaking out before dawn lately. Do not ask me why yet.",
+   "There is a locked tin under my potting bench. Pip knows what is inside, and so do I.",
+   "Sometimes I hum a tune and then stop, very quickly. I am thinking about something I am not ready to share."
+  ],
+  "news": [
+   "{name} has planted a row of sunflowers that already lean toward the new neighbor.",
+   "{name} found a pumpkin hiding under a leaf and has been talking to it like an old friend.",
+   "{name} has been up before the sun every day this week, counting seedlings and muttering numbers.",
+   "{name} traded a jar of honey for a cracked flowerpot and says the deal was fair."
+  ],
+  "tripStory": [
+   "I went to {island} and a hedgehog there taught me to braid onions. My paws still smell of them.",
+   "I visited {island} and got caught in a rain shower. I sheltered under a huge leaf for an hour and made friends with a snail.",
+   "When I was on {island}, I bought a bag of strange seeds from a stall that sold only hats. I have not planted them yet, I am scared of them."
+  ]
+ },
+ "musician": {
+  "greet": [
+   "Hello there. Mind the wind chimes, they gossip when you walk under them.",
+   "Oh, a visitor. Come in out of the cloud spray before my kettle gets jealous.",
+   "Morning. I was just tuning a spoon against the chimes, so you caught me mid-note."
+  ],
+  "chat": [
+   "I played the big bell chime at dawn today. It woke a crab and he thanked me.",
+   "Today I hummed a tune on a wet bottle until the bread rose. It seemed to like it.",
+   "I drummed on an upturned pot all afternoon. My paws are sore but my heart is light.",
+   "This morning I tried a new song on the chimes. The wind kept stealing the high notes."
+  ],
+  "stay": [
+   "Yes, I would love that. Put the house near the edge where the chimes can hear the sea.",
+   "Yes please. Build it on the north side so the evening wind can pass through the chimes.",
+   "Yes. Let the house sit beside the old tree, so the chimes can catch the leaves falling."
+  ],
+  "leave": [
+   "Safe travels. Hum me a note from wherever you land.",
+   "Goodbye for now. Mind the chimes on your way out, they like a little tap.",
+   "Bye. Come back when the clouds go pink and we will play something together."
+  ],
+  "giftLove": [
+   "Oh, {gift}. That goes right by the window of my {place}, where I will see it every morning.",
+   "{Gift}, for me? I have wanted one for ages. It is going on the shelf above my bed.",
+   "You remembered. I love {gift}, and now my {place} will have one too.",
+   "This is perfect. I will find it the best spot in my {place}, and then move it twice."
+  ],
+  "giftLike": [
+   "{Gift}. How kind of you. I will find it a cozy spot in my {place}.",
+   "Thank you, that is thoughtful. I do not know much about {gift}, which makes it interesting.",
+   "For me? You are very kind. I will keep it safe until I work out what it is for.",
+   "That is lovely of you. I will put it where the morning light can find it."
+  ],
+  "hint": [
+   "You are not the only one with a quiet song tucked away. Mine is still waiting in a drawer.",
+   "I have a secret tune I have not played for anyone yet. It needs one more verse.",
+   "There is something I have been saving for the right evening. Ask me again when the stars come out."
+  ],
+  "news": [
+   "{name} has been practising a lullaby on the fence rails, and the sheep are sleeping better.",
+   "{name} traded a bell for a bowl of plum jam and now hums while stirring soup.",
+   "{name} tapped a rhythm on the lantern all night and the moths have started dancing to it.",
+   "{name} is building a new chime from old spoons and a dented kettle lid."
+  ],
+  "tripStory": [
+   "I went to {island} and a frog there taught me a clapping song. I still do it when the kettle boils.",
+   "My trip to {island} was loud. The fishermen there beat on barrels and I joined in until dusk.",
+   "On {island} I heard a bird that sings in three voices. I tried to copy it on my drum and failed happily."
+  ]
+ },
+ "tea-maker": {
+  "greet": [
+   "Oh, hello there. The kettle is warm, so you came at a good time.",
+   "Hello, neighbor. Mind the step, the top one is loose and squeaks.",
+   "Well look who drifted in. Pull up a cushion, the tea is almost ready."
+  ],
+  "chat": [
+   "I brewed nine pots today. The sour one with the orange peel sold out first.",
+   "The rain came in sideways, so I kept the stove going and my cup full.",
+   "Pip stole a sugar cube again. I let it go, it was a very small cube.",
+   "I tried a new leaf from the high slope. It tastes like wet stone and honey."
+  ],
+  "stay": [
+   "Yes, I would love that. Put the house on the flat rock by the wind chime.",
+   "Yes, please. The little nook by the kettle shelf would hold a bed and a teapot.",
+   "Yes, I think so. Somewhere facing the sunset, so I can watch the cups cool."
+  ],
+  "leave": [
+   "Take a warm bun for the trip. The bread is from this morning, so it is still soft.",
+   "Safe travels, neighbor. Wave to the clouds for me when you pass them.",
+   "Off you go then. Come back soon, the tea will keep, probably."
+  ],
+  "giftLove": [
+   "Oh, {gift}. That goes right by the window of my {place}, where I will see it every morning.",
+   "{Gift}, for me? I have wanted one for ages. It is going on the shelf above my bed.",
+   "You remembered. I love {gift}, and now my {place} will have one too.",
+   "This is perfect. I will find it the best spot in my {place}, and then move it twice."
+  ],
+  "giftLike": [
+   "{Gift}. How kind of you. I will find it a cozy spot in my {place}.",
+   "Thank you, that is thoughtful. I do not know much about {gift}, which makes it interesting.",
+   "For me? You are very kind. I will keep it safe until I work out what it is for.",
+   "That is lovely of you. I will put it where the morning light can find it."
+  ],
+  "hint": [
+   "There is one tin on my top shelf I never open when anyone is watching. Maybe one day.",
+   "Some nights I brew a pot that is not for drinking. Ask me again under the stars.",
+   "I have a reason for always setting out one more cup than I need. Not today, though."
+  ],
+  "news": [
+   "{name} has been teaching the wind to whistle in tune, and it is getting better every day.",
+   "{name} painted the front door blue, then yellow, then blue again, and nobody asked why.",
+   "{name} waved at a passing whale this morning, and the whale waved back with its tail.",
+   "{name} is saving up pebbles for a little bridge, though no one knows where it will go."
+  ],
+  "tripStory": [
+   "I went to {island} last week. They serve tea in shells there, and the shells are salty.",
+   "I sailed over to {island} on a paper boat. It leaked twice, but the cake was worth it.",
+   "When I visited {island}, the rain fell upward for an hour. I brought home a jar of it."
+  ]
+ },
+ "tinkerer": {
+  "greet": [
+   "Oh, hello there. Mind the spring on the floor, it bounces.",
+   "Hello. Pardon the grease on my hands, it comes off eventually.",
+   "Well hello. Shut the door gently, the draft sets my little bells off."
+  ],
+  "chat": [
+   "I spent the morning on a clock that ticks backwards. It insists it is right.",
+   "Today I fixed a music box that only played the middle notes. Now it plays all of them, badly.",
+   "I got a stubborn hinge to swing without squeaking. It squeaked anyway, just once, out of spite.",
+   "My kettle whistle was jammed all week. I cleaned it out and now it sings a little too loudly."
+  ],
+  "stay": [
+   "Yes, I would like that very much. Put the house by the workshop, so I can hear the wind through the vents.",
+   "Yes please. Somewhere near the rain barrel would suit me, I like the drip for tuning my ears.",
+   "Oh yes. Put it on the sunny side, I need a warm bench and a long shelf for my tools."
+  ],
+  "leave": [
+   "Off you go then. Mind the loose gear by the door.",
+   "Safe travels. Come back when your umbrella needs a new rib.",
+   "Goodbye for now. Keep your lantern wick trimmed and your wings tidy."
+  ],
+  "giftLove": [
+   "Oh, {gift}. That goes right by the window of my {place}, where I will see it every morning.",
+   "{Gift}, for me? I have wanted one for ages. It is going on the shelf above my bed.",
+   "You remembered. I love {gift}, and now my {place} will have one too.",
+   "This is perfect. I will find it the best spot in my {place}, and then move it twice."
+  ],
+  "giftLike": [
+   "{Gift}. How kind of you. I will find it a cozy spot in my {place}.",
+   "Thank you, that is thoughtful. I do not know much about {gift}, which makes it interesting.",
+   "For me? You are very kind. I will keep it safe until I work out what it is for.",
+   "That is lovely of you. I will put it where the morning light can find it."
+  ],
+  "hint": [
+   "There is a little box in my workshop that ticks, and it is not a clock. I will show you sometime.",
+   "I am building something I have not told anyone about. It needs one more spring.",
+   "Ask me about the key on my workbench another day. It is a long story."
+  ],
+  "news": [
+   "Word on the wind is that {name} fixed a broken kettle for a grumpy heron and was thanked with a pie.",
+   "I heard {name} rewound an old cuckoo clock that had been silent for years, and now it sings at dusk.",
+   "Pip says {name} has been stitching a new sail for a paper boat and is sure it will not leak this time.",
+   "Someone told me {name} trades bolts for bread with the bakery crowd, and the bread is always warm."
+  ],
+  "tripStory": [
+   "I went to {island} on a borrowed kite. The wind there tangled my spare wire into a bird nest.",
+   "When I visited {island}, I helped a clockmaker there mend a bell. It rang the wrong hour all afternoon.",
+   "Back from {island}, I brought a pocketful of gears. The locals said they fall out of the sky sometimes."
+  ]
+ },
+ "storyteller": {
+  "greet": [
+   "Oh, hello there. Mind the loose step, the third one squeaks like a hinge.",
+   "Well met. I have a pencil behind my ear and a crumb on my chin, so forgive me.",
+   "Hello, friend. Pull up the stool with the three legs. The fourth leg is in the stove."
+  ],
+  "chat": [
+   "I spent the morning listening to a crow describe a sneeze. It was very long and very honest.",
+   "Today I wrote down a riddle about rain from a teapot. I am still not sure it was a riddle.",
+   "A moth told me its grandmother once flew into a lantern. I gave her a page for it, and she was pleased.",
+   "The wind dropped three old letters on my doorstep, all sealed with bread crust. I am reading them slowly."
+  ],
+  "stay": [
+   "Yes, I would like that very much. Put the house by the kettle tree, where the afternoon sun lands first.",
+   "Oh, yes. Let them build it on the bend where the grass is soft, so my books can dry in the morning light.",
+   "Yes, please. A little house next to Pip's perch would suit me. I can hear the birds gossip from there."
+  ],
+  "leave": [
+   "Off you go, then. Mind the clouds, they like to nudge at hats.",
+   "Goodbye for now. Come back when the bread is warm and I have a new tale for you.",
+   "Safe travels, friend. Leave the stool where it is. Someone always needs a seat."
+  ],
+  "giftLove": [
+   "Oh, {gift}. That goes right by the window of my {place}, where I will see it every morning.",
+   "{Gift}, for me? I have wanted one for ages. It is going on the shelf above my bed.",
+   "You remembered. I love {gift}, and now my {place} will have one too.",
+   "This is perfect. I will find it the best spot in my {place}, and then move it twice."
+  ],
+  "giftLike": [
+   "{Gift}. How kind of you. I will find it a cozy spot in my {place}.",
+   "Thank you, that is thoughtful. I do not know much about {gift}, which makes it interesting.",
+   "For me? You are very kind. I will keep it safe until I work out what it is for.",
+   "That is lovely of you. I will put it where the morning light can find it."
+  ],
+  "hint": [
+   "I have a story I have never told anyone. It is tucked behind the third shelf, under a pressed flower.",
+   "There is something I am saving for the right night. I will tell you when the stars are out and the kettle is singing.",
+   "I have kept one tale in a jar for years. The lid is still sealed, but I think you might like it someday."
+  ],
+  "news": [
+   "{name} read a story to the clouds this morning, and one of them stayed to hear the end.",
+   "{name} came by with a basket of pears and a sad story about a lost hat, which they later found in a teapot.",
+   "{name} wrote a letter to the wind and got a reply the next day, folded into a paper bird.",
+   "{name} is learning to whistle through a bread knife and has only managed to frighten the pigeons."
+  ],
+  "tripStory": [
+   "I went to {island} last week on a paper boat. The people there keep their books inside their hats, and I came home with a dozen new tales.",
+   "I visited {island} and got caught in a rain shower that tasted of lemon. I wrote it all down before it dried.",
+   "When I was on {island}, a kind old lantern taught me a song about moths. I have been singing it in the bath ever since."
+  ]
+ },
+ "cartographer": {
+  "greet": [
+   "Oh, hello there. Mind the ink on the third step, it is still wet.",
+   "Hello, neighbor. You caught me with a compass in my teeth.",
+   "Well, look who floated up. I was just rolling up a map of a cloud."
+  ],
+  "chat": [
+   "I measured the wind today. It says the north is quieter than usual.",
+   "I drew three new coastlines before lunch. One of them is a cat.",
+   "My pen ran dry twice, so I wrote the rest with a tea leaf.",
+   "I spent the morning checking which islands have moved since yesterday."
+  ],
+  "stay": [
+   "Yes, I would like that very much. The tower has a spare room with a view of the sea.",
+   "Yes, please. Put the house on the flat rock by the kettle tree, where the sun lands first.",
+   "Yes, I think so. Let the birds choose a corner that smells of toast and paper."
+  ],
+  "leave": [
+   "Safe travels, neighbor. Keep your compass pointed toward home.",
+   "Goodbye for now. Come back before the next storm draws new edges.",
+   "Off you go, then. I will keep your spot marked on the map."
+  ],
+  "giftLove": [
+   "Oh, {gift}. That goes right by the window of my {place}, where I will see it every morning.",
+   "{Gift}, for me? I have wanted one for ages. It is going on the shelf above my bed.",
+   "You remembered. I love {gift}, and now my {place} will have one too.",
+   "This is perfect. I will find it the best spot in my {place}, and then move it twice."
+  ],
+  "giftLike": [
+   "{Gift}. How kind of you. I will find it a cozy spot in my {place}.",
+   "Thank you, that is thoughtful. I do not know much about {gift}, which makes it interesting.",
+   "For me? You are very kind. I will keep it safe until I work out what it is for.",
+   "That is lovely of you. I will put it where the morning light can find it."
+  ],
+  "hint": [
+   "You know, I once drew a map that showed something I have never told anyone. Maybe one day.",
+   "There is a small box under my desk with a label I keep covering up. Another time, perhaps.",
+   "I have a fondness for a certain island that I have not marked on any chart. I will show you later."
+  ],
+  "news": [
+   "{name} has been sketching the coast every morning this week, and the birds say the lines are getting neater.",
+   "Word on the wind is that {name} finally fixed the squeaky tower door, though the squeak was a favorite of the owls.",
+   "{name} rolled out a map of the whole sky last night, and it has a new star in the corner that nobody noticed before.",
+   "The birds report that {name} traded a dented compass for a jar of honey, and was very pleased with the deal."
+  ],
+  "tripStory": [
+   "I drifted to {island} on a paper boat, and the captain there asked me to draw his house in the clouds.",
+   "On {island} I learned that their maps are all drawn in wool, with the rivers stitched in blue thread.",
+   "I flew to {island} by kite and came back with a sketch of their lighthouse, which blinks in the shape of a fish."
+  ]
+ },
+ "painter": {
+  "greet": [
+   "Oh, hello there. Mind the wet paint by the door.",
+   "Hello. You caught me mid-stroke, so forgive my blue thumb.",
+   "Well met. I was just deciding whether the sky is more lavender or grey."
+  ],
+  "chat": [
+   "I painted the same cloud four times today. It keeps changing its mind.",
+   "My brushes are soaking in a jam jar. One of them has been crying all morning.",
+   "I tried painting the wind today. It kept blowing my canvas off the easel.",
+   "I ran out of yellow after lunch. Now every sunset is a little bit green."
+  ],
+  "stay": [
+   "Yes, I would love that. Put the studio on the north side, where the light stays soft.",
+   "Yes please. The house could sit beside the old washing line so I can dry my canvases.",
+   "Yes. Let the birds build it near the lighthouse rock so I can watch the stars come out."
+  ],
+  "leave": [
+   "Off you go then. Mind the drips on the path.",
+   "Goodbye for now. Come back when the paint has dried.",
+   "Safe travels. Tell the clouds I said hello."
+  ],
+  "giftLove": [
+   "Oh, {gift}. That goes right by the window of my {place}, where I will see it every morning.",
+   "{Gift}, for me? I have wanted one for ages. It is going on the shelf above my bed.",
+   "You remembered. I love {gift}, and now my {place} will have one too.",
+   "This is perfect. I will find it the best spot in my {place}, and then move it twice."
+  ],
+  "giftLike": [
+   "{Gift}. How kind of you. I will find it a cozy spot in my {place}.",
+   "Thank you, that is thoughtful. I do not know much about {gift}, which makes it interesting.",
+   "For me? You are very kind. I will keep it safe until I work out what it is for.",
+   "That is lovely of you. I will put it where the morning light can find it."
+  ],
+  "hint": [
+   "I have been sneaking out at dawn with a sketchbook. I am not ready to show anyone yet.",
+   "There is a painting under the cloth in the corner. It is not finished, and it is not for you to see.",
+   "I have been writing letters to a bird across the sea. I will tell you one day."
+  ],
+  "news": [
+   "{name} has painted the same cloud for three days and says it is nearly right.",
+   "{name} traded a small landscape for a bag of seeds and a hot water bottle.",
+   "{name} spilled a whole pot of green paint on the path and now the path is lovely.",
+   "{name} has started giving paintings away to the birds, who hang them in their nests."
+  ],
+  "tripStory": [
+   "I went to {island} and sat on a rock painting the waves. The waves kept interrupting.",
+   "On {island} I bought a jar of colour made from crushed shells. I have been too afraid to open it.",
+   "I stayed three nights on {island}. Their kettle whistles in a song, and I could not stop humming it."
+  ]
+ },
+ "beekeeper": {
+  "greet": [
+   "Oh, hello there. Mind the hive by the gate, it hums when it is in a mood.",
+   "Hello, friend. Your hat smells like clover, so you must have come up through the flowers.",
+   "Welcome in. Pull up a stump, the bees have been waiting all morning to meet you."
+  ],
+  "chat": [
+   "I spent the morning saving a swarm from the washing line. They were very polite about it.",
+   "Today I scraped wax off my spoon for an hour. Good wax, too, the color of old butter.",
+   "The bees were grumpy at breakfast, so I hummed to them and they settled down. Works every time.",
+   "I counted the jars on the shelf twice today. Still only nine, which is nine more than I expected."
+  ],
+  "stay": [
+   "Yes, I would like that very much. Put the house on the sunny side, where the hives can hear the kettle.",
+   "I would love to stay. Let us build it by the old apple tree, so the bees have something to visit on the way out.",
+   "Yes, count me in. A spot near the rain barrel would suit me, and the hives can sit in a row beside it."
+  ],
+  "leave": [
+   "Safe travels. Keep your sleeves tucked in, the clover bees are bold this time of year.",
+   "Goodbye for now. Come back when the honey is runny, I will save you a jar with a lid that sticks.",
+   "Off you go, friend. Wave to the wind on your way, it likes to be waved at."
+  ],
+  "giftLove": [
+   "Oh, {gift}. That goes right by the window of my {place}, where I will see it every morning.",
+   "{Gift}, for me? I have wanted one for ages. It is going on the shelf above my bed.",
+   "You remembered. I love {gift}, and now my {place} will have one too.",
+   "This is perfect. I will find it the best spot in my {place}, and then move it twice."
+  ],
+  "giftLike": [
+   "{Gift}. How kind of you. I will find it a cozy spot in my {place}.",
+   "Thank you, that is thoughtful. I do not know much about {gift}, which makes it interesting.",
+   "For me? You are very kind. I will keep it safe until I work out what it is for.",
+   "That is lovely of you. I will put it where the morning light can find it."
+  ],
+  "hint": [
+   "The bees know something about me that nobody else does. They are very good at keeping quiet.",
+   "There is one hive I never open in daylight. Come back on a starry night and ask.",
+   "I hum a tune to the bees that I never hum for anyone else. Maybe one day."
+  ],
+  "news": [
+   "{name} has taken up whistling to the bees, and they have started whistling back. Nobody is sure who is winning.",
+   "{name} bought a new kettle with a dent in the side, and says the dent makes the tea taste better.",
+   "{name} gave every bee a name this week and is now on the second hundred.",
+   "{name} found a bee asleep in a teacup and carried it home very carefully. The bee has not complained yet."
+  ],
+  "tripStory": [
+   "I went to {island} last week on a paper boat. The bees there are shy, but the honey is very loud.",
+   "I came back from {island} with a jar of crumbly honey and a story about a fox who bakes bread. I believe every word.",
+   "On {island} I got caught in a cloud of pollen and sneezed for a whole afternoon. The locals were very kind about it."
+  ]
+ },
+ "lighthouse-keeper": {
+  "greet": [
+   "Hello there. Mind the step, the lamp stairs are steep and the third one wobbles.",
+   "Oh, a visitor. Come in out of the wind before it takes your hat.",
+   "Good timing. I just polished the glass and I am not done bragging about it."
+  ],
+  "chat": [
+   "I trimmed the wick twice today. The first time was too short and the flame sulked.",
+   "I counted the ships this morning. There were none, but I still wrote it down in the book.",
+   "I kept the light on through the whole cloud fog. Pip sat on my shoulder and sang off key.",
+   "I ate three biscuits while I watched the sea. A lighthouse keeper needs good crumbs for thinking."
+  ],
+  "stay": [
+   "Yes, I would like that very much. Put the house on the flat rock by the pier, where the wind is kind.",
+   "Yes, a second light would be nice on the east cliff. Two lights make the clouds feel less lonely.",
+   "Yes, and build it near the kettle shelf. I can hear the water boil from my chair."
+  ],
+  "leave": [
+   "Safe travels. Keep the lantern lit and the boat pointed toward my glow.",
+   "Goodbye for now. Come back when the fog gets thick and tell me the news.",
+   "Off you go then. Mind the wave that always splashes at the bottom step."
+  ],
+  "giftLove": [
+   "Oh, {gift}. That goes right by the window of my {place}, where I will see it every morning.",
+   "{Gift}, for me? I have wanted one for ages. It is going on the shelf above my bed.",
+   "You remembered. I love {gift}, and now my {place} will have one too.",
+   "This is perfect. I will find it the best spot in my {place}, and then move it twice."
+  ],
+  "giftLike": [
+   "{Gift}. How kind of you. I will find it a cozy spot in my {place}.",
+   "Thank you, that is thoughtful. I do not know much about {gift}, which makes it interesting.",
+   "For me? You are very kind. I will keep it safe until I work out what it is for.",
+   "That is lovely of you. I will put it where the morning light can find it."
+  ],
+  "hint": [
+   "There is a page in my logbook I keep folded over. I am not ready to unfold it yet.",
+   "Some nights I leave the lamp on for a reason that is not ships. Ask me when it is dark.",
+   "I keep something in my pocket for a special day. It has not come yet."
+  ],
+  "news": [
+   "{name} polished the lamp until it squeaked, then apologized to it.",
+   "{name} kept the light on all night for a single passing kite. The kite waved its tail.",
+   "{name} has been writing down every cloud that drifts by. The book is getting very fluffy.",
+   "{name} rang the little bell at dusk, and three birds came to see what the fuss was."
+  ],
+  "tripStory": [
+   "I went to {island} on a cloud whale. The whale hummed the whole way and I hummed back, so we were quite the choir.",
+   "I visited {island} and found a lighthouse there with no lamp. I lit a candle in its window so it would not feel left out.",
+   "I came back from {island} with a bag of sea salt and a story about a seagull who kept my hat. The gull is still keeping it."
+  ]
+ }
+}

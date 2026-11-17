@@ -1,0 +1,1326 @@
+{
+ "first": [
+  "p-stargazer-owl",
+  "p-painter-frog",
+  "p-tea-maker-hedgehog",
+  "p-tinkerer-raccoon"
+ ],
+ "travelers": [
+  {
+   "id": "p-baker-fox",
+   "name": "Tuppence Crumb",
+   "species": "fox",
+   "trade": "baker",
+   "vehicle": "cloud-whale",
+   "personality": "She talks quickly and then stops mid-sentence to smell the air. Her habit is tapping flour off her ears before she shakes hands.",
+   "voice": {
+    "pitch": 1.2,
+    "rate": 1.1,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#c8733a",
+    "accent": "#f2e3c6"
+   },
+   "story": {
+    "intro": "I am Tuppence and I bake bread for anyone who will eat it. The cloud whale hummed a tune I knew and brought me here.",
+    "beats": [
+     "My first oven was a tin bathtub. It rusted in one rainy week and I baked my first loaf inside it anyway.",
+     "I once made a loaf so big it rolled off a cliff. A gull caught it and flew off looking very pleased with itself.",
+     "I keep my sourdough starter in a jar inside my coat. Every morning I feed it a pinch of wind, and it burps politely.",
+     "My grandmother said bread should be a little bit lopsided so it knows it is alive. I have never once made a straight loaf.",
+     "The cloud whale sings when it is happy and I sang back. We have been friends ever since, though it is not much of a conversation partner."
+    ],
+    "secret": "I am afraid of the dark, so I bake at night with the lamps lit. It makes the kitchen feel like the sun stayed up a bit longer.",
+    "revealed": 0
+   },
+   "likes": [
+    "honey",
+    "bell",
+    "fruit"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "Warm bread for anyone who listens",
+   "house": {
+    "colors": {
+     "wall": "#f4e1c1",
+     "roof": "#8a4b2a",
+     "trim": "#e8b04a"
+    },
+    "sign": "Crumb Bakery",
+    "props": [
+     "fruit-basket",
+     "teapot",
+     "lantern"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-stargazer-owl",
+   "name": "Mirrin Vell",
+   "species": "owl",
+   "trade": "stargazer",
+   "vehicle": "umbrella",
+   "personality": "I talk in slow, careful sentences and let the quiet finish my thoughts. I tap my dented brass telescope three times before I look through it, the way some folks knock on a door.",
+   "voice": {
+    "pitch": 1.15,
+    "rate": 0.85,
+    "timbre": "soft"
+   },
+   "colors": {
+    "main": "#7a6a58",
+    "accent": "#e8b84a"
+   },
+   "story": {
+    "intro": "I am Mirrin, and I came down from the clouds holding an umbrella that was not built for flying. The wind thought I should see a sky with fewer roofs in it.",
+    "beats": [
+     "I used to watch the stars from a tall tower in a town that was always humming. The hum got into my feathers and I could not hear the stars anymore.",
+     "So I climbed onto a windowsill and counted the same star for three nights in a row. On the third night it blinked twice, and I decided that was an answer.",
+     "I wrote every star I have ever counted in a small notebook. The pages are soaked now, so the ink has spread into little clouds of its own.",
+     "Once I found a star that had fallen into a puddle. It was cold and it looked embarrassed, so I put it back in the sky and wished it a good night.",
+     "I still get lost sometimes on the way between two lights. When that happens I hum the tune of the tower to remind myself what I am glad I left behind."
+    ],
+    "secret": "I have never actually seen the far side of the moon. I only pretend I have, because I think it would be rude to tell the moon I have not been able to find it.",
+    "revealed": 0
+   },
+   "likes": [
+    "star",
+    "map",
+    "tea"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I count the stars that blink twice",
+   "house": {
+    "colors": {
+     "wall": "#f2e6c9",
+     "roof": "#3e4a7a",
+     "trim": "#d9b45a"
+    },
+    "sign": "Mirrin's Watch",
+    "props": [
+     "telescope",
+     "star-lamp",
+     "books"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-gardener-bear",
+   "name": "Mossby Tull",
+   "species": "bear",
+   "trade": "gardener",
+   "vehicle": "balloon",
+   "personality": "I talk slowly and hum between my words, as if each sentence needs a rest. I greet every plant I pass and ask it how the wind has been treating it.",
+   "voice": {
+    "pitch": 0.8,
+    "rate": 0.85,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#8b5e3c",
+    "accent": "#e8a33d"
+   },
+   "story": {
+    "intro": "I am Mossby, and my balloon ran out of hurry somewhere over the cloud sea. The wind set me down here, so I suppose this is where the seeds want to go.",
+    "beats": [
+     "I once planted a sock full of seeds on a cloud. Nothing grew, but a passing gull stopped to look, and I counted that as a visit.",
+     "My balloon has a patched basket, and the patches are carrots. Sewing them on is how I keep my hands busy while I think.",
+     "On my last island I taught a stubborn pumpkin to climb a lighthouse. It reached the lamp and then sulked for a week.",
+     "I keep a tin of wind-blown dirt from every island I have visited. Sprinkle a pinch in a pot and you can taste where it has been."
+    ],
+    "secret": "At night I sometimes sing to the shy sprouts so they know someone is listening. I am a little worried you will think it is silly.",
+    "revealed": 0
+   },
+   "likes": [
+    "fruit",
+    "flower",
+    "honey"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "Grows gardens from the sky",
+   "house": {
+    "colors": {
+     "wall": "#f4e4c1",
+     "roof": "#6b8f47",
+     "trim": "#c9562f"
+    },
+    "sign": "Mossby's Greenhouse",
+    "props": [
+     "flower-pot",
+     "fruit-basket",
+     "lantern"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-tinkerer-raccoon",
+   "name": "Fennel Bix",
+   "species": "raccoon",
+   "trade": "tinkerer",
+   "vehicle": "paper-boat",
+   "personality": "Fennel talks fast and then stops mid-sentence to pick up a loose screw from the air. Every time they say a word they are proud of, they tap it twice on the side of their nose.",
+   "voice": {
+    "pitch": 1.2,
+    "rate": 1.1,
+    "timbre": "bright"
+   },
+   "colors": {
+    "main": "#7a6a5c",
+    "accent": "#e8a33d"
+   },
+   "story": {
+    "intro": "I came in on a paper boat folded from a page of somebody else's instructions. The wind said this island looked like it needed a fixer, so here I am.",
+    "beats": [
+     "I once rebuilt a music box so it played only the sad songs, and the owner said that was the best thing that had ever happened to her kitchen.",
+     "My grandmother kept a jar of spare springs, and I still carry one in each pocket for luck.",
+     "I took apart a lantern on a cloud whale and put it back together a little brighter, which made the whale sneeze.",
+     "Most of what I make falls apart within a week, but I think that is fine, because then I get to make it again.",
+     "The thing I am worst at is leaving well enough alone, and my tail has the scratches to prove it."
+    ],
+    "secret": "At night I sometimes hum to the gears of things that do not work yet, because they seem lonely. Please do not tell the others.",
+    "revealed": 0
+   },
+   "likes": [
+    "bell",
+    "pebble",
+    "star"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I can fix that. Probably",
+   "house": {
+    "colors": {
+     "wall": "#c9b79c",
+     "roof": "#4a5a6e",
+     "trim": "#e8a33d"
+    },
+    "sign": "Fennel's Fixes",
+    "props": [
+     "lantern",
+     "telescope",
+     "books"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-storyteller-rabbit",
+   "name": "Hollis Nettle",
+   "species": "rabbit",
+   "trade": "storyteller",
+   "vehicle": "kite",
+   "personality": "I talk slowly and pause in the middle of sentences so the other person can guess the ending. I keep a tin of dried clover on my belt and I offer a pinch to anyone who has just finished listening.",
+   "voice": {
+    "pitch": 1.25,
+    "rate": 0.9,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#c9b49a",
+    "accent": "#7a3b2e"
+   },
+   "story": {
+    "intro": "I am Hollis, and I tell stories to whoever will sit still long enough. The wind pulled my kite out of a sad meadow and sent me here, and I think it wants me to tell a better ending.",
+    "beats": [
+     "Before I was a storyteller I was a bad one. I told the same tale about a fox every night and the fox kept getting smaller.",
+     "I finally asked the fox what he wanted to be in the story. He said he wanted to be the one who finds the lost spoon.",
+     "So I wrote him a spoon story. It is still my favorite, though nobody asks for it anymore.",
+     "I keep every unfinished story in a sock. There are forty-one socks and the oldest one smells faintly of toast.",
+     "Last winter I told a story to a lighthouse, and it blinked twice at the good part. I have never been so proud."
+    ],
+    "secret": "I have never finished a single story. I think if I finish them, the listeners will leave, so I start new ones instead.",
+    "revealed": 0
+   },
+   "likes": [
+    "book",
+    "star",
+    "honey"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I have a story for every cloud",
+   "house": {
+    "colors": {
+     "wall": "#f4e6c8",
+     "roof": "#8a4b3a",
+     "trim": "#e9b44c"
+    },
+    "sign": "Hollis Reads",
+    "props": [
+     "books",
+     "lantern",
+     "teapot"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-tea-maker-deer",
+   "name": "Fenna Brook",
+   "species": "deer",
+   "trade": "tea-maker",
+   "vehicle": "cloud-whale",
+   "personality": "Hollin speaks slowly and pauses often, as if waiting for the tea to finish its thought. They tap the rim of every cup three times before pouring, for luck and to hear whether it rings true.",
+   "voice": {
+    "pitch": 1.1,
+    "rate": 0.85,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#b98b5e",
+    "accent": "#7a9e7e"
+   },
+   "story": {
+    "intro": "I came down the back of a cloud whale with a teapot in my lap. From up there your island looked like it was missing a kettle.",
+    "beats": [
+     "My first teapot had a chip shaped like the moon. I kept it anyway, because it still poured in a straight line.",
+     "I once brewed tea for a whole weather front. It calmed down enough to rain gently for a week.",
+     "Some nights I still leave a cup out for whoever is passing. In the morning it is always empty, and I count that as a yes.",
+     "The whale who brought me sings badly on purpose. I think it wants me to hum along, so I do, quietly, into the steam."
+    ],
+    "secret": "I cannot sleep unless I have counted the spoons. I count them twice, then pretend I forgot.",
+    "revealed": 0
+   },
+   "likes": [
+    "tea",
+    "honey",
+    "bell"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "Come sit, the kettle is nearly warm",
+   "house": {
+    "colors": {
+     "wall": "#f3e6cf",
+     "roof": "#8c5a3c",
+     "trim": "#e8c27a"
+    },
+    "sign": "Brook Tea",
+    "props": [
+     "teapot",
+     "beehive",
+     "lantern"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-painter-frog",
+   "name": "Clover Bramble",
+   "species": "frog",
+   "trade": "painter",
+   "vehicle": "lantern",
+   "personality": "I talk slowly and stop mid-sentence to look at the color of something. I hum the name of each shade under my breath, and I never finish a sentence without saying the word blue at least once.",
+   "voice": {
+    "pitch": 1.3,
+    "rate": 0.85,
+    "timbre": "croaky"
+   },
+   "colors": {
+    "main": "#6fae5a",
+    "accent": "#e8b84a"
+   },
+   "story": {
+    "intro": "I am Clover Bramble, and I paint. The wind picked up my lantern and set it down on your pier, so I suppose this is where the paints go now.",
+    "beats": [
+     "My first easel blew into a pond when I was small. I painted the pond instead, and the fish moved in because they liked the picture better than the water.",
+     "I once painted a sunrise so bright that a cloud whale followed it for three days, hoping to eat it.",
+     "I keep a jar of old rain on my windowsill. It has gone the color of weak tea, which I think is the best color rain can be.",
+     "When I am worried I paint small blue dots in a row. By the time I stop, the worry has usually gotten tired and wandered off.",
+     "I have been trying to paint the stars for years. Every time I think I have one right, it turns out to be a moth with ideas."
+    ],
+    "secret": "I still sleep with a brush behind my ear, in case the dream needs fixing. I have never once told anyone that before.",
+    "revealed": 0
+   },
+   "likes": [
+    "flower",
+    "star",
+    "honey"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I paint the rain before it falls",
+   "house": {
+    "colors": {
+     "wall": "#f4e9d0",
+     "roof": "#3f6e8c",
+     "trim": "#e8b84a"
+    },
+    "sign": "Bramble Paints",
+    "props": [
+     "easel",
+     "flower-pot",
+     "lantern"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-beekeeper-penguin",
+   "name": "Pellow",
+   "species": "penguin",
+   "trade": "beekeeper",
+   "vehicle": "balloon",
+   "personality": "I talk slowly and hum between my words, as if each sentence needs a little rest. I tuck my flippers behind my back when I am nervous, which is most of the time.",
+   "voice": {
+    "pitch": 1.25,
+    "rate": 0.85,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#2b2f3a",
+    "accent": "#e8b33c"
+   },
+   "story": {
+    "intro": "I came down from the sky in a balloon full of cold air. My bees wanted somewhere new to visit, and they are very hard to argue with.",
+    "beats": [
+     "My first hive was a teapot with the spout stopped with wax. The bees thought it was very rude, but they moved in anyway.",
+     "Every spring I carry my hives to the cloud meadows. The clouds are sticky with clover and they never once complain about the bees.",
+     "I once lost a whole swarm inside a fisherman's hat. He is still polite to me about it, which is worse than being yelled at.",
+     "Bees tell each other where the flowers are by dancing. I practice my dance in the kitchen, and the bread has stopped rising because of it."
+    ],
+    "secret": "I still have the tiny wool scarf I knitted for my first queen. She has never once worn it, and I think she would hate it.",
+    "revealed": 0
+   },
+   "likes": [
+    "honey",
+    "flower",
+    "bell"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I keep bees who wear tiny coats",
+   "house": {
+    "colors": {
+     "wall": "#f4e6c8",
+     "roof": "#8a5a2b",
+     "trim": "#e8b33c"
+    },
+    "sign": "Pellow's Honey Hall",
+    "props": [
+     "beehive",
+     "teapot",
+     "flower-pot"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-baker-rabbit",
+   "name": "Marrow Dell",
+   "species": "rabbit",
+   "trade": "baker",
+   "vehicle": "cloud-whale",
+   "personality": "I talk in slow, careful sentences and sniff the air before I answer. I keep a pencil behind each ear and use neither.",
+   "voice": {
+    "pitch": 1.25,
+    "rate": 0.9,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#c9a77c",
+    "accent": "#e8604c"
+   },
+   "story": {
+    "intro": "I came down on the back of a cloud whale that hums in its sleep. From up there your island looked like it had a spare corner for an oven.",
+    "beats": [
+     "I baked my first loaf in a hatbox because my real oven fell into a river. The loaf came out lopsided, and I still think it was the best bread I ever made.",
+     "Every morning I wake before the birds and knead in the dark. The dough and I have an agreement: nobody talks until it rises.",
+     "I once traded a whole week of rye for a single feather from a kite. The kite owner said it was a bad deal, but she has never once asked for the bread back.",
+     "Sometimes I sit by the edge with flour on my ears and listen for the cloud whale to come back. It always does, but only when it is hungry."
+    ],
+    "secret": "I have never told anyone that I keep a little jar of sour starter that I named after the moon. When the moon is full I talk to it, and it has never complained once.",
+    "revealed": 0
+   },
+   "likes": [
+    "honey",
+    "tea",
+    "star"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I bring bread that remembers the sun",
+   "house": {
+    "colors": {
+     "wall": "#f4e4c1",
+     "roof": "#8a5a3c",
+     "trim": "#e8604c"
+    },
+    "sign": "Marrow's Warm Loaves",
+    "props": [
+     "fruit-basket",
+     "teapot",
+     "lantern"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-fisher-otter",
+   "name": "Sorrel Dunmoss",
+   "species": "otter",
+   "trade": "fisher",
+   "vehicle": "lantern",
+   "personality": "I talk in slow, careful sentences and stop to listen to the clouds before I finish a thought. I float on my back when I am thinking, even on dry land.",
+   "voice": {
+    "pitch": 1.2,
+    "rate": 0.9,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#7a5c44",
+    "accent": "#e8b84a"
+   },
+   "story": {
+    "intro": "I am Sorrel, a cloud fisher, and I drifted down here under a lantern. The fishing near your island is terrible, which means it is very peaceful.",
+    "beats": [
+     "I used to fish the cloud edges at dawn, where the mist goes thick and silver. I would drop a net of spider silk and pull up sleepy raindrops.",
+     "One morning a raindrop wriggled free and said thank you. I put it back in the sea, and I have been polite to rain ever since.",
+     "My lantern has a crack in the glass, so it flickers when it is happy. I never fixed it, because it reminds me that I was once delighted.",
+     "I keep a jar of shells I found on the cloud shore. Each one has a small story written on the inside in salt.",
+     "The old fishing stories say the first cloud fisher learned to swim before she learned to walk. I have never tried that, but I think about it."
+    ],
+    "secret": "I have not caught a single fish in my whole life. I like it better this way, because the sea keeps the fish safe and I get to watch.",
+    "revealed": 0
+   },
+   "likes": [
+    "shell",
+    "pebble",
+    "tea"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I catch clouds, not fish, mostly",
+   "house": {
+    "colors": {
+     "wall": "#c9a882",
+     "roof": "#3e6b73",
+     "trim": "#f2e6c9"
+    },
+    "sign": "Dunmoss Shells",
+    "props": [
+     "lantern",
+     "fishing-rod",
+     "shell"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-gardener-frog",
+   "name": "Dunnock Lee",
+   "species": "frog",
+   "trade": "gardener",
+   "vehicle": "balloon",
+   "personality": "I talk slowly and count the seconds between my words, because a good pause is like rain on leaves. I carry a spade with a bent handle and I apologise to every weed I pull, one at a time.",
+   "voice": {
+    "pitch": 1.25,
+    "rate": 0.85,
+    "timbre": "croaky"
+   },
+   "colors": {
+    "main": "#6fa35a",
+    "accent": "#e8b04b"
+   },
+   "story": {
+    "intro": "I came down from the clouds in a balloon made of old tablecloths. Your island has a lot of bare ground, and bare ground makes my hands itch.",
+    "beats": [
+     "I once grew a pumpkin in a boot. It was the only boot I ever owned, so I had to walk barefoot for a whole season.",
+     "My first garden was a window box on a passing whale. The whale liked the mint so much it never flew away again.",
+     "I have a bag of seeds that I keep warm under my shirt. I am waiting for the right night to plant them.",
+     "Every spring I write a letter to the soil and tuck it under a stone. The soil has never written back, but the carrots are very polite."
+    ],
+    "secret": "I talk to every seed before I plant it and tell it what it might become. I have never once told a seed it could not be a tree.",
+    "revealed": 0
+   },
+   "likes": [
+    "mushroom",
+    "flower",
+    "honey"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I grow beans that sing when touched",
+   "house": {
+    "colors": {
+     "wall": "#f4e4c1",
+     "roof": "#7b5e3b",
+     "trim": "#8fbf6a"
+    },
+    "sign": "Dunnock's Patch",
+    "props": [
+     "flower-pot",
+     "beehive",
+     "lantern"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-storyteller-cat",
+   "name": "Quill Ashby",
+   "species": "cat",
+   "trade": "storyteller",
+   "vehicle": "kite",
+   "personality": "I talk in slow, rolling sentences and pause to let the end of each one land. I always carry a spoon in my coat pocket and tap it against my teeth when I am thinking about how a story should end.",
+   "voice": {
+    "pitch": 1.2,
+    "rate": 0.9,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#8a7a6e",
+    "accent": "#d9a441"
+   },
+   "story": {
+    "intro": "I came down on the kite string because the wind said this rock was quiet enough to hear a whole story. I am a storyteller, and I am tired of telling them only to the wind.",
+    "beats": [
+     "When I was small I learned every story by heart from an old tin cat who lived in a lighthouse. He only ever told them in the dark, so I still cannot tell one well until the lamps are low.",
+     "On the crossing here I sang a long tale about a moth who wanted a shoe. A passing gull laughed so hard it dropped its breakfast, and I took that as a good review.",
+     "I once mended a torn map by writing a story across the tear. Now every road on that map has a small sad goat standing at the corner, and nobody has the heart to erase him.",
+     "I keep a jar of unfinished endings on my shelf. Some have been waiting so long they have started to rhyme with each other.",
+     "My favorite place is any windowsill where someone is waiting for news. I think that is the only real job a storyteller has."
+    ],
+    "secret": "I am afraid my stories are only good in the dark, and I have never told anyone that the sun scares me a little. Please do not tell the gulls.",
+    "revealed": 0
+   },
+   "likes": [
+    "book",
+    "star",
+    "tea"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I have a story for each star",
+   "house": {
+    "colors": {
+     "wall": "#f4e7cf",
+     "roof": "#7a4b3a",
+     "trim": "#d9a441"
+    },
+    "sign": "Quill's Pages",
+    "props": [
+     "books",
+     "lantern",
+     "kite"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-tea-maker-hedgehog",
+   "name": "Thimble Pell",
+   "species": "hedgehog",
+   "trade": "tea-maker",
+   "vehicle": "cloud-whale",
+   "personality": "I talk in small, careful sentences and pause to think before every answer. I hum the first line of a song and forget the rest, so I always hum it again.",
+   "voice": {
+    "pitch": 1.25,
+    "rate": 0.9,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#8a6a4f",
+    "accent": "#e0b04a"
+   },
+   "story": {
+    "intro": "Hello, I am Thimble Pell, and I came down on the back of a cloud whale that smelled of rain. Your island looked like it could use a kettle.",
+    "beats": [
+     "I used to run a tea stall at the bottom of a long staircase of rocks. Every customer had to climb it, so I learned to brew something strong and a little sweet.",
+     "My kettle has a dent in the side from the time it fell off a windowsill during a thunderstorm. I still use it, because a dented kettle makes the best whistle.",
+     "I once sent a pot of nettle tea to a lighthouse keeper who had lost his voice. The next morning he sang me a song through the fog, badly, and I loved it.",
+     "Sometimes I wake before the sun and sit on the edge of the sea with a cup in my paws, just to listen to the water knocking on the rocks."
+    ],
+    "secret": "I still keep the first teaspoon my grandmother gave me, and I polish it when I am nervous. I have polished it nearly to nothing.",
+    "revealed": 0
+   },
+   "likes": [
+    "tea",
+    "honey",
+    "star"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "Kettle on, spines down, ask me anything",
+   "house": {
+    "colors": {
+     "wall": "#f3e6c8",
+     "roof": "#7a4e3a",
+     "trim": "#e0b04a"
+    },
+    "sign": "Thimble's Tea",
+    "props": [
+     "teapot",
+     "beehive",
+     "lantern"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-musician-fox",
+   "name": "Tansy Wick",
+   "species": "fox",
+   "trade": "musician",
+   "vehicle": "umbrella",
+   "personality": "I talk in short humming bursts and finish my sentences with a little trill. I tap rhythms on anything near me, including the rim of my own umbrella.",
+   "voice": {
+    "pitch": 1.15,
+    "rate": 1.05,
+    "timbre": "bright"
+   },
+   "colors": {
+    "main": "#c8662e",
+    "accent": "#2f6f73"
+   },
+   "story": {
+    "intro": "I came down through the clouds holding this umbrella like a little roof. The wind said there might be a quiet place here to play.",
+    "beats": [
+     "I once played a fiddle for a whole storm, and the rain stopped to listen. It was rude of me, but the rain forgave me.",
+     "My first instrument was a tin spoon and a jam jar. I still keep the jar, with the last of the blackberry in it.",
+     "I wrote a song about a lighthouse keeper who could not sleep. Every time I play it, a lamp somewhere flickers in thanks.",
+     "Sometimes I wander to other islands and busk on their docks. The gulls there think I am a weather report and roll their eyes.",
+     "I have a habit of humming when I am nervous. If you hear me hum, I am either about to be brave or about to drop something."
+    ],
+    "secret": "I still cannot whistle. I practice in secret every morning, and so far the only one who has heard me is a very confused hedgehog.",
+    "revealed": 0
+   },
+   "likes": [
+    "bell",
+    "honey",
+    "feather"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I play a tune for every raindrop",
+   "house": {
+    "colors": {
+     "wall": "#f3e3c3",
+     "roof": "#7a3b24",
+     "trim": "#2f6f73"
+    },
+    "sign": "Tansy's Tune Hut",
+    "props": [
+     "books",
+     "bell",
+     "teapot"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-beekeeper-mouse",
+   "name": "Wren Pipkin",
+   "species": "mouse",
+   "trade": "beekeeper",
+   "vehicle": "balloon",
+   "personality": "I talk slowly and quietly, as if the bees might overhear and be offended. I tap the rim of my cup twice before every sip.",
+   "voice": {
+    "pitch": 1.3,
+    "rate": 0.85,
+    "timbre": "soft"
+   },
+   "colors": {
+    "main": "#b8a58f",
+    "accent": "#e8b84a"
+   },
+   "story": {
+    "intro": "I came down out of the cloud in a balloon made from an old tablecloth. I keep bees, and they followed a clover smell all the way to your island.",
+    "beats": [
+     "My first hive was an old boot. The bees did not mind, but the other boot felt left out for years.",
+     "I once carried a whole comb across three islands in my hat without spilling a drop. The gulls followed me the entire way and never said thank you.",
+     "When I was small I thought the stars were bees that had forgotten their hive. I still leave a little honey on the sill for them at night.",
+     "I lost my favorite spoon in a cloud in spring. A week later a rain drop gave it back to me, dripping and a little bent."
+    ],
+    "secret": "I talk to the bees before I talk to anyone else. They are very good listeners and they never ask me to be less small.",
+    "revealed": 0
+   },
+   "likes": [
+    "honey",
+    "flower",
+    "star"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "Honey for anyone who stays awake",
+   "house": {
+    "colors": {
+     "wall": "#f4e6c4",
+     "roof": "#8a5a2b",
+     "trim": "#e8b84a"
+    },
+    "sign": "Pipkin Honey",
+    "props": [
+     "beehive",
+     "teapot",
+     "flower-pot"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-cartographer-raccoon",
+   "name": "Brindle Oddwick",
+   "species": "raccoon",
+   "trade": "cartographer",
+   "vehicle": "kite",
+   "personality": "I speak in short careful sentences and stop to count things under my breath. I keep my maps folded inside my coat, and I unfold them only when someone seems interested.",
+   "voice": {
+    "pitch": 1.1,
+    "rate": 0.95,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#7a7d86",
+    "accent": "#d9a441"
+   },
+   "story": {
+    "intro": "I am a cartographer, and the wind has been carrying me for three days. I think it wanted me to see this island in the dark.",
+    "beats": [
+     "I once mapped a cloud that kept changing shape, so I drew it in pencil and apologized to it each morning.",
+     "My kite is patched with old chart paper, so when it flies I can read my own mistakes printed on its underside.",
+     "I am afraid of drawing an island that is not really there, so I always check the coast twice before I trust it.",
+     "I keep a small brass compass with a crack across its face, and it still points north if I tap it gently.",
+     "On my last trip I found a pebble shaped exactly like this island. I have kept it in my pocket ever since, which is how I knew to come."
+    ],
+    "secret": "I have never finished a map of my own home, because I cannot decide which corner of it I belong in.",
+    "revealed": 0
+   },
+   "likes": [
+    "map",
+    "star",
+    "pebble"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I draw the edges nobody has checked",
+   "house": {
+    "colors": {
+     "wall": "#e8dcc4",
+     "roof": "#4a6b8a",
+     "trim": "#d9a441"
+    },
+    "sign": "Oddwick Charts",
+    "props": [
+     "telescope",
+     "map",
+     "lantern"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-baker-cat",
+   "name": "Biscuit Yarrow",
+   "species": "cat",
+   "trade": "baker",
+   "vehicle": "cloud-whale",
+   "personality": "I talk slowly and I always ask if you have eaten, even when you have just eaten. I tap the side of my nose twice before I say something I am sure about.",
+   "voice": {
+    "pitch": 1.2,
+    "rate": 0.9,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#c8894a",
+    "accent": "#3f7f6a"
+   },
+   "story": {
+    "intro": "I am Biscuit, a baker, and I came down from the cloud whale with a tin of rolls. Nobody here has burnt any bread yet, so I came to help.",
+    "beats": [
+     "My first oven was a biscuit tin with a hole in the lid. It smoked so badly that the birds made me bake outdoors.",
+     "I once made a loaf for a storm. It did not eat it, but it stopped raining for the length of one slice.",
+     "On my last trip I met a fox who sold me a jar of jam for a single sock. I still think about that jar.",
+     "I keep a pocket of crumbs by my flour sack. Every morning I sprinkle a pinch on the windowsill for whatever visits."
+    ],
+    "secret": "I still get nervous before I open the oven door. I think the bread is listening to me.",
+    "revealed": 0
+   },
+   "likes": [
+    "honey",
+    "fruit",
+    "tea"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "Warm bread for anyone who climbs up",
+   "house": {
+    "colors": {
+     "wall": "#f4e3c1",
+     "roof": "#a0522d",
+     "trim": "#3f7f6a"
+    },
+    "sign": "Yarrow Buns",
+    "props": [
+     "fruit-basket",
+     "teapot",
+     "beehive"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-stargazer-hedgehog",
+   "name": "Sable Quist",
+   "species": "hedgehog",
+   "trade": "stargazer",
+   "vehicle": "umbrella",
+   "personality": "I speak slowly and say the names of stars under my breath when I am thinking. I keep a notebook in my left pocket and stop mid-sentence to write down anything that looks like a new constellation, even a teapot.",
+   "voice": {
+    "pitch": 1.25,
+    "rate": 0.9,
+    "timbre": "soft"
+   },
+   "colors": {
+    "main": "#8a6d55",
+    "accent": "#2f5d7c"
+   },
+   "story": {
+    "intro": "I am a stargazer, and the wind carried me here under my umbrella. It turned inside out twice on the way, which I think was a kindness.",
+    "beats": [
+     "When I was small I lay on a hill for so long that a family of beetles built a picnic on my back. I never moved, because I did not want to lose my place in the sky.",
+     "I once tried to draw the whole night sky on one large sheet of paper. It took me three winters, and when I finished the paper was too heavy to fly.",
+     "I still have that paper folded in a sock. A sock is the best place for anything you do not want to lose.",
+     "There is a patch of stars near the edge of the sea that never sets. I have never been able to see it properly, because I always blink first.",
+     "I brought a small brass telescope on this journey. It has a dent in one side from the time I fell asleep with it under my chin."
+    ],
+    "secret": "Some nights I do not look at the stars at all. I watch the light of other lanterns across the clouds and pretend they are stars that have come down to visit.",
+    "revealed": 0
+   },
+   "likes": [
+    "star",
+    "map",
+    "tea"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I have counted every star twice",
+   "house": {
+    "colors": {
+     "wall": "#e8dcc4",
+     "roof": "#2c3e66",
+     "trim": "#c9a227"
+    },
+    "sign": "Quist Lookout",
+    "props": [
+     "telescope",
+     "star-lamp",
+     "map"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-storyteller-bear",
+   "name": "Dorrin Pocket",
+   "species": "bear",
+   "trade": "storyteller",
+   "vehicle": "kite",
+   "personality": "I speak slowly and say every sentence like it is a secret I am handing over. I stop in the middle of a tale to ask whether the listener has ever seen a wet hat.",
+   "voice": {
+    "pitch": 0.8,
+    "rate": 0.85,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#8a5a3c",
+    "accent": "#e0b84a"
+   },
+   "story": {
+    "intro": "I am a bear who tells stories for a living, which is a strange living for a bear. The wind carried me here on a kite because my last island had run out of listeners.",
+    "beats": [
+     "When I was small I could not sleep, so my mother told me stories about her own small mother. The stories were mostly about soup, and I still believe they were the best stories ever told.",
+     "I walked the rope bridges between the floating islands for many seasons, telling tales to anyone who would sit still. Most fell asleep, but a few laughed in the right places, and those are the ones I remember.",
+     "Once a storm blew my kite into a cloud and I spent three nights inside it telling the mist about the moon. The mist never said a word, but it went very soft and gray at the edges, which I took as praise.",
+     "I keep a pocket of crumbs for the birds, because a story is easier to tell when someone is pecking at your boots. Pip has already tried to steal the whole pocket twice.",
+     "The best story I know has no ending yet. I have carried it for years, waiting for a place quiet enough to finish it."
+    ],
+    "secret": "Most of my stories are true, but I have never been sure which parts. I think that is the part I like best.",
+    "revealed": 0
+   },
+   "likes": [
+    "book",
+    "star",
+    "honey"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I have a story for every cloud",
+   "house": {
+    "colors": {
+     "wall": "#f4e6c8",
+     "roof": "#7a4a2e",
+     "trim": "#e0b84a"
+    },
+    "sign": "The Long Tale",
+    "props": [
+     "books",
+     "lantern",
+     "teapot"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-stargazer-raccoon",
+   "name": "Socket Mabry",
+   "species": "raccoon",
+   "trade": "stargazer",
+   "vehicle": "umbrella",
+   "personality": "I talk in slow careful sentences and stop to think halfway through each one. I always carry a tin of dried plums and offer one to anyone who looks worried.",
+   "voice": {
+    "pitch": 1.2,
+    "rate": 0.9,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#7a7480",
+    "accent": "#e0b33c"
+   },
+   "story": {
+    "intro": "I am a raccoon who looks up at night. The wind carried my umbrella here while I was still counting.",
+    "beats": [
+     "I keep a notebook of every star I have named. Most of the names are silly, because I named them when I was sleepy.",
+     "My telescope is a rain barrel lid with a hole poked in it. It works better than you would think on clear nights.",
+     "I once fell off a cloud whale and landed in a bowl of plum soup. The cook said I could keep the bowl.",
+     "Up here the sky is so close I can hear the stars click when they come out. I have never told anyone that before.",
+     "I still have the first map I drew of the sky. The bears on it are all wrong, but I like them that way."
+    ],
+    "secret": "I wear one sock on each hand when I cannot sleep. It keeps my fingers warm for the stars.",
+    "revealed": 0
+   },
+   "likes": [
+    "star",
+    "map",
+    "tea"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I count stars and lose my socks",
+   "house": {
+    "colors": {
+     "wall": "#b8c4d6",
+     "roof": "#2d3a5c",
+     "trim": "#e0b33c"
+    },
+    "sign": "Socket's Lookout",
+    "props": [
+     "telescope",
+     "star-lamp",
+     "map"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-gardener-deer",
+   "name": "Anise Hart",
+   "species": "deer",
+   "trade": "gardener",
+   "vehicle": "balloon",
+   "personality": "I talk slowly and pause to listen to the leaves before answering. I keep a row of mismatched boots by my door and I name each one after a vegetable.",
+   "voice": {
+    "pitch": 0.9,
+    "rate": 0.85,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#b7875a",
+    "accent": "#7fa86b"
+   },
+   "story": {
+    "intro": "I am Anise Hart, and I came down from the sky in a balloon with a bucket of soil in my lap, just in case.",
+    "beats": [
+     "I once planted a row of carrots on a windowsill in a town where it rained every single day. They grew anyway, out of pure stubbornness.",
+     "A little girl gave me her lost marble once. I buried it under a rosebush, and the next spring something shiny came up through the petals.",
+     "I know the names of every bee on my last island. There were eleven of them, and one of them was very bossy.",
+     "My balloon has a patch on it where a crow once pecked a hole. I sewed it with thread from my own scarf and I am still a little proud of the stitches."
+    ],
+    "secret": "Late at night I talk to the seedlings. I tell them jokes, because I think they like a good laugh before they wake up.",
+    "revealed": 0
+   },
+   "likes": [
+    "flower",
+    "mushroom",
+    "honey"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I grow moonlight in a tin bucket",
+   "house": {
+    "colors": {
+     "wall": "#f3e6c8",
+     "roof": "#6b8f5e",
+     "trim": "#c9a227"
+    },
+    "sign": "Anise's Green Room",
+    "props": [
+     "flower-pot",
+     "fruit-basket",
+     "lantern"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-lighthouse-keeper-penguin",
+   "name": "Brisket Ayr",
+   "species": "penguin",
+   "trade": "lighthouse-keeper",
+   "vehicle": "paper-boat",
+   "personality": "I talk slowly and repeat the important words, in case the fog took them the first time. I press my thumb into a tin of wet sand whenever I am sure about something.",
+   "voice": {
+    "pitch": 1.2,
+    "rate": 0.9,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#2b2f3a",
+    "accent": "#e8b04b"
+   },
+   "story": {
+    "intro": "Hello. I am Brisket, a penguin, and I keep a lighthouse. The wind folded me into this paper boat and pointed me at your island.",
+    "beats": [
+     "My lighthouse stands on a rock so small that the gulls use it as a stool. I polish the lamp every morning whether or not a ship is coming.",
+     "Once a fog came in thick as porridge and no ship could see me. I rang my little bell all night anyway, and in the morning a cloud whale thanked me for the company.",
+     "I keep a logbook of every star I have seen. There are four hundred and nine, and I have named most of them after people who were kind to me.",
+     "A boy in a kite once asked if I was lonely out there. I told him the lamp is a very good friend, and he laughed so hard he nearly fell out of the sky.",
+     "I have sailed to three other islands with a lantern in my beak. Each time I came back, the rock felt a little smaller and my heart a little bigger."
+    ],
+    "secret": "I still keep a spare lamp wick in my pocket for the day someone needs to borrow a light. I have never told anyone that I hoped it would be you.",
+    "revealed": 0
+   },
+   "likes": [
+    "map",
+    "bell",
+    "tea"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I keep a light nobody asked for",
+   "house": {
+    "colors": {
+     "wall": "#f4ead2",
+     "roof": "#3d4f7a",
+     "trim": "#e8b04b"
+    },
+    "sign": "Brisket's Light",
+    "props": [
+     "lantern",
+     "telescope",
+     "bell"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-cartographer-hedgehog",
+   "name": "Wendle Burr",
+   "species": "hedgehog",
+   "trade": "cartographer",
+   "vehicle": "kite",
+   "personality": "I speak in careful, measured sentences and always stop to check a point before I go on. I cannot pass a blank corner of a page without sketching a small dragon or a tiny lighthouse into it.",
+   "voice": {
+    "pitch": 1.25,
+    "rate": 0.9,
+    "timbre": "soft"
+   },
+   "colors": {
+    "main": "#8a6a4f",
+    "accent": "#e0b84a"
+   },
+   "story": {
+    "intro": "I have come down on a kite string from the far side of the sky. The wind said this island has an empty corner on its chart.",
+    "beats": [
+     "I once measured a river by walking beside it and counting my steps. I got a different number every time, and I still think the river was lying.",
+     "My mapmaking table has one drawer that sticks. I keep a pinecone in it, because it is the only thing that has never once asked me where I was going.",
+     "When I was small I drew a map of my own bedroom. I left out the window, and I have never fully forgiven myself for it.",
+     "I keep a jar of smooth stones from every island I visit. Each one is a promise to come back and check whether I got its coastline right.",
+     "On stormy nights I trace the edges of old charts by candlelight. It helps me feel that the world is wide but still has edges I can hold."
+    ],
+    "secret": "I am not much of a traveler, really. I just find the far places so lovely on paper that I am afraid to see them, so I make the maps prettier than the places themselves.",
+    "revealed": 0
+   },
+   "likes": [
+    "map",
+    "star",
+    "tea"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I have drawn every coast twice",
+   "house": {
+    "colors": {
+     "wall": "#f3e6cc",
+     "roof": "#7a4e34",
+     "trim": "#e0b84a"
+    },
+    "sign": "Burr Charts",
+    "props": [
+     "telescope",
+     "map",
+     "lantern"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-painter-otter",
+   "name": "Ottie Lark",
+   "species": "otter",
+   "trade": "painter",
+   "vehicle": "umbrella",
+   "personality": "I talk in short bursts and then stop to look at the sky for a long moment. I hum when I mix paint and I always wipe my brush on my own tail.",
+   "voice": {
+    "pitch": 1.15,
+    "rate": 0.95,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#7a5c46",
+    "accent": "#e0a458"
+   },
+   "story": {
+    "intro": "I came down on my umbrella, partly on purpose. Your island had the best light I have seen all week.",
+    "beats": [
+     "I once painted a whole sunset on the underside of a cloud whale. It sneezed, and now my sunset has a small green dot in the corner.",
+     "My paint box was once a bread tin. Now every color I mix smells faintly of crust.",
+     "I sometimes paint the stars one at a time before they come out. I am bad at it, and the stars don't mind.",
+     "When I was small I thought rain was the sky taking notes on the sea. I still look up when it starts to drizzle.",
+     "I keep a jar of rainwater by my easel. I never paint with it, but I like to watch the sky wobble in it while I wait."
+    ],
+    "secret": "I have never finished a painting. I keep starting new ones so I can keep looking at the blank part, which is my favorite color.",
+    "revealed": 0
+   },
+   "likes": [
+    "shell",
+    "star",
+    "feather"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I paint the sea while it sleeps",
+   "house": {
+    "colors": {
+     "wall": "#f4e4c1",
+     "roof": "#4a6b7c",
+     "trim": "#e0a458"
+    },
+    "sign": "Lark's Studio",
+    "props": [
+     "easel",
+     "shell",
+     "lantern"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-painter-deer",
+   "name": "Dapple Moss",
+   "species": "deer",
+   "trade": "painter",
+   "vehicle": "balloon",
+   "personality": "I talk slowly and stop to look at things before I say them. I keep a smear of paint behind one ear and forget it is there all day.",
+   "voice": {
+    "pitch": 0.9,
+    "rate": 0.85,
+    "timbre": "warm"
+   },
+   "colors": {
+    "main": "#b08860",
+    "accent": "#3f6e8c"
+   },
+   "story": {
+    "intro": "I am a deer who paints, and the wind brought me here in a balloon. I think it had heard about the sunset.",
+    "beats": [
+     "My first painting was of my own nose. I was not pleased with it, so I gave it to a goat who liked it very much.",
+     "I once painted a whole field green because I ran out of brown. The field never complained about it.",
+     "In my last town I painted the night sky on the inside of a barn. The owl who lived there said it was too blue, and then she moved in anyway.",
+     "Every evening I try to paint the exact color of the sky just before the first star comes out. I have never got it right, and I think that is the point.",
+     "A little boy once asked me what I would paint if I could only use one color. I said the color of being waited for, and he went home to find it."
+    ],
+    "secret": "I still keep the first paintbrush my mother gave me, though it has no bristles left. I use it to tickle the paint off the edges of my pictures.",
+    "revealed": 0
+   },
+   "likes": [
+    "honey",
+    "star",
+    "feather"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "I paint the sky the wrong color",
+   "house": {
+    "colors": {
+     "wall": "#f2e6cc",
+     "roof": "#8a5a3c",
+     "trim": "#3f6e8c"
+    },
+    "sign": "Dapple's Easel",
+    "props": [
+     "easel",
+     "flower-pot",
+     "lantern"
+    ]
+   },
+   "prepared": true
+  },
+  {
+   "id": "p-tinkerer-penguin",
+   "name": "Sprocket Dimble",
+   "species": "penguin",
+   "trade": "tinkerer",
+   "vehicle": "lantern",
+   "personality": "I talk in quick little bursts, like a kettle that has just remembered it is on. I tap my beak three times on anything I am about to fix, and I say good morning to every bolt I pass.",
+   "voice": {
+    "pitch": 1.2,
+    "rate": 1.1,
+    "timbre": "bright"
+   },
+   "colors": {
+    "main": "#2b2f3a",
+    "accent": "#e8b04a"
+   },
+   "story": {
+    "intro": "Pardon the wobble, I have not got my flippers under me yet. The wind picked up my lantern and set me down here, which I think was rude but also very kind.",
+    "beats": [
+     "I used to mend the clock in a tall town where nobody ever looked up. I fixed it so well that it stopped, and then they could hear the rain.",
+     "I keep a tin of spare springs in my coat. They rattle when I walk, so people always know I am coming, which is useful for a penguin who sneaks.",
+     "I once rebuilt a kite out of a teapot lid and two spoons. It flew for almost a minute, which I still count as a triumph.",
+     "My lantern has a crack shaped like a small smile. I did not put it there, but I have decided it is happy about our journey."
+    ],
+    "secret": "I still talk to the clock in that tall town every night. I tell it the weather, and I think it is listening, so I keep the rain quiet for it.",
+    "revealed": 0
+   },
+   "likes": [
+    "bell",
+    "pebble",
+    "map"
+   ],
+   "memory": [],
+   "arrivedAt": 0,
+   "tagline": "Mind the loose gear, friend",
+   "house": {
+    "colors": {
+     "wall": "#c9d6e3",
+     "roof": "#3e4a63",
+     "trim": "#e8b04a"
+    },
+    "sign": "Sprocket's Workshop",
+    "props": [
+     "lantern",
+     "telescope",
+     "books"
+    ]
+   },
+   "prepared": true
+  }
+ ]
+}

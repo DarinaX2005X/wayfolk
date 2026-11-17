@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Live visits preview</title>
+    <style>
+      @font-face {
+        font-family: 'Atkinson Hyperlegible Next';
+        font-weight: 700;
+        src: url('/fonts/atkinson-hyperlegible-next-latin-700-normal.woff2') format('woff2');
+      }
+      html, body { margin: 0; height: 100%; background: #1f3b44; overflow: hidden; }
+      canvas { display: block; width: 100vw; height: 100vh; }
+      #status { position: fixed; left: 12px; bottom: 10px; font: 600 14px system-ui; color: #fff6e8; text-shadow: 0 1px 2px #0006; }
+    </style>
+  </head>
+  <body>
+    <div id="status"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

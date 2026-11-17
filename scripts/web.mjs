@@ -232,7 +232,7 @@ async function main() {
   let failed = 0;
   try {
     for (const scenario of scenarios) {
-      const context = await browser.newContext({ ...DEVICES[args.device], ignoreHTTPSErrors: true });
+      const context = await browser.newContext({ ...DEVICES[args.device], ignoreHTTPSErrors: true, reducedMotion: 'reduce' });
       const page = await context.newPage();
       const requests = [];
       const problems = [];

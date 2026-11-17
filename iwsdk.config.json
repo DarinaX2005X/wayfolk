@@ -31,9 +31,9 @@
       "canvasPointerEvents": true
     },
     "render": {
-      "fov": 30,
-      "near": 0.01,
-      "far": 50
+      "fov": 60,
+      "near": 0.03,
+      "far": 1500
     },
     "features": {
       "locomotion": false,
