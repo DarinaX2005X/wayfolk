@@ -11,6 +11,7 @@ import {
   Mesh,
   Object3D,
   ShaderMaterial,
+  SphereGeometry,
   Vector3,
 } from '@iwsdk/core';
 import { CATALOG } from './catalog';
@@ -627,6 +628,40 @@ function scatterDecor(
     decor.push({ key, x, z, r: rad });
     shadows.push([x, z, rad * 1.3, rock ? 0.45 : 0.5]);
   }
+  // mushrooms at the foot of trees, pebbles round the porch
+  const mush: BufferGeometry[] = [];
+  const caps = ['#d2553f', '#c98b4e', '#e7c48a'];
+  for (const o of land.obstacles.slice(0, 40)) {
+    if (o.clearable || r() < 0.45) continue;
+    const a0 = r() * TAU;
+    const cap = caps[Math.floor(r() * caps.length)];
+    for (let k = 0; k < 3; k++) {
+      const a = a0 + k * 0.5;
+      const x = o.x + Math.cos(a) * (o.r * 0.55 + 0.15 + k * 0.08);
+      const z = o.z + Math.sin(a) * (o.r * 0.55 + 0.15 + k * 0.08);
+      const s = 0.6 + r() * 0.6;
+      const y = land.height(x, z) - 0.01;
+      mush.push(paint(cyl(0.022 * s, 0.03 * s, 0.09 * s, 6).translate(x, y, z), '#f1e6d0', { shade: 0.2, mat: M.plain }, true));
+      mush.push(paint(new SphereGeometry(0.07 * s, 8, 4, 0, TAU, 0, Math.PI / 2).scale(1, 0.75, 1).translate(x, y + 0.085 * s, z), cap, { shade: 0.2 }, true));
+      if (cap === '#d2553f') for (let d = 0; d < 3; d++) {
+        const da = d * 2.1 + a;
+        mush.push(paint(blob(0.011 * s, 0, d, 0.1).translate(x + Math.cos(da) * 0.035 * s, y + 0.13 * s, z + Math.sin(da) * 0.035 * s), '#fff8ec', { shade: 0 }, true));
+      }
+    }
+  }
+  if (mush.length) batch.add('mushrooms', join(mush));
+  const pebbles: BufferGeometry[] = [];
+  for (let i = 0; i < 40; i++) {
+    const a = r() * TAU;
+    const d = 1.9 + r() * 2.2;
+    const x = SEAT.x + Math.cos(a) * d * 1.1;
+    const z = SEAT.z - 0.4 + Math.sin(a) * d * 0.8;
+    if (!land.inside(x, z, 0.3) || (Math.abs(x) < 1.9 && z > -1.5)) continue;
+    const s = 0.03 + r() * 0.05;
+    pebbles.push(paint(blob(s, 1, i, 0.2, 0.55).translate(x, land.height(x, z) + s * 0.2, z), r() < 0.5 ? '#b9b0a2' : '#a59b8c', { shade: 0.15, mat: M.rock }, true));
+  }
+  if (pebbles.length) batch.add('pebbles', join(pebbles));
+
   // sand spit: a few stones and a beached rowboat
   const spit = { x: -14.2, z: -5.0 };
   for (let i = 0; i < 4; i++) {

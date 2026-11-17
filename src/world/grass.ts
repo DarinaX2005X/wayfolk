@@ -38,8 +38,8 @@ function tuftGeometry(): BufferGeometry {
   const root = new Color('#5a963c');
   const tip = new Color('#b9d66c');
   const r = rng(3);
-  for (let i = 0; i < 9; i++) {
-    const a = (i / 9) * Math.PI * 2 + r() * 0.5;
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 + r() * 0.5;
     const h = 0.11 + r() * 0.12;
     const w = 0.014 + r() * 0.008;
     const lean = 0.03 + r() * 0.06;
@@ -312,7 +312,7 @@ export function createMeadow(parent: Object3D, land: Land): Meadow {
       if (okAt(x, z)) ferns.list.push({ x, z, s: 0.7 + r() * 0.5, rot: r() * 6.28, tint: new Color().setHSL(0.26, 0.4, 0.55) });
     }
   };
-  scatter(CENTER.x, CENTER.z, outlineR, 9000, 48);
+  scatter(CENTER.x, CENTER.z, outlineR, 5600, 48);
 
   const hidden = new Set<Placed>();
   const m = new Matrix4();
