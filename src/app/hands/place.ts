@@ -205,7 +205,21 @@ export function createPlacement(app: App, hands: Hands, world: WorldPort, replie
     },
     suggest() {
       const offered = world.suggestSpot?.();
-      if (offered?.ok) return { x: offered.snapped.x, z: offered.snapped.z, rotY: offered.rotY };
+      if (offered?.ok) {
+        // A house close by fills a side of the seated view: the same way out, but a little
+        // further, when the ground there is free.
+        anchorPoint(world.seat, seatP);
+        const dx = offered.snapped.x - seatP.x;
+        const dz = offered.snapped.z - seatP.z;
+        const d = Math.hypot(dx, dz);
+        if (d > 1 && d < 10.5) {
+          const k = 11.2 / d;
+          const v = world.validSpot({ x: seatP.x + dx * k, y: seatP.y, z: seatP.z + dz * k });
+          const far = v.snapped ? Math.hypot(v.snapped.x - seatP.x, v.snapped.z - seatP.z) : 0;
+          if (v.ok && v.snapped && far >= 10 && far <= 13.5) return { x: v.snapped.x, z: v.snapped.z, rotY: v.rotY };
+        }
+        return { x: offered.snapped.x, z: offered.snapped.z, rotY: offered.rotY };
+      }
       // Walk out from the seat along its view until validSpot says yes.
       anchorPoint(world.seat, seatP);
       const cam = app.world.camera;

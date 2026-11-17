@@ -3,7 +3,7 @@
  * from the seat, from above or close to a house, at any hour.
  *
  *   ?time=19.2         local hour
- *   ?view=seat|above|house&house=3|pier|left|right
+ *   ?view=seat|above|house&house=3|pier|left|right|spot&spot=pier
  *   ?houses=12         how many houses to build
  *   ?build=1           leave the last house as a hidden build plan (to check buildPlan)
  */
@@ -128,7 +128,15 @@ async function main(): Promise<void> {
   else if (view === 'back') look(new Vector3(0, 1.2, 0), new Vector3(0, 0.0, 10));
   else if (view === 'above') look(new Vector3(18, 26, 16), new Vector3(-1, -2, -11));
   else if (view === 'far') look(new Vector3(30, 9, 30), new Vector3(-1, -3, -11));
-  else if (view === 'pier') look(new Vector3(world.pier.pos.x + 4, 2.4, world.pier.pos.z + 4), world.pier.pos);
+  else if (view === 'spot') {
+    // a glide spot: eye 1.2 m over it, facing its rotY (0 faces -z), ?turn=radians to look round
+    const sp = world.spots().find((x) => x.id === (q.get('spot') ?? 'pier'));
+    if (sp) {
+      const a = sp.rotY + Number(q.get('turn') ?? '0');
+      const from = sp.pos.clone().add(new Vector3(0, 1.2, 0));
+      look(from, from.clone().add(new Vector3(-Math.sin(a) * 10, -1.2, -Math.cos(a) * 10)));
+    }
+  } else if (view === 'pier') look(new Vector3(world.pier.pos.x + 4, 2.4, world.pier.pos.z + 4), world.pier.pos);
   else if (view === 'house') {
     const id = `h${q.get('house') ?? '1'}`;
     const h = world.house(id);
@@ -169,6 +177,10 @@ async function main(): Promise<void> {
   };
   loop();
   (window as unknown as Record<string, unknown>).__world = world;
+  (window as unknown as Record<string, unknown>).__info = () => {
+    renderer.render(scene, camera);
+    return { calls: renderer.info.render.calls, tris: renderer.info.render.triangles };
+  };
   (window as unknown as Record<string, unknown>).__probe = () => {
     const fr = new Frustum().setFromProjectionMatrix(new Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
     const rows: [string, number, boolean][] = [];
@@ -178,14 +190,37 @@ async function main(): Promise<void> {
       const g = m.geometry;
       const per = (g.index ? g.index.count : (g.getAttribute('position')?.count ?? 0)) / 3;
       const n = (m as InstancedMesh).isInstancedMesh ? (m as InstancedMesh).count : 1;
+      const inst = (m as InstancedMesh).isInstancedMesh ? (m as InstancedMesh) : null;
+      if (inst && !inst.boundingSphere) inst.computeBoundingSphere();
       if (!g.boundingSphere) g.computeBoundingSphere();
-      const s = g.boundingSphere!.clone().applyMatrix4(m.matrixWorld);
+      const s = (inst ? inst.boundingSphere! : g.boundingSphere!).clone().applyMatrix4(m.matrixWorld);
       const inView = !m.frustumCulled || fr.intersectsSphere(s);
       rows.push([m.name || m.type, Math.round(per * n), inView]);
     });
     rows.sort((a, b) => b[1] - a[1]);
     const seen = rows.filter((r) => r[2]).reduce((a, r) => a + r[1], 0);
     return [`in view ${seen}`, ...rows.map((r) => `${r[2] ? '*' : ' '} ${r[1]} ${r[0]}`)];
+  };
+  // batch entries by key with triangles and distance from the seat (budget work)
+  (window as unknown as Record<string, unknown>).__entries = () => {
+    const out: [string, string, number, number][] = [];
+    scene.traverse((o) => {
+      const b = o.userData.batch as { entries?: Map<string, import('@iwsdk/core').BufferGeometry[]> } | undefined;
+      if (!b?.entries) return;
+      for (const [key, list] of b.entries) {
+        let tris = 0;
+        let cx = 0;
+        let cz = 0;
+        for (const g of list) {
+          tris += g.getAttribute('position').count / 3;
+          if (!g.boundingSphere) g.computeBoundingSphere();
+          cx = g.boundingSphere!.center.x;
+          cz = g.boundingSphere!.center.z;
+        }
+        out.push([o.name, key, Math.round(tris), Math.round(Math.hypot(cx, cz))]);
+      }
+    });
+    return out.sort((a, b) => b[2] - a[2]);
   };
 }
 

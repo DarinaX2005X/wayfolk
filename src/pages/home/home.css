@@ -391,6 +391,7 @@
   min-width: 0;
   padding: 18px 16px 10px;
   font-size: 16px;
+  white-space: nowrap;
 }
 
 .home[data-state='desk'] .home-hero,
@@ -675,7 +676,9 @@
 
 .home-menu {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 12px;
   pointer-events: auto;
 }
 

@@ -23,6 +23,7 @@ export { planBuild } from './build-plan';
 const FLOCK_SIZE = 7;
 const tA = new Vector3();
 const tB = new Vector3();
+const UP_Y = new Vector3(0, 1, 0);
 
 interface WorldLike {
   scene?: Object3D;
@@ -179,6 +180,10 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
       pipAgent.takeOff();
       pipAgent.mode = 'hover';
       pipAgent.goalFn = null;
+    },
+    /** Where Pip hovers from the head (metres ahead, right, below); the page keeps him further off than a headset. */
+    setHover(o: { ahead: number; side: number; drop: number }): void {
+      flockEnv.hover = o;
     },
     say(text: string, opts?: SayOptions): Promise<void> {
       return speech.say(pipSpeaker, text, opts);
@@ -449,6 +454,55 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
     startDaily(): void {
       daily.start();
     },
+    feed(at: () => Vector3 | null, opts: { count?: number; seconds?: number; spread?: number; scale?: number; up?: () => Vector3 } = {}): Promise<void> {
+      // A few of the flock come down round the crumbs, peck for a while, then fly off.
+      const free = flock.filter((b) => !b.carrying && (b.mode === 'flock' || b.mode === 'perch'));
+      const birds = free.slice(0, Math.max(1, Math.min(free.length, opts.count ?? 4)));
+      const spread = opts.spread ?? 0.4;
+      const scale = opts.scale ?? 1;
+      birds.forEach((b, i) => {
+        const a = (i / birds.length) * Math.PI * 2 + 0.6;
+        const r = spread * (0.55 + (i % 2) * 0.45);
+        const off = new Vector3(Math.cos(a) * r, 0, Math.sin(a) * r);
+        b.perchIdx = -1;
+        b.takeOff();
+        b.mode = 'palm';
+        b.landed = false;
+        b.look = null;
+        b.model.mesh.scale.setScalar(scale);
+        b.goalFn = (out, up) => {
+          const c = at();
+          if (!c) return false;
+          out.copy(c).add(off);
+          up.copy(opts.up?.() ?? UP_Y);
+          return true;
+        };
+        b.onLanded = () => {
+          b.pecking = true;
+          audio.chirp(b.pos, 1.4 + i * 0.07);
+        };
+      });
+      const seconds = opts.seconds ?? 9;
+      return new Promise<void>((resolve) => {
+        const t0 = clock;
+        const check = (): void => {
+          if (clock - t0 < seconds) {
+            setTimeout(check, 250);
+            return;
+          }
+          for (const b of birds) {
+            b.pecking = false;
+            b.goalFn = null;
+            b.onLanded = null;
+            b.takeOff();
+            b.mode = 'flock';
+            b.model.mesh.scale.setScalar(1);
+          }
+          resolve();
+        };
+        setTimeout(check, 250);
+      });
+    },
     flockCircle(at: Vector3 | null, radius = 3): void {
       for (const b of flock) {
         if (at) {
@@ -473,8 +527,24 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
       speech.skip();
       for (const s of scenes) s.skip();
     },
+    hurry(id: string): void {
+      // A walker told to hurry steps out of a puff of dust where they were going.
+      const a = agents.get(id);
+      if (!a || !a.walking) return;
+      const from = a.pos.clone();
+      if (a.finishWalk()) {
+        a.pos.y = ground(a.pos.x, a.pos.z, a.pos.y);
+        a.group.position.copy(a.pos);
+        fx.dust(from, 0.35, '#efe1c8');
+        fx.dust(a.pos.clone(), 0.45, '#efe1c8');
+        a.faceToward(head);
+      }
+    },
     setTime,
     update,
+    flockObjects(): Object3D[] {
+      return flock.map((b) => b.object);
+    },
     objectOf(id: string): Object3D | undefined {
       if (id === 'pip') return pipAgent.object;
       return agents.get(id)?.group;

@@ -175,7 +175,8 @@ export function createReplies(app: App, hands: Hands): Replies {
       side = opts?.side;
       shownAt = app.clock.now();
       bubbles = current.map((text, i) => {
-        const b = makeBubble(text, { width: WIDTH, size: 46, tail: 'none', paper: '#fffaf0', rim: '#f0b46c' });
+        // The same paper speech bubbles as the page's reply buttons.
+        const b = makeBubble(text, { width: WIDTH, size: 44, reply: true, paper: '#fffaf0', rim: '#f0b46c', ink: '#3a2c22' });
         b.name = `bubble:${i}`;
         b.scale.setScalar(0.01);
         group.add(b);

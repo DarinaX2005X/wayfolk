@@ -43,6 +43,7 @@ export const DESK_TEXT = {
     tap: 'Tap Pip or a neighbour to talk',
     flags: 'Click a flag to go there',
     space: 'Hold Space to talk',
+    hurry: 'Click anywhere to hurry',
   },
 } as const;
 
@@ -166,7 +167,7 @@ export function createDeskUi(store: Store, hooks: Hooks): HTMLElement[] {
   effect(() => {
     const text = store.cue.value;
     cueText.textContent = text ? (touch ? text.replace(/^Click/, 'Tap') : text) : '';
-    cue.hidden = !text || store.mode.value !== 'desk';
+    cue.hidden = !text || store.mode.value !== 'desk' || (store.choices.value.length > 0 && store.phase.value === 'free');
   });
 
   // ---- one line of keys at a time
@@ -210,15 +211,20 @@ export function createDeskUi(store: Store, hooks: Hooks): HTMLElement[] {
     all.hidden = !all.hidden;
   });
   const [dragLine, walkLine] = lineEls();
+  const hurryLine = el('p', 'desk-line');
+  hurryLine.append(el('span', 'desk-glyph desk-glyph-tap'), document.createTextNode(touch ? DESK_TEXT.lines.hurry.replace('Click', 'Tap') : DESK_TEXT.lines.hurry));
   let shown: HTMLElement | null = null;
   effect(() => {
     // Only once inside: the landing has its own tags.
     const desk = store.mode.value === 'desk' && store.phase.value !== 'boot';
     const looked = store.deskUsed.value;
     const walked = store.walked.value;
-    const free = store.phase.value === 'free';
+    const phase = store.phase.value;
+    const free = phase === 'free';
+    // In a long moment (a traveler on the way, a house going up) a click hurries it.
+    const long = (phase === 'arrive' || phase === 'build') && !store.hurried.value;
     // Look first; walking matters once the island is free to wander.
-    const next = !desk ? null : !looked ? dragLine : !walked && free ? walkLine : null;
+    const next = !desk ? null : long ? hurryLine : !looked ? dragLine : !walked && free ? walkLine : null;
     if (next !== shown) {
       shown = next;
       hint.replaceChildren(...(next ? [next] : []));

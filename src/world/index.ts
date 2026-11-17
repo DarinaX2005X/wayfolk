@@ -47,6 +47,7 @@ import { createSky } from './sky';
 import { createSigns } from './signs';
 import { wind } from './wind';
 import { createEvents, firePitGeometry, type WeatherKind } from './events';
+import { ViewCone } from './cull';
 import { setAmbienceState } from './ambience';
 
 export { CATALOG, GIFT_PROPS, propsForTrade, resolveProp } from './catalog';
@@ -223,6 +224,10 @@ function logBench(): BufferGeometry {
 
 /** Houses nearer than this (metres from the viewer) show their props and small details. */
 const FINE_R = 13;
+const FINE_MAX = 4;
+/** Houses further than this from the viewer are drawn simplified (vertex clusters of HOUSE_CELL metres). */
+const HOUSE_NEAR = 15;
+const HOUSE_CELL = 0.06;
 
 export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: () => number } = {}): World {
   const clock = opts.now ?? ((): number => (typeof performance !== 'undefined' ? performance.now() : Date.now()));
@@ -311,9 +316,22 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: 
     const tops: Vector3[] = [];
     for (const h of houses.values()) if (h.built && h.plan.smoke) tops.push(new Vector3(...h.plan.top).applyMatrix4(h.matrix));
     critters?.setSmoke(tops);
+    // built houses hide the plants behind them from the seat
+    const walls: { x: number; z: number; r: number; h: number }[] = [];
+    for (const h of houses.values()) {
+      if (!h.built) continue;
+      const base = land.height(h.spec.pos.x, h.spec.pos.z);
+      const top = new Vector3(...h.plan.top).applyMatrix4(h.matrix).y;
+      walls.push({ x: h.spec.pos.x, z: h.spec.pos.z, r: h.plan.radius * 0.62, h: base + (top - base) * 0.55 });
+    }
+    meadow?.setOccluders(walls);
   };
 
   const groundY = (x: number, z: number): number => land.height(x, z);
+  // level of detail follows the viewer (in world.root space)
+  const lodEye = new Vector3(SEAT.x, 1.2, SEAT.z);
+  const lastLodEye = new Vector3(1e9, 0, 0);
+  let lodDirty = true;
 
   const ready = (async () => {
     try {
@@ -344,6 +362,11 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: 
     pier.walk = layPath(start, { x: PIER.base.x - PIER.dir.x * 0.6, z: PIER.base.z - PIER.dir.z * 0.6 }, 'seat|pier', true).reverse();
     pier.walk.unshift(pier.step.clone());
     pier.walk.push(seat.meet.clone());
+    // trees, bushes and rocks get simpler far versions
+    for (const key of staticBatch.keys()) if (key.startsWith('tree:')) staticBatch.lod(key, 0.3, 16);
+    staticBatch.lod('mushrooms', 0.05, 12);
+    for (const key of decorBatch.keys()) decorBatch.lod(key, key.includes('tree') ? 0.3 : key.startsWith('bush') ? 0.2 : 0.12, 11);
+    lodDirty = true;
     refreshShadows();
     applySky();
     flush();
@@ -469,6 +492,8 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: 
       if (isFine(piece)) rec.fine.push(mesh.geometry.clone().applyMatrix4(m.copy(mesh.matrix)));
       else houseBatch.add(rec.spec.id, mesh.geometry, m.copy(mesh.matrix));
     });
+    // far away the house melts its small shapes (trims, knobs, shingles) into the walls
+    houseBatch.lod(rec.spec.id, HOUSE_CELL, HOUSE_NEAR);
     lodDirty = true;
     applyLod();
     root.remove(rec.group);
@@ -620,17 +645,22 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: 
     if (!piece.geo.boundingSphere) piece.geo.computeBoundingSphere();
     return piece.geo.boundingSphere!.radius < 0.32;
   }
-  const lodEye = new Vector3(SEAT.x, 1.2, SEAT.z);
-  const lastLodEye = new Vector3(1e9, 0, 0);
-  let lodDirty = true;
   function applyLod(): void {
     if (!lodDirty && lodEye.distanceToSquared(lastLodEye) < 9) return;
     lodDirty = false;
     lastLodEye.copy(lodEye);
     let changed = false;
+    // small details only for the few nearest houses within reach of the eye
+    const nearest = [...houses.values()]
+      .filter((h) => h.built)
+      .map((h) => [h, Math.hypot(h.spec.pos.x - lodEye.x, h.spec.pos.z - lodEye.z)] as const)
+      .filter(([, d]) => d < FINE_R)
+      .sort((a, b) => a[1] - b[1])
+      .slice(0, FINE_MAX)
+      .map(([h]) => h);
     for (const rec of houses.values()) {
       if (!rec.built) continue;
-      const near = Math.hypot(rec.spec.pos.x - lodEye.x, rec.spec.pos.z - lodEye.z) < FINE_R;
+      const near = nearest.includes(rec);
       const has = fineBatch.has(rec.spec.id);
       if (near && !has) {
         for (const g of rec.fine) fineBatch.add(rec.spec.id, g);
@@ -641,6 +671,7 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: 
       }
     }
     if (changed) fineBatch.flush();
+    for (const b of [houseBatch, staticBatch, decorBatch]) b.updateLod(lodEye.x, lodEye.z);
   }
 
   // ---------- frame tick ----------
@@ -692,6 +723,9 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: 
       }
     }
     if (frameN++ % 30 === 0) applyLod();
+    // grass, flowers and cloud puffs: only what the viewer can see, thinner far away
+    meadow?.cull(cone);
+    clouds.cull(cone, t);
     events.update(t, Math.min(0.1, Math.max(0, t - lastT)), lodEye, sky.sunDir);
     lastT = t;
     if (Math.abs(events.rain - rainShown) > 0.01 || (events.rain === 0 && rainShown > 0)) applySky();
@@ -704,15 +738,15 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: 
   };
 
   // ticking from the render loop: the sky dome is always drawn first
+  const cone = new ViewCone();
   skyRig.dome.onBeforeRender = (renderer, _scene, camera) => {
     const frame = renderer.info.render.frame;
     if (frame === lastFrame) return;
     lastFrame = frame;
+    cone.set(camera, root, renderer);
+    lodEye.copy(cone.eye);
     tick();
-    camera.getWorldPosition(eye);
-    root.worldToLocal(eye);
-    skyRig.follow(eye);
-    lodEye.copy(eye);
+    skyRig.follow(cone.eye);
   };
 
   const world: World = {
@@ -914,15 +948,16 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: 
       tick(timeMs);
     },
     stats() {
+      // what is drawn now: far versions where shown, grass and clouds in view
       let triangles = 0;
       for (const b of batches) triangles += b.triangles();
-      triangles += (island?.triangles() ?? 0) + (meadow?.triangles() ?? 0) + clouds.triangles() + (critters?.triangles() ?? 0) + 32 * 18 * 2;
+      triangles += (island?.triangles() ?? 0) + (meadow?.shown() ?? 0) + clouds.shown() + (critters?.triangles() ?? 0) + 32 * 18 * 2;
       for (const rec of houses.values()) for (const m of rec.pieces) triangles += m.geometry.getAttribute('position').count / 3;
       const parts: Record<string, number> = {};
       for (const b of batches) parts[b.mesh.name] = Math.round(b.triangles());
       parts.ground = Math.round(island?.triangles() ?? 0);
-      parts.meadow = Math.round(meadow?.triangles() ?? 0);
-      parts.clouds = Math.round(clouds.triangles());
+      parts.meadow = Math.round(meadow?.shown() ?? 0);
+      parts.clouds = Math.round(clouds.shown());
       return { triangles, houses: houses.size, props: props.size, parts };
     },
     dispose() {

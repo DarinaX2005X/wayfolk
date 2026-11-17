@@ -139,6 +139,18 @@ export class ResidentAgent {
     this.arrive();
   }
 
+  /** Ends a walk at once, standing at its last point (a pinch or a click hurries it). */
+  finishWalk(): boolean {
+    const last = this.path[this.path.length - 1];
+    if (!last || this.riding) return false;
+    this.pos.x = last.x;
+    this.pos.z = last.z;
+    this.path = [];
+    this.antic = 0;
+    this.arrive();
+    return true;
+  }
+
   private arrive(): void {
     const cb = this.onArrive;
     this.onArrive = null;

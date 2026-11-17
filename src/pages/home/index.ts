@@ -149,7 +149,8 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   });
 
   effect(() => {
-    menu.hidden = store.phase.value !== 'free' || store.mode.value !== 'desk' || store.show.value !== null;
+    // One thing at a time: while replies are on offer, the menu waits.
+    menu.hidden = store.phase.value !== 'free' || store.mode.value !== 'desk' || store.show.value !== null || store.choices.value.length > 0;
   });
   const prepared = el('p', 'home-prepared', 'prepared traveler');
   prepared.hidden = true;

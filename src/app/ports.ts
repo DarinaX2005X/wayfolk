@@ -71,6 +71,9 @@ export type PipPort = {
   say(text: string, opts?: unknown): Promise<void> | void;
   emote?(kind: string): void;
   object?: Object3D;
+  /** Where Pip hovers from the head (metres ahead, right, below), when offered. */
+  setHover?(o: { ahead: number; side: number; drop: number }): void;
+  readonly mode?: string;
 };
 
 export type LifePort = {
@@ -89,6 +92,10 @@ export type LifePort = {
   face?(id: string, p?: unknown): void;
   /** Skips what is playing now (a long build, a line). */
   skip?(): void;
+  /** Ends a resident's walk at once where it was going, when offered. */
+  hurry?(id: string): void;
+  /** A few birds land round a point and peck at crumbs, when offered. */
+  feed?(at: () => Vector3 | null, opts?: { count?: number; seconds?: number; spread?: number; scale?: number; up?: () => Vector3 }): Promise<void>;
 };
 
 export type MindPort = {

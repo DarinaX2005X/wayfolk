@@ -478,6 +478,78 @@ function star4(c: C, x: number, y: number, s: number): void {
   c.closePath();
 }
 
+/**
+ * The owl, face on: a round head sitting straight on the body (no neck), small tufts,
+ * two big eyes cut out of the paper so the light shines through them, a hooked beak,
+ * folded wings with scalloped tips, chest chevrons, and the feet gripping a twig.
+ */
+function owl(c: C): void {
+  const cx = 0.5;
+  solid(c, () => {
+    // Body and head as one mass.
+    blob(c, [cx - 0.17, 0.42, cx, 0.36, cx + 0.17, 0.42, cx + 0.22, 0.62, cx + 0.17, 0.84, cx, 0.9, cx - 0.17, 0.84, cx - 0.22, 0.62]);
+    ell(c, cx, 0.31, 0.2, 0.165);
+    // Ear tufts, swept out.
+    poly(c, [cx - 0.18, 0.25, cx - 0.25, 0.14, cx - 0.1, 0.19]);
+    poly(c, [cx + 0.18, 0.25, cx + 0.25, 0.14, cx + 0.1, 0.19]);
+    // Folded wings, a little off the body, with scalloped tips.
+    for (const side of [-1, 1]) {
+      blob(c, [cx + side * 0.15, 0.45, cx + side * 0.25, 0.55, cx + side * 0.25, 0.75, cx + side * 0.19, 0.88, cx + side * 0.13, 0.74]);
+      for (let i = 0; i < 3; i += 1) ell(c, cx + side * (0.2 - i * 0.025), 0.86 + i * 0.012, 0.03, 0.022);
+    }
+    // Tail feathers under the body.
+    poly(c, [cx - 0.06, 0.86, cx + 0.06, 0.86, cx + 0.04, 0.97, cx - 0.04, 0.97]);
+    // Feet on the twig.
+    for (const side of [-1, 1]) {
+      for (let k = -1; k <= 1; k += 1) ell(c, cx + side * 0.07 + k * 0.022, 0.915, 0.014, 0.022, k * 0.4);
+    }
+  });
+  // The twig.
+  line(c, 0.03, [0.08, 0.94, 0.92, 0.925]);
+  line(c, 0.018, [0.78, 0.93, 0.88, 0.86]);
+  solid(c, () => ell(c, 0.86, 0.85, 0.035, 0.018, -0.6));
+  // Eyes: big holes with a pupil left in each, under a ring of the facial disc.
+  cut(c, () => {
+    ell(c, cx - 0.08, 0.31, 0.06, 0.06);
+    ell(c, cx + 0.08, 0.31, 0.06, 0.06);
+  });
+  solid(c, () => {
+    ell(c, cx - 0.072, 0.315, 0.028, 0.03);
+    ell(c, cx + 0.088, 0.315, 0.028, 0.03);
+  });
+  c.save();
+  c.globalCompositeOperation = 'destination-out';
+  c.lineWidth = 0.011;
+  c.beginPath();
+  c.arc(cx - 0.08, 0.31, 0.088, Math.PI * 0.95, Math.PI * 1.95);
+  c.moveTo(cx + 0.168, 0.31);
+  c.arc(cx + 0.08, 0.31, 0.088, Math.PI * 1.05, Math.PI * 2.05);
+  c.stroke();
+  // A thin line round the beak, so the beak reads inside the face.
+  c.lineWidth = 0.009;
+  c.beginPath();
+  c.moveTo(cx - 0.025, 0.365);
+  c.lineTo(cx, 0.43);
+  c.lineTo(cx + 0.025, 0.365);
+  c.stroke();
+  // Chest chevrons.
+  c.lineWidth = 0.012;
+  c.lineCap = 'round';
+  for (let row = 0; row < 3; row += 1) {
+    for (let k = -1; k <= 1; k += 1) {
+      const x = cx + k * 0.06 + (row % 2) * 0.03 - 0.015;
+      const y = 0.55 + row * 0.07;
+      if (Math.abs(x - cx) > 0.11) continue;
+      c.beginPath();
+      c.moveTo(x - 0.02, y - 0.012);
+      c.lineTo(x, y + 0.01);
+      c.lineTo(x + 0.02, y - 0.012);
+      c.stroke();
+    }
+  }
+  c.restore();
+}
+
 /** A small seeded random, so the same kind draws the same way every time. */
 function rng(seed: number): () => number {
   let s = seed >>> 0;
@@ -493,7 +565,7 @@ const DRAW: Record<SilhouetteKind, (c: C, w: number) => void> = {
   cat: (c) => animal(c, ANIMALS.cat),
   bear: (c) => animal(c, ANIMALS.bear),
   frog: (c) => animal(c, ANIMALS.frog),
-  owl: (c) => animal(c, ANIMALS.owl),
+  owl: (c) => owl(c),
   deer: (c) => animal(c, ANIMALS.deer),
   hedgehog: (c) => animal(c, ANIMALS.hedgehog),
   raccoon: (c) => animal(c, ANIMALS.raccoon),

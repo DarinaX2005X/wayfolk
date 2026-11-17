@@ -29,6 +29,7 @@ import {
 } from '@iwsdk/core';
 import type { SkyState } from './daylight';
 import { blob, join, paint, rng } from './geo';
+import { Packer, type ViewCone } from './cull';
 import { CENTER } from './land';
 import { U } from './materials';
 
@@ -201,7 +202,23 @@ export interface Clouds {
   solid(): ShaderMaterial;
   /** Adds small kit clouds drifting at eye level (after the kit has loaded). */
   addDrifters(geo: BufferGeometry): void;
+  /** Draws only the puffs inside the view cone (call once a frame; t is the cloud clock in seconds). */
+  cull(cone: ViewCone, t: number): void;
+  /** Triangles of every puff (all of them, in view or not). */
   triangles(): number;
+  /** Triangles of the puffs drawn now. */
+  shown(): number;
+}
+
+/** One instanced set of puffs with what culling needs: where each puff starts and how big it is. */
+interface PuffSet {
+  packer: Packer;
+  /** x, y, z, radius per puff (at time 0; puffs orbit CENTER at their own speed). */
+  at: Float32Array;
+  speed: Float32Array;
+  tris: number;
+  list: Uint16Array;
+  n: number;
 }
 
 function puffGeometry(seed: number, count = 6): BufferGeometry {
@@ -267,6 +284,19 @@ export function createClouds(parent: Object3D): Clouds {
   const s = new Vector3();
   const p = new Vector3();
   let tris = 4 * 48;
+  const sets: PuffSet[] = [];
+  const puffSet = (mesh: InstancedMesh, speed: Float32Array): PuffSet => {
+    const n = mesh.count;
+    const at = new Float32Array(n * 4);
+    const e = mesh.instanceMatrix.array;
+    for (let i = 0; i < n; i++) {
+      const sx = Math.hypot(e[i * 16], e[i * 16 + 1], e[i * 16 + 2]);
+      const sy = Math.hypot(e[i * 16 + 4], e[i * 16 + 5], e[i * 16 + 6]);
+      at.set([e[i * 16 + 12], e[i * 16 + 13], e[i * 16 + 14], Math.max(sx, sy) * 2.1], i * 4);
+    }
+    // copies: packing reorders the mesh's own arrays
+    return { packer: new Packer(mesh), at, speed: Float32Array.from(speed), tris: mesh.geometry.getAttribute('position').count / 3, list: new Uint16Array(n), n };
+  };
   rings.forEach((ring, ri) => {
     const geo = puffGeometry(5 + ri, ring.heads);
     const n = ring.n + (ri === 0 ? extra.length : 0);
@@ -300,6 +330,7 @@ export function createClouds(parent: Object3D): Clouds {
     puffs.renderOrder = -800;
     root.add(puffs);
     tris += (geo.getAttribute('position').count / 3) * n;
+    sets.push(puffSet(puffs, speeds));
   });
 
   // sun shafts: long soft fans from the low sun down through the clouds at golden hour
@@ -409,7 +440,29 @@ export function createClouds(parent: Object3D): Clouds {
       dg.setAttribute('aSpeed', new InstancedBufferAttribute(sp, 1));
       root.add(drift);
       tris += (dg.getAttribute('position').count / 3) * n;
+      sets.push(puffSet(drift, sp));
+    },
+    cull(cone, t) {
+      for (const set of sets) {
+        let n = 0;
+        let key = '';
+        for (let i = 0; i < set.packer.total; i++) {
+          const a = t * set.speed[i];
+          const ca = Math.cos(a);
+          const sa = Math.sin(a);
+          const rx = set.at[i * 4] - CENTER.x;
+          const rz = set.at[i * 4 + 2] - CENTER.z;
+          const x = CENTER.x + rx * ca - rz * sa;
+          const z = CENTER.z + rx * sa + rz * ca;
+          if (!cone.sees(x, set.at[i * 4 + 1], z, set.at[i * 4 + 3])) continue;
+          set.list[n++] = i;
+          key += i + ',';
+        }
+        set.n = n;
+        set.packer.show(set.list, n, key);
+      }
     },
     triangles: () => tris,
+    shown: () => 4 * 48 + 14 + sets.reduce((a, st) => a + st.tris * st.n, 0),
   };
 }

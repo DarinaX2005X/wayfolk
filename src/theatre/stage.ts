@@ -34,6 +34,13 @@ import { KINDS, drawKind } from './silhouettes';
 
 /** Size of the paper screen, metres. */
 export const STAGE = { width: 6.2, height: 3.5 } as const;
+/** The lit screen behind the cut-outs (a little larger than the opening, hidden at its edges). */
+const SCREEN = { w: 6.5, h: 3.75, y: 1.72, open: 6.0 } as const;
+/** The arched opening of the proscenium, metres in stage space. */
+const OPEN = { bottom: 0.08, shoulder: 3.0, top: 3.42 } as const;
+/** The proscenium card. */
+const FRAME = { w: 7.7, h: 4.95, bottom: -0.42, top: 4.53 } as const;
+const FOOTLIGHTS = 9;
 const HALF = STAGE.width / 2;
 const LAYER_Z: Record<StageLayer, number> = { far: -0.7, mid: -0.36, near: 0 };
 const LAYER_SCALE: Record<StageLayer, number> = { far: 0.62, mid: 0.85, near: 1 };
@@ -234,35 +241,395 @@ function noise(ctx: CanvasRenderingContext2D, w: number, h: number, amount: numb
   ctx.restore();
 }
 
-/** The glowing paper screen: a warm gradient with fibres and soft torn edges. */
+/**
+ * The glowing paper screen behind the cut-outs: a warm gradient with fibres, darker toward
+ * the corners and warmer at the foot where the footlights reach it. Its edges hide behind
+ * the proscenium, so it needs none of its own.
+ */
 function backdropTexture(p: Palette, seed: number): CanvasTexture {
   const W = 1024;
-  const H = Math.round((W * STAGE.height) / STAGE.width);
+  const H = Math.round((W * SCREEN.h) / SCREEN.w);
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const c = canvas.getContext('2d')!;
-  const g = c.createRadialGradient(W * 0.5, H * 0.62, H * 0.08, W * 0.5, H * 0.55, W * 0.62);
+  const g = c.createRadialGradient(W * 0.5, H * 0.6, H * 0.06, W * 0.5, H * 0.55, W * 0.58);
   g.addColorStop(0, p.center);
   g.addColorStop(0.5, p.mid);
   g.addColorStop(1, p.edge);
   c.fillStyle = g;
   c.fillRect(0, 0, W, H);
-  noise(c, W, H, 0.09, seed);
-  // Feathered edge: the screen melts into the clouds instead of ending in a line.
-  const mask = document.createElement('canvas');
-  mask.width = W;
-  mask.height = H;
-  const m = mask.getContext('2d')!;
-  m.filter = `blur(${Math.round(W * 0.016)}px)`;
-  m.fillStyle = '#000';
-  m.beginPath();
-  const inset = W * 0.035;
-  m.roundRect(inset, inset, W - inset * 2, H - inset * 2, H * 0.12);
-  m.fill();
-  c.globalCompositeOperation = 'destination-in';
-  c.drawImage(mask, 0, 0);
-  c.globalCompositeOperation = 'source-over';
+  // Footlight warmth rising from the foot of the screen.
+  const foot = c.createLinearGradient(0, H, 0, H * 0.55);
+  foot.addColorStop(0, 'rgba(255,214,150,0.55)');
+  foot.addColorStop(1, 'rgba(255,214,150,0)');
+  c.fillStyle = foot;
+  c.fillRect(0, 0, W, H);
+  noise(c, W, H, 0.1, seed);
+  // A soft vignette, the way light falls off at the edges of a lit sheet.
+  const v = c.createRadialGradient(W * 0.5, H * 0.55, H * 0.35, W * 0.5, H * 0.55, W * 0.62);
+  v.addColorStop(0, 'rgba(40,16,10,0)');
+  v.addColorStop(1, 'rgba(40,16,10,0.42)');
+  c.fillStyle = v;
+  c.fillRect(0, 0, W, H);
+  const t = new CanvasTexture(canvas);
+  t.colorSpace = SRGBColorSpace;
+  return t;
+}
+
+/** A deckled paper edge: the outline wobbles a little, the way torn card does. */
+function deckle(c: CanvasRenderingContext2D, pts: [number, number][], seed: number, amp: number): void {
+  let s = seed;
+  const r = (): number => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+  c.beginPath();
+  for (let i = 0; i < pts.length; i += 1) {
+    const [x0, y0] = pts[i];
+    const [x1, y1] = pts[(i + 1) % pts.length];
+    const len = Math.hypot(x1 - x0, y1 - y0) || 1;
+    const n = Math.max(1, Math.round(len / 14));
+    for (let k = 0; k < n; k += 1) {
+      const u = k / n;
+      const nx = -(y1 - y0) / len;
+      const ny = (x1 - x0) / len;
+      const j = (r() - 0.5) * amp;
+      const x = x0 + (x1 - x0) * u + nx * j;
+      const y = y0 + (y1 - y0) * u + ny * j;
+      if (i === 0 && k === 0) c.moveTo(x, y);
+      else c.lineTo(x, y);
+    }
+  }
+  c.closePath();
+}
+
+/** Height of the arched top of the opening at x (stage metres). */
+function archAt(x: number, halfW: number, shoulder: number, top: number): number {
+  const u = Math.max(0, Math.min(1, (x + halfW) / (halfW * 2)));
+  return shoulder + (top - shoulder) * Math.sin(u * Math.PI);
+}
+
+/** Points of an arched opening in canvas pixels (from the bottom left, clockwise). */
+function archPoints(toPx: (x: number, y: number) => [number, number], halfW: number, bottom: number, shoulder: number, top: number): [number, number][] {
+  const pts: [number, number][] = [toPx(-halfW, bottom), toPx(-halfW, shoulder)];
+  for (let i = 1; i < 24; i += 1) {
+    const x = -halfW + (i / 24) * halfW * 2;
+    pts.push(toPx(x, archAt(x, halfW, shoulder, top)));
+  }
+  pts.push(toPx(halfW, shoulder), toPx(halfW, bottom));
+  return pts;
+}
+
+/**
+ * The proscenium: layered card. A wine-red frame with fluted pillars and gold capitals, a
+ * gold band round an arched opening, a scalloped valance with a fringe, a wooden lip with
+ * brass footlight cups, and a gold medallion on top with Pip cut through it.
+ */
+function prosceniumTexture(seed: number): CanvasTexture {
+  const W = 2048;
+  const H = Math.round((W * FRAME.h) / FRAME.w);
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const c = canvas.getContext('2d')!;
+  const k = W / FRAME.w;
+  const px = (x: number, y: number): [number, number] => [(x + FRAME.w / 2) * k, (FRAME.top - y) * k];
+  const halfW = SCREEN.open / 2;
+  const shadow = (blur: number, dy: number, alpha = 0.5): void => {
+    c.shadowColor = `rgba(30,8,4,${alpha})`;
+    c.shadowBlur = blur;
+    c.shadowOffsetY = dy;
+  };
+  // The outer card: straight sides, a gentle arch on top that leaves room for the medallion.
+  const ow = FRAME.w / 2 - 0.05;
+  const outer: [number, number][] = [px(-ow, FRAME.bottom + 0.03), px(-ow, OPEN.shoulder + 0.35)];
+  for (let i = 1; i < 30; i += 1) {
+    const x = -ow + (i / 30) * ow * 2;
+    outer.push(px(x, archAt(x, ow, OPEN.shoulder + 0.35, FRAME.top - 0.55)));
+  }
+  outer.push(px(ow, OPEN.shoulder + 0.35), px(ow, FRAME.bottom + 0.03));
+  // Back card: darker and a touch larger, casting its shadow behind.
+  c.save();
+  shadow(26, 10, 0.55);
+  deckle(c, outer, seed + 1, 7);
+  c.fillStyle = '#4a1912';
+  c.fill();
+  c.restore();
+  // Main card, inset a little so the back card shows as a rim.
+  const inner = outer.map(([x, y]) => [x + (W / 2 - x) * 0.014, y + (H * 0.6 - y) * 0.022] as [number, number]);
+  const red = c.createLinearGradient(0, 0, 0, H);
+  red.addColorStop(0, '#9a3a2c');
+  red.addColorStop(0.55, '#802d23');
+  red.addColorStop(1, '#5e1f18');
+  c.save();
+  shadow(10, 4, 0.4);
+  deckle(c, inner, seed + 2, 5);
+  c.fillStyle = red;
+  c.fill();
+  c.restore();
+  // Paper fibres only on the card.
+  c.save();
+  deckle(c, inner, seed + 2, 5);
+  c.clip();
+  noise(c, W, H, 0.08, seed + 3);
+  c.restore();
+  // Pillars: lighter fluted card with gold capitals and bases.
+  for (const side of [-1, 1]) {
+    const xa = side < 0 ? -ow + 0.2 : halfW + 0.2;
+    const xb = side < 0 ? -halfW - 0.2 : ow - 0.2;
+    const [ax, ay] = px(xa, OPEN.shoulder + 0.05);
+    const [bx, by] = px(xb, FRAME.bottom + 0.42);
+    const pg = c.createLinearGradient(ax, 0, bx, 0);
+    pg.addColorStop(0, '#8a3427');
+    pg.addColorStop(0.5, '#b04e3e');
+    pg.addColorStop(1, '#8a3427');
+    c.save();
+    shadow(10, 4, 0.4);
+    c.fillStyle = pg;
+    c.fillRect(ax, ay, bx - ax, by - ay);
+    c.restore();
+    c.strokeStyle = 'rgba(50,14,8,0.4)';
+    c.lineWidth = 5;
+    for (let f = 1; f < 4; f += 1) {
+      const fx = ax + ((bx - ax) * f) / 4;
+      c.beginPath();
+      c.moveTo(fx, ay + 34);
+      c.lineTo(fx, by - 30);
+      c.stroke();
+    }
+    c.save();
+    shadow(8, 3, 0.4);
+    c.fillStyle = '#e2a650';
+    c.fillRect(ax - 14, ay - 30, bx - ax + 28, 36);
+    c.fillRect(ax - 6, ay + 6, bx - ax + 12, 12);
+    c.fillRect(ax - 14, by - 4, bx - ax + 28, 36);
+    c.restore();
+  }
+  // Gold band round the opening.
+  c.save();
+  shadow(14, 6, 0.5);
+  deckle(c, archPoints(px, halfW + 0.13, OPEN.bottom - 0.02, OPEN.shoulder + 0.02, OPEN.top + 0.13), seed + 4, 4);
+  const gold = c.createLinearGradient(0, 0, 0, H);
+  gold.addColorStop(0, '#f2c674');
+  gold.addColorStop(1, '#c98a3c');
+  c.fillStyle = gold;
+  c.fill();
+  c.restore();
+  // Little punched dots along the band.
+  c.fillStyle = '#7a2a20';
+  for (let i = 0; i <= 44; i += 1) {
+    const x = -halfW - 0.06 + (i / 44) * (halfW * 2 + 0.12);
+    const [dx, dy] = px(x, archAt(x, halfW + 0.06, OPEN.shoulder + 0.02, OPEN.top + 0.07));
+    c.beginPath();
+    c.arc(dx, dy, 5, 0, Math.PI * 2);
+    c.fill();
+  }
+  // The opening.
+  c.save();
+  c.globalCompositeOperation = 'destination-out';
+  deckle(c, archPoints(px, halfW, OPEN.bottom, OPEN.shoulder - 0.08, OPEN.top), seed + 7, 3);
+  c.fill();
+  c.restore();
+  // The valance: scalloped swags hung inside the top of the opening, with a fringe.
+  const swags = 7;
+  const drop = 0.34;
+  const swagLow = (i: number): number => (i === 0 || i === swags - 1 ? 0.22 : 0);
+  c.save();
+  shadow(18, 8, 0.5);
+  c.beginPath();
+  const [l0x, l0y] = px(-halfW - 0.02, OPEN.top + 0.05);
+  const [r0x, r0y] = px(halfW + 0.02, OPEN.top + 0.05);
+  c.moveTo(l0x, l0y);
+  c.lineTo(r0x, r0y);
+  for (let i = swags - 1; i >= 0; i -= 1) {
+    const xa = -halfW + (i / swags) * halfW * 2;
+    const xb = -halfW + ((i + 1) / swags) * halfW * 2;
+    const ya = archAt(xa, halfW, OPEN.shoulder - 0.08, OPEN.top) - 0.1;
+    const yb = archAt(xb, halfW, OPEN.shoulder - 0.08, OPEN.top) - 0.1;
+    const [bx, by] = px(xb, yb);
+    const [mx, my] = px((xa + xb) / 2, Math.min(ya, yb) - drop - swagLow(i));
+    const [ax, ay] = px(xa, ya);
+    if (i === swags - 1) c.lineTo(bx, by);
+    c.quadraticCurveTo(mx, my, ax, ay);
+  }
+  c.closePath();
+  const drape = c.createLinearGradient(0, px(0, OPEN.top)[1], 0, px(0, OPEN.shoulder - 0.5)[1]);
+  drape.addColorStop(0, '#6e2219');
+  drape.addColorStop(1, '#b0402f');
+  c.fillStyle = drape;
+  c.fill();
+  c.restore();
+  // Fringe along each swag.
+  c.fillStyle = '#e8b45c';
+  for (let i = 0; i < swags; i += 1) {
+    const xa = -halfW + (i / swags) * halfW * 2;
+    const xb = -halfW + ((i + 1) / swags) * halfW * 2;
+    const ya = archAt(xa, halfW, OPEN.shoulder - 0.08, OPEN.top) - 0.1;
+    const yb = archAt(xb, halfW, OPEN.shoulder - 0.08, OPEN.top) - 0.1;
+    const ym = Math.min(ya, yb) - drop - swagLow(i);
+    for (let f = 0; f <= 9; f += 1) {
+      const u = f / 9;
+      const x = xa + (xb - xa) * u;
+      // Height of the quadratic swag at u (control at the middle).
+      const y = (1 - u) * (1 - u) * ya + 2 * u * (1 - u) * ym + u * u * yb;
+      const [fx, fy] = px(x, y);
+      c.beginPath();
+      c.ellipse(fx, fy + 10, 6, 13, 0, 0, Math.PI * 2);
+      c.fill();
+    }
+  }
+  // The lip: a wooden apron under the opening with brass footlight cups.
+  const [lx0, ly0] = px(-halfW - 0.22, OPEN.bottom + 0.05);
+  const [lx1, ly1] = px(halfW + 0.22, FRAME.bottom + 0.1);
+  const wood = c.createLinearGradient(0, ly0, 0, ly1);
+  wood.addColorStop(0, '#94613a');
+  wood.addColorStop(1, '#5b361f');
+  c.save();
+  shadow(16, 6, 0.5);
+  deckle(c, [[lx0, ly0], [lx1, ly0], [lx1, ly1], [lx0, ly1]], seed + 9, 3);
+  c.fillStyle = wood;
+  c.fill();
+  c.restore();
+  c.strokeStyle = 'rgba(40,20,8,0.35)';
+  c.lineWidth = 3;
+  for (let i = 1; i < 3; i += 1) {
+    const y = ly0 + ((ly1 - ly0) * i) / 3;
+    c.beginPath();
+    c.moveTo(lx0 + 6, y);
+    c.lineTo(lx1 - 6, y);
+    c.stroke();
+  }
+  for (let i = 0; i < FOOTLIGHTS; i += 1) {
+    const x = -halfW + 0.3 + (i / (FOOTLIGHTS - 1)) * (halfW * 2 - 0.6);
+    const [fx, fy] = px(x, OPEN.bottom + 0.05);
+    c.fillStyle = '#a8742f';
+    c.fillRect(fx - 28, fy - 4, 56, 10);
+    c.fillStyle = '#e0aa55';
+    c.beginPath();
+    c.ellipse(fx, fy - 2, 24, 13, 0, Math.PI, 0);
+    c.fill();
+  }
+  // The medallion on top: a gold sunburst with Pip on a wine-red disc.
+  const [mx, my] = px(0, FRAME.top - 0.45);
+  c.save();
+  shadow(16, 6, 0.5);
+  c.fillStyle = '#e8b45c';
+  c.beginPath();
+  for (let i = 0; i < 36; i += 1) {
+    const a = (i / 36) * Math.PI * 2;
+    const rad = (i % 2 ? 0.31 : 0.42) * k;
+    if (i === 0) c.moveTo(mx + Math.cos(a) * rad, my + Math.sin(a) * rad);
+    else c.lineTo(mx + Math.cos(a) * rad, my + Math.sin(a) * rad);
+  }
+  c.closePath();
+  c.fill();
+  c.restore();
+  c.fillStyle = '#7f2c22';
+  c.beginPath();
+  c.arc(mx, my, 0.25 * k, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = '#f3c878';
+  c.beginPath();
+  c.ellipse(mx - 0.01 * k, my + 0.04 * k, 0.12 * k, 0.11 * k, 0, 0, Math.PI * 2);
+  c.fill();
+  c.beginPath();
+  c.ellipse(mx + 0.06 * k, my - 0.06 * k, 0.075 * k, 0.07 * k, 0, 0, Math.PI * 2);
+  c.fill();
+  c.beginPath();
+  c.moveTo(mx + 0.125 * k, my - 0.075 * k);
+  c.lineTo(mx + 0.19 * k, my - 0.045 * k);
+  c.lineTo(mx + 0.125 * k, my - 0.03 * k);
+  c.closePath();
+  c.fill();
+  c.beginPath();
+  c.moveTo(mx - 0.11 * k, my + 0.03 * k);
+  c.lineTo(mx - 0.2 * k, my - 0.03 * k);
+  c.lineTo(mx - 0.12 * k, my + 0.08 * k);
+  c.closePath();
+  c.fill();
+  c.beginPath();
+  c.moveTo(mx + 0.04 * k, my - 0.12 * k);
+  c.quadraticCurveTo(mx + 0.02 * k, my - 0.2 * k, mx + 0.08 * k, my - 0.17 * k);
+  c.lineTo(mx + 0.07 * k, my - 0.12 * k);
+  c.closePath();
+  c.fill();
+  c.fillStyle = '#7f2c22';
+  c.beginPath();
+  c.arc(mx + 0.08 * k, my - 0.07 * k, 0.015 * k, 0, Math.PI * 2);
+  c.fill();
+  const t = new CanvasTexture(canvas);
+  t.colorSpace = SRGBColorSpace;
+  t.anisotropy = 4;
+  t.minFilter = LinearMipmapLinearFilter;
+  return t;
+}
+
+/** One paper curtain: deep red folds, darker in the hollows, a scalloped hem and a fringe. */
+function curtainTexture(seed: number): CanvasTexture {
+  const W = 512;
+  const H = 1024;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const c = canvas.getContext('2d')!;
+  const folds = 6;
+  const g = c.createLinearGradient(0, 0, W, 0);
+  for (let i = 0; i <= folds * 6; i += 1) {
+    const u = i / (folds * 6);
+    const v = 0.5 + 0.5 * Math.sin(u * folds * Math.PI * 2);
+    g.addColorStop(u, `rgb(${Math.round(112 + v * 70)},${Math.round(28 + v * 26)},${Math.round(22 + v * 16)})`);
+  }
+  c.fillStyle = g;
+  c.beginPath();
+  c.moveTo(0, 0);
+  c.lineTo(W, 0);
+  for (let i = folds * 2; i >= 0; i -= 1) c.lineTo((i / (folds * 2)) * W, H - 44 - (i % 2 ? 0 : 18));
+  c.closePath();
+  c.fill();
+  c.save();
+  c.globalCompositeOperation = 'source-atop';
+  noise(c, W, H, 0.07, seed);
+  // Light from above: darker toward the hem.
+  const shade = c.createLinearGradient(0, 0, 0, H);
+  shade.addColorStop(0, 'rgba(255,200,150,0.14)');
+  shade.addColorStop(1, 'rgba(30,6,4,0.4)');
+  c.fillStyle = shade;
+  c.fillRect(0, 0, W, H);
+  c.restore();
+  c.fillStyle = '#e2a650';
+  for (let i = 0; i <= folds * 4; i += 1) {
+    const x = (i / (folds * 4)) * W;
+    const hem = H - 44 - (Math.round((i / (folds * 4)) * folds * 2) % 2 ? 0 : 18);
+    c.beginPath();
+    c.ellipse(x, hem + 12, 7, 16, 0, 0, Math.PI * 2);
+    c.fill();
+  }
+  const t = new CanvasTexture(canvas);
+  t.colorSpace = SRGBColorSpace;
+  return t;
+}
+
+/** A row of small warm lamps, for the footlights (drawn additively). */
+function footlightTexture(): CanvasTexture {
+  const W = 1024;
+  const H = 160;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const c = canvas.getContext('2d')!;
+  // A low wash of light along the whole row.
+  const wash = c.createLinearGradient(0, H, 0, 0);
+  wash.addColorStop(0, 'rgba(255,200,130,0.35)');
+  wash.addColorStop(1, 'rgba(255,200,130,0)');
+  c.fillStyle = wash;
+  c.fillRect(0, 0, W, H);
+  for (let i = 0; i < FOOTLIGHTS; i += 1) {
+    const x = (0.3 / SCREEN.open + (i / (FOOTLIGHTS - 1)) * (1 - 0.6 / SCREEN.open)) * W;
+    const g = c.createRadialGradient(x, H * 0.8, 2, x, H * 0.8, H * 0.6);
+    g.addColorStop(0, 'rgba(255,244,210,1)');
+    g.addColorStop(0.2, 'rgba(255,210,130,0.7)');
+    g.addColorStop(1, 'rgba(255,170,90,0)');
+    c.fillStyle = g;
+    c.fillRect(x - H, 0, H * 2, H);
+  }
   const t = new CanvasTexture(canvas);
   t.colorSpace = SRGBColorSpace;
   return t;
@@ -426,6 +793,8 @@ export type Stage = {
 
 const INTRO = 3.0;
 const OUTRO = 2.6;
+/** The caption strip hangs under the proscenium. */
+const CAPTION_Y = FRAME.bottom - 0.5;
 
 export function beatSeconds(line: string): number {
   return Math.min(10.5, Math.max(4.6, 2.2 + line.length * 0.052));
@@ -437,19 +806,47 @@ export function createStage(opts: StageOptions): Stage {
   group.visible = false;
   opts.parent.add(group);
 
+  // Warm light spilling round the card from behind.
   const halo = new Mesh(
-    new PlaneGeometry(STAGE.width * 1.9, STAGE.height * 2.1),
+    new PlaneGeometry(FRAME.w * 1.5, FRAME.h * 1.45),
     new MeshBasicMaterial({ map: haloTexture(), transparent: true, depthWrite: false, blending: AdditiveBlending, toneMapped: false, fog: false, opacity: 0 }),
   );
-  halo.position.set(0, STAGE.height * 0.5, -1.3);
+  halo.position.set(0, (FRAME.top + FRAME.bottom) / 2, -1.3);
   halo.renderOrder = 1;
   group.add(halo);
 
   const backdropMat = new MeshBasicMaterial({ transparent: true, depthWrite: false, toneMapped: false, fog: false, side: DoubleSide, opacity: 0 });
-  const backdrop = new Mesh(new PlaneGeometry(STAGE.width * 1.3, STAGE.height * 1.3), backdropMat);
-  backdrop.position.set(0, STAGE.height * 0.5, -0.95);
+  const backdrop = new Mesh(new PlaneGeometry(SCREEN.w, SCREEN.h), backdropMat);
+  backdrop.position.set(0, SCREEN.y, -0.95);
   backdrop.renderOrder = 2;
   group.add(backdrop);
+
+  // The proscenium in front of everything on the stage, the curtains just behind it.
+  const frameMat = new MeshBasicMaterial({ map: prosceniumTexture(41), transparent: true, depthWrite: false, toneMapped: false, fog: false, side: DoubleSide, opacity: 0 });
+  const frame = new Mesh(new PlaneGeometry(FRAME.w, FRAME.h), frameMat);
+  frame.name = 'theatre:proscenium';
+  frame.position.set(0, (FRAME.top + FRAME.bottom) / 2, 0.3);
+  frame.renderOrder = 23;
+  group.add(frame);
+  const curtainTex = curtainTexture(17);
+  const CURTAIN = { w: SCREEN.open / 2 + 0.25, h: OPEN.top - OPEN.bottom + 0.1 };
+  const curtains = [-1, 1].map((side) => {
+    const mat = new MeshBasicMaterial({ map: curtainTex, transparent: true, depthWrite: false, toneMapped: false, fog: false, side: DoubleSide, opacity: 0 });
+    const g = new PlaneGeometry(CURTAIN.w, CURTAIN.h);
+    // Hinged at the outer edge, so a squeeze gathers it to the side.
+    g.translate((-side * CURTAIN.w) / 2, CURTAIN.h / 2, 0);
+    const m = new Mesh(g, mat);
+    m.name = `theatre:curtain:${side < 0 ? 'left' : 'right'}`;
+    m.position.set(side * (SCREEN.open / 2 + 0.1), OPEN.bottom, 0.22);
+    m.renderOrder = 22;
+    group.add(m);
+    return m;
+  });
+  const footMat = new MeshBasicMaterial({ map: footlightTexture(), transparent: true, depthWrite: false, toneMapped: false, fog: false, blending: AdditiveBlending, opacity: 0 });
+  const footlights = new Mesh(new PlaneGeometry(SCREEN.open, 0.5), footMat);
+  footlights.position.set(0, OPEN.bottom + 0.16, 0.34);
+  footlights.renderOrder = 24;
+  group.add(footlights);
 
   const capCanvas = document.createElement('canvas');
   capCanvas.width = 1600;
@@ -460,7 +857,7 @@ export function createStage(opts: StageOptions): Stage {
   const capMat = new MeshBasicMaterial({ map: capTex, transparent: true, depthWrite: false, toneMapped: false, fog: false, opacity: 0 });
   const caption = new Mesh(new PlaneGeometry(5.2, (5.2 * 300) / 1600), capMat);
   caption.name = 'theatre:caption';
-  caption.position.set(0, -0.62, 0.35);
+  caption.position.set(0, CAPTION_Y, 0.35);
   caption.renderOrder = 30;
   group.add(caption);
 
@@ -602,22 +999,21 @@ export function createStage(opts: StageOptions): Stage {
       actors.push(actor);
     }
 
-    // Cream paper clouds framing the screen; they part when the stage opens.
+    // Cream paper clouds along the foot: the stage floats on them. They drift in as it opens.
     const cc = atlas.cells.get('cloud')!;
-    const frame = [
-      { x: -2.9, y: -0.05, s: 1.5, o: { x: -4.6, y: -0.5 } },
-      { x: 2.95, y: 0.0, s: 1.7, o: { x: 4.7, y: -0.4 } },
-      { x: -3.1, y: 2.9, s: 1.2, o: { x: -4.8, y: 3.6 } },
-      { x: 3.05, y: 3.2, s: 1.3, o: { x: 4.8, y: 3.8 } },
-      { x: -1.1, y: -0.35, s: 1.1, o: { x: -1.6, y: -1.4 } },
-      { x: 1.4, y: -0.4, s: 1.25, o: { x: 2.2, y: -1.5 } },
-      { x: 0.2, y: 3.55, s: 1.0, o: { x: 0.3, y: 4.6 } },
+    const puffs = [
+      { x: -3.55, y: -0.62, s: 1.5, o: { x: -5.2, y: -0.9 } },
+      { x: 3.6, y: -0.58, s: 1.6, o: { x: 5.2, y: -0.9 } },
+      { x: -2.15, y: -0.78, s: 1.05, o: { x: -2.8, y: -1.6 } },
+      { x: 2.2, y: -0.8, s: 1.15, o: { x: 2.9, y: -1.6 } },
+      { x: -4.1, y: 0.35, s: 0.95, o: { x: -5.4, y: 0.2 } },
+      { x: 4.15, y: 0.45, s: 1.0, o: { x: 5.4, y: 0.3 } },
     ];
-    for (const f of frame) {
+    for (const f of puffs) {
       const mat = new MeshBasicMaterial({ map: atlas.texture, color: new Color(palette.cloud), transparent: true, depthWrite: false, toneMapped: false, fog: false, opacity: 0, side: DoubleSide });
       const mesh = new Mesh(geometryFor(cc, f.s, true), mat);
       mesh.position.set(f.o.x, f.o.y, 0.45);
-      mesh.renderOrder = 25;
+      mesh.renderOrder = 26;
       group.add(mesh);
       clouds.push({ mesh, home: { x: f.x, y: f.y }, out: f.o });
     }
@@ -819,11 +1215,23 @@ export function createStage(opts: StageOptions): Stage {
         }
       }
     }
-    const open = ending < 0 ? ease(t / 2.2) : 1 - ease((t - ending) / OUTRO);
+    const open = ending < 0 ? ease(t / 2.2) : 1 - ease((t - ending - 0.9) / (OUTRO - 0.9));
+    // The card comes first, the curtains part, the light comes up behind them; at the end
+    // the curtains close before the card fades.
+    const card = ending < 0 ? ease(t / 0.8) : open;
+    frameMat.opacity = card;
+    const parted = ending < 0 ? ease((t - 0.7) / 1.6) : 1 - ease((t - ending) / 1.0);
+    for (let i = 0; i < 2; i += 1) {
+      const m = curtains[i];
+      m.material.opacity = card;
+      m.scale.x = 1 - parted * 0.82;
+      m.rotation.z = (i === 0 ? 1 : -1) * parted * 0.02;
+    }
     backdropMat.opacity = open;
-    (halo.material as MeshBasicMaterial).opacity = open * 0.35;
+    (halo.material as MeshBasicMaterial).opacity = open * 0.28;
+    footMat.opacity = card * (0.85 + Math.sin(t * 7.3) * 0.05 + Math.sin(t * 3.1) * 0.06);
     capMat.opacity = ending < 0 ? ease((t - 0.8) / 1.2) : open;
-    caption.position.y = -0.62 - (1 - open) * 0.25;
+    caption.position.y = CAPTION_Y - (1 - open) * 0.25;
     for (const c of clouds) {
       const k = ending < 0 ? ease((t - 0.2) / 2.4) : open;
       c.mesh.position.x = c.out.x + (c.home.x - c.out.x) * k;

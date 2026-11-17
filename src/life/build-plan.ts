@@ -1,6 +1,7 @@
 // The build schedule, pure and unit tested: which birds carry which piece, when they
 // pick it up at the cloud edge and when it lands, so pieces land in assembly order and
-// the whole build (gather, carry, finish) takes 12–20 seconds.
+// the whole build (gather, carry, finish) takes 11–15 seconds: long enough to watch the
+// flock work, short enough that nobody waits.
 
 export interface Carry {
   index: number;
@@ -23,8 +24,8 @@ export interface BuildSchedule {
   total: number;
 }
 
-export const MIN_TOTAL = 12;
-export const MAX_TOTAL = 20;
+export const MIN_TOTAL = 11;
+export const MAX_TOTAL = 15;
 const GATHER = 1.6;
 const FINISH = 3.2;
 const SETTLE = 0.55;
@@ -44,7 +45,7 @@ export function planBuild(sizes: number[], flock: number): BuildSchedule {
   const birds = Math.max(1, flock);
   if (n === 0) return { items: [], gather: 0, finish: 0, total: 0 };
   // Aim for a total that grows with the piece count, within the bounds.
-  const target = Math.min(MAX_TOTAL, Math.max(MIN_TOTAL, 9 + n * 0.55));
+  const target = Math.min(MAX_TOTAL, Math.max(MIN_TOTAL, 8 + n * 0.4));
   const span = target - GATHER - FINISH - SETTLE;
   // Flight time of one carry and the launch gap between pieces.
   let carry = Math.min(3.4, Math.max(1.6, span * 0.42));

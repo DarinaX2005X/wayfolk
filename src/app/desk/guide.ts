@@ -22,8 +22,11 @@ import type { ScreenPoint } from '../store';
 export type Subject = () => Vector3 | null;
 
 export type Guide = {
-  /** Keeps a subject in view (null: stop framing). `lift` raises the aim, metres. */
-  frame(subject: Subject | null, opts?: { lift?: number; hold?: boolean }): void;
+  /**
+   * Keeps a subject in view (null: stop framing). `lift` raises the aim, metres; `zoom`
+   * narrows the view on a far subject (a traveler drifting in), as a camera would.
+   */
+  frame(subject: Subject | null, opts?: { lift?: number; hold?: boolean; zoom?: boolean }): void;
   /** Points the page's arrow at a subject with one short line, or hides it. */
   cue(subject: Subject | null, text?: string | null): void;
   /** The person took the view (drag, keys): framing waits. */
@@ -43,6 +46,8 @@ export function createGuide(app: App, rig: Rig, world: WorldPort, blocked: () =>
   const desk = (): boolean => app.store.mode.peek() === 'desk';
   let subject: Subject | null = null;
   let lift = 0;
+  let zoom = false;
+  let baseFov = 0;
   let cueSubject: Subject | null = null;
   let manualUntil = 0;
   let aiming = false;
@@ -163,6 +168,20 @@ export function createGuide(app: App, rig: Rig, world: WorldPort, blocked: () =>
 
     // Framing.
     const target = subject?.();
+    // The lens: a far subject is brought closer by narrowing the view, eased both ways.
+    const lens = cam as unknown as { fov?: number; updateProjectionMatrix?: () => void };
+    if (lens.fov && lens.updateProjectionMatrix) {
+      if (!baseFov) baseFov = lens.fov;
+      let want = baseFov;
+      if (zoom && target) {
+        const d = cam.getWorldPosition(TMP).distanceTo(target);
+        want = Math.max(baseFov * 0.5, Math.min(baseFov, (baseFov * 6.5) / Math.max(1, d)));
+      }
+      if (Math.abs(want - lens.fov) > 0.05) {
+        lens.fov += (want - lens.fov) * (1 - Math.exp(-dt * 1.6));
+        lens.updateProjectionMatrix();
+      }
+    }
     if (target && now > manualUntil) {
       const from = cam.getWorldPosition(LOCAL);
       const dx = target.x - from.x;
@@ -198,6 +217,7 @@ export function createGuide(app: App, rig: Rig, world: WorldPort, blocked: () =>
     frame(s, opts) {
       subject = s;
       lift = opts?.lift ?? 0;
+      zoom = Boolean(opts?.zoom);
       aiming = true;
       if (!opts?.hold) manualUntil = Math.min(manualUntil, app.clock.now() + 600);
     },

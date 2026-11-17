@@ -8,6 +8,7 @@ import { CATALOG } from './catalog';
 import { M, blob, cone, hashString, join, paint, place, rng } from './geo';
 import { kitGeometry } from './kit';
 import type { Batch } from './batch';
+import { simplify } from './lod';
 
 export interface HorizonIsland {
   id: string;
@@ -65,7 +66,8 @@ function islandGeometry(seed: number, radius: number, village: boolean): BufferG
       parts.push(paint(place(blob(0.55, 0, i, 0.1), [Math.cos(a) * d + radius * 0.2, radius * 0.06 + 2.2, Math.sin(a) * d + radius * 0.15 + 2.6]), '#ffd38a', { glow: true }));
     }
   }
-  return join(parts);
+  // seen from 120 m and more: shapes under about half a metre melt away (a fifth of the triangles)
+  return village ? simplify(join(parts), radius * 0.07) : join(parts);
 }
 
 export interface Horizon {

@@ -7,6 +7,7 @@ import type { HandLike, V3 } from './types';
 export type BirdMode = 'flock' | 'perch' | 'goto' | 'carry' | 'palm' | 'hover' | 'follow' | 'circle';
 
 const UP = new Vector3(0, 1, 0);
+const HOVER = { ahead: 0.7, side: 0.34, drop: 0.2 };
 const tA = new Vector3();
 const tB = new Vector3();
 const tC = new Vector3();
@@ -23,6 +24,8 @@ export interface FlockEnv {
   perches: Vector3[];
   /** Wind velocity at a point, m/s (the island's shared wind). */
   wind?: (pos: Vector3, out: Vector3) => Vector3;
+  /** Where Pip hovers from the head: metres ahead, to the right, and below the eyes. */
+  hover?: { ahead: number; side: number; drop: number };
 }
 
 let seed = 9;
@@ -71,6 +74,8 @@ export class BirdAgent {
   /** Mouth envelope while speaking (0..1), set by speech. */
   mouth = 0;
   carrying = false;
+  /** Landed and eating crumbs: the head dips to the ground now and then. */
+  pecking = false;
   onLanded: (() => void) | null = null;
 
   constructor(readonly lead: boolean, colorIndex: number, scale: number, detail = 1) {
@@ -148,8 +153,9 @@ export class BirdAgent {
           const fl = Math.hypot(fx, fz) || 1;
           const sx = -fz / fl;
           const sz = fx / fl;
-          const w = Math.sin(t * 0.9 + this.personal) * 0.08;
-          tA.set(env.head.x + (fx / fl) * 0.7 + sx * (0.34 + w), env.head.y - 0.2 + Math.sin(t * 1.8) * 0.04, env.head.z + (fz / fl) * 0.7 + sz * (0.34 + w));
+          const hv = env.hover ?? HOVER;
+          const w = Math.sin(t * 0.9 + this.personal) * 0.08 * Math.max(1, hv.ahead / 0.7);
+          tA.set(env.head.x + (fx / fl) * hv.ahead + sx * (hv.side + w), env.head.y - hv.drop + Math.sin(t * 1.8) * 0.04, env.head.z + (fz / fl) * hv.ahead + sz * (hv.side + w));
           this.seek(tA, 3.2, dt, 3);
           this.look = env.head;
           break;
@@ -322,8 +328,14 @@ export class BirdAgent {
     if (rnd() < dt * 0.4) this.tiltGoal = (rnd() - 0.5) * 0.7;
     if (this.mouth > 0) this.tiltGoal = Math.sin(t * 2.2) * 0.25;
     this.tilt += (this.tiltGoal - this.tilt) * (1 - Math.exp(-dt * 6));
+    if (this.pecking && !flying) {
+      // Eating: quick dips of the head to the ground, a little look round between them.
+      const k = Math.sin(t * 5.2 + this.personal * 3);
+      pitch = k > 0.35 ? 0.95 : -0.1;
+      yaw = Math.sin(t * 0.7 + this.personal) * 0.5;
+    }
     p.headYaw += (yaw - p.headYaw) * (1 - Math.exp(-dt * 8));
-    p.headPitch += (pitch - p.headPitch) * (1 - Math.exp(-dt * 8));
+    p.headPitch += (pitch - p.headPitch) * (1 - Math.exp(-dt * (this.pecking ? 18 : 8)));
     p.headRoll = this.tilt;
     // Landed life: hops and preening.
     this.landSquash = Math.max(0, this.landSquash - dt * 3.5);

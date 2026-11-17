@@ -100,7 +100,7 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     (mods.mind.state?.residents ?? [])
       .map((r) => ({ id: r.id, name: r.name, object: mods.life.objectOf?.(r.id) as Object3D }))
       .filter((r) => r.object);
-  const gifts = createGifts(app, hands, mods.life, mods.mind, replies, residents);
+  const gifts = createGifts(app, hands, mods.life, mods.mind, replies, residents, mods.world);
   registerGiftTest(gifts);
   const voice = createVoice(app, hands, replies, () => flow?.pipSide() ?? null);
   const postcard = createPostcard(app, hands, mods.mind);
@@ -132,7 +132,7 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     voice,
     postcard,
     guide,
-    shows: { story: (id) => evening.story(id), concert: (id) => evening.concert(id), lantern: () => delights.lantern(), paint: () => painter.paint() },
+    shows: { story: (id) => evening.story(id), concert: (id) => evening.concert(id), lantern: () => delights.lantern(), paint: () => painter.paint(), dusk: () => evening.dusk() },
     readNote: () => delights.readNote(),
     star: () => delights.star(),
     visits: {
@@ -153,7 +153,29 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
         if (r) void flow?.meet(r.id);
       },
     },
-  ]);
+  ], () => flow?.hurry() ?? false);
+
+  // Where Pip hovers: close by the hand in a headset; in a page further off and low to the
+  // right, so he never fills an edge of the view (the page's width decides how far right).
+  let hoverKey = '';
+  app.everyFrame(() => {
+    const setHover = mods.life.pip.setHover;
+    if (!setHover) return;
+    const cam = world.camera as unknown as { aspect?: number; fov?: number };
+    const desk = app.store.mode.peek() === 'desk';
+    const aspect = cam.aspect || 1.6;
+    const key = desk ? `d${aspect.toFixed(2)}` : 'xr';
+    if (key === hoverKey) return;
+    hoverKey = key;
+    if (!desk) {
+      setHover.call(mods.life.pip, { ahead: 0.7, side: 0.34, drop: 0.2 });
+      return;
+    }
+    const halfV = ((cam.fov ?? 60) * Math.PI) / 360;
+    const halfH = Math.atan(Math.tan(halfV) * aspect);
+    const ahead = 1.55;
+    setHover.call(mods.life.pip, { ahead, side: ahead * Math.tan(Math.min(0.46, halfH * 0.62)), drop: ahead * Math.tan(halfV) * 0.42 });
+  });
 
   // Re-seat when a session starts or ends (the head pose changes frame).
   let lastMode = app.store.mode.peek();
@@ -204,8 +226,7 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
   // A pinch hurries a long line, an arrival or a build (DESIGN «Движение»).
   hands.onPinch((side, down) => {
     if (!down || replies.consumed(side) || placement.active || replies.open) return;
-    const phase = app.store.phase.peek();
-    if (phase === 'arrive' || phase === 'build' || phase === 'greet' || phase === 'goodnight') mods.life.skip?.();
+    flow?.hurry();
   });
   // Life's sounds and the wind in the grass start with the first gesture, like the rest.
   // The island's ambience (wind, sea, birds, the fire; src/world/) follows the head.

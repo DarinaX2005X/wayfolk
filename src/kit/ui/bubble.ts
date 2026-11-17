@@ -25,9 +25,14 @@ export type BubbleStyle = {
   align?: 'center' | 'left';
   /** A small label above the text (the speaker). */
   label?: string;
+  /**
+   * A reply: the same paper speech bubble as the page's reply buttons (cream paper, a warm
+   * inner rim, a solid drop under it, one sharp corner toward the speaker, bold text).
+   */
+  reply?: boolean;
 };
 
-const DEFAULT: Required<Omit<BubbleStyle, 'label'>> = {
+const DEFAULT: Required<Omit<BubbleStyle, 'label' | 'reply'>> = {
   paper: '#fff8ec',
   ink: '#3a2c22',
   rim: '#e8c9a0',
@@ -56,19 +61,62 @@ export function wrapText(ctx: { measureText(s: string): { width: number } }, tex
   return lines.length ? lines : [''];
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, bl = r): void {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.arcTo(x + w, y, x + w, y + h, r);
   ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y + h, x, y, bl);
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
+}
+
+/** A reply bubble, drawn like the page's `.desk-choice` buttons at this canvas scale. */
+function drawReply(text: string, s: Required<Omit<BubbleStyle, 'label' | 'reply'>>): { canvas: HTMLCanvasElement; w: number; h: number } {
+  const W = 512;
+  const k = s.size / 17;
+  const canvas = document.createElement('canvas');
+  const measure = canvas.getContext('2d')!;
+  measure.font = `700 ${s.size}px ${FONT}`;
+  const padX = Math.round(18 * k);
+  const padY = Math.round(11 * k);
+  const lines = wrapText(measure, text, W - padX * 2 - 8);
+  const lineH = s.size * 1.25;
+  const drop = Math.round(5 * k);
+  const bodyH = Math.ceil(padY * 2 + lines.length * lineH);
+  const H = bodyH + drop + 4;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d')!;
+  const r = Math.min(bodyH / 2, 20 * k);
+  // The solid drop under the paper, then the paper with its warm inner rim.
+  ctx.fillStyle = 'rgba(90, 42, 23, 0.22)';
+  roundRect(ctx, 2, 2 + drop, W - 4, bodyH - 2, r, 6 * k);
+  ctx.fill();
+  ctx.fillStyle = s.paper;
+  roundRect(ctx, 2, 2, W - 4, bodyH - 2, r, 6 * k);
+  ctx.fill();
+  const rim = 3 * k;
+  ctx.strokeStyle = s.rim;
+  ctx.lineWidth = rim;
+  roundRect(ctx, 2 + rim / 2, 2 + rim / 2, W - 4 - rim, bodyH - 2 - rim, r - rim / 2, Math.max(2, 6 * k - rim / 2));
+  ctx.stroke();
+  ctx.font = `700 ${s.size}px ${FONT}`;
+  ctx.fillStyle = s.ink;
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+  let y = padY + (lineH - s.size) / 2;
+  for (const line of lines) {
+    ctx.fillText(line, padX, y);
+    y += lineH;
+  }
+  return { canvas, w: s.width, h: (H / W) * s.width };
 }
 
 /** Draws a bubble into a new canvas; returns it with its size in metres. */
 export function drawBubble(text: string, style: BubbleStyle = {}): { canvas: HTMLCanvasElement; w: number; h: number } {
   const s = { ...DEFAULT, ...style };
+  if (style.reply) return drawReply(text, s);
   const W = 512;
   const scale = W / (s.width * 1000) * 1000; // px per metre of this texture
   const canvas = document.createElement('canvas');

@@ -60,12 +60,13 @@ export class Arrival implements Scene {
   private end = new Vector3();
   private stage = 0;
   private yaw: number;
-  private readonly T_TRAVEL = 7.2;
-  private readonly T_DOCK = 8.0;
-  private readonly T_HOP = 8.6;
-  private readonly T_WALK = 10.0;
-  readonly T_END = 11.8;
-  private readonly T_GONE = 15;
+  // Brisk: out of the clouds to the pier in about five seconds, waving by eight.
+  private readonly T_TRAVEL = 5.4;
+  private readonly T_DOCK = 6.0;
+  private readonly T_HOP = 6.5;
+  private readonly T_WALK = 7.4;
+  readonly T_END = 8.2;
+  private readonly T_GONE = 12;
   private resolveFn: (() => void) | null = null;
   readonly done: Promise<void>;
   private hopFrom = new Vector3();

@@ -32,6 +32,8 @@ export function bindDesk(
   guide: Guide,
   voice: Voice,
   picks: DeskPick[] = [],
+  /** A click in a long moment hurries it (true when it did). */
+  hurry: () => boolean = () => false,
 ): void {
   const canvas = app.world.renderer.domElement;
   canvas.style.touchAction = 'none';
@@ -99,6 +101,10 @@ export function bindDesk(
     }
     if (best) {
       best.pick.pick(best.object);
+      return;
+    }
+    if (hurry()) {
+      app.store.hurried.value = true;
       return;
     }
     const rings = glide.rings();

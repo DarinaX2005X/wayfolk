@@ -7,20 +7,33 @@
  *   notes    notes from guests hang on the mailbox as paper slips; a neighbour reads one
  *            aloud (on coming home, or when a slip is touched or clicked);
  *   wave     a resident you look at for a moment turns and waves;
- *   stroke   stroke Pip with a fingertip (or the mouse) and he puffs up and chirps.
+ *   stroke   stroke Pip with a fingertip (or the mouse) and he puffs up and chirps;
+ *   bell     a little brass bell by the seat: ring it and the neighbours come to wave;
+ *   crumbs   crumbs on the open palm (or on the grass, or a click on the flock) and a few
+ *            birds come down to eat;
+ *   umbrellas in the rain every neighbour opens one in their own colours.
  *
  * Every part works with hands in the headset and with the pointer in a page.
  */
 import {
   AdditiveBlending,
+  Box3,
+  BufferAttribute,
+  BufferGeometry,
   CanvasTexture,
+  ConeGeometry,
+  CylinderGeometry,
   DoubleSide,
   Group,
+  LatheGeometry,
   Mesh,
   MeshBasicMaterial,
+  MeshLambertMaterial,
   PlaneGeometry,
   Raycaster,
+  SphereGeometry,
   SRGBColorSpace,
+  TorusGeometry,
   Vector2,
   Vector3,
   type Object3D,
@@ -42,6 +55,10 @@ export type Delights = {
   readNote(): Promise<boolean>;
   /** Hangs the unread notes on the mailbox again. */
   refreshNotes(): void;
+  /** Rings the bell by the seat: the neighbours come over and wave. */
+  ring(): Promise<void>;
+  /** Crumbs on the palm (or the grass): a few birds come down to eat. */
+  feed(): Promise<void>;
 };
 
 export const DELIGHT_LINES = {
@@ -56,6 +73,10 @@ export const DELIGHT_LINES = {
   starMissed: 'It slipped back into the sky. There will be others.',
   note: (m: MailItem) => `"${m.text}" That is from ${m.from}${m.fromIsland ? ` on ${m.fromIsland}` : ''}.`,
   noteIntro: 'There is a note in the mailbox. Let me read it.',
+  bell: 'Everyone, come and say hello.',
+  bellNobody: 'Nobody lives here yet to come. Ask a traveler to stay.',
+  crumbsHand: 'Hold still. They are a little shy.',
+  crumbsGrass: 'Crumbs for the flock. Watch them come down.',
 } as const;
 
 function lanternTexture(): CanvasTexture {
@@ -496,7 +517,327 @@ export function createDelights(app: App, mods: Modules, hands: Hands, guide: Gui
     void dt;
   });
 
-  const delights: Delights = { lantern, star, readNote, refreshNotes };
+  // ------------------------------------------------------------ the bell by the seat
+  // A small brass bell hangs from a crooked post at the left of the seat, within reach.
+  // Touch it (or click it) and everyone who lives here comes over to wave.
+  const seatAt = (): { p: Vector3; right: Vector3; fwd: Vector3 } => {
+    const seat = world.seat as { pos?: Vector3; rotY?: number };
+    const p = seat.pos?.isVector3 ? world.root.localToWorld(seat.pos.clone()) : new Vector3();
+    const yaw = seat.rotY ?? 0;
+    return { p, right: new Vector3(Math.cos(yaw), 0, -Math.sin(yaw)), fwd: new Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)) };
+  };
+  const brass = new MeshLambertMaterial({ color: '#d9a441', emissive: '#3a2408' });
+  const wood = new MeshLambertMaterial({ color: '#7a5236' });
+  const bellGroup = new Group();
+  bellGroup.name = 'delight:bell';
+  const bellSwing = new Group();
+  const bellMesh = new Mesh(
+    new LatheGeometry(
+      [
+        [0, -0.012],
+        [0.052, -0.012],
+        [0.056, -0.004],
+        [0.046, 0.02],
+        [0.034, 0.05],
+        [0.028, 0.068],
+        [0.016, 0.078],
+        [0, 0.08],
+      ].map(([x, y]) => new Vector2(x, y)),
+      28,
+    ),
+    brass,
+  );
+  bellMesh.name = 'bell';
+  bellMesh.position.y = -0.1;
+  const clapper = new Mesh(new SphereGeometry(0.012, 12, 8), brass);
+  clapper.position.y = -0.115;
+  const loop = new Mesh(new TorusGeometry(0.012, 0.003, 6, 16), brass);
+  loop.position.y = -0.012;
+  const cord = new Mesh(new CylinderGeometry(0.0025, 0.0025, 0.012, 5), wood);
+  cord.position.y = -0.006;
+  bellSwing.add(bellMesh, clapper, loop, cord);
+  const post = new Mesh(new CylinderGeometry(0.022, 0.03, 1.12, 8).translate(0, 0.56, 0), wood);
+  const arm = new Mesh(new CylinderGeometry(0.016, 0.018, 0.26, 7).rotateZ(Math.PI / 2).translate(0.13, 0, 0), wood);
+  arm.position.y = 1.08;
+  const cap = new Mesh(new SphereGeometry(0.03, 12, 8), wood);
+  cap.position.y = 1.12;
+  bellSwing.position.set(0.23, 1.08, 0);
+  bellGroup.add(post, arm, cap, bellSwing);
+  let bellPlaced = false;
+  const placeBell = (): void => {
+    if (bellPlaced) return;
+    bellPlaced = true;
+    const { p, right, fwd } = seatAt();
+    const at = p.clone().addScaledVector(right, -0.82).addScaledVector(fwd, -0.12);
+    at.y = (world.groundY?.(at.x, at.z) ?? p.y) - 0.02;
+    bellGroup.position.copy(at);
+    // The arm reaches in toward the person.
+    bellGroup.rotation.y = Math.atan2(right.z, right.x) * -1;
+    app.roots.fx.add(bellGroup);
+  };
+  let swingT = -1;
+  const strike = (at: Vector3, when: number, gain: number): void => {
+    const ctx = (life as { audio?: AudioContext | null }).audio;
+    if (!ctx) return;
+    const pan = ctx.createPanner();
+    pan.panningModel = 'HRTF';
+    pan.refDistance = 0.6;
+    pan.positionX.value = at.x;
+    pan.positionY.value = at.y;
+    pan.positionZ.value = at.z;
+    pan.connect(ctx.destination);
+    const t = ctx.currentTime + when;
+    // A small hand bell: a few inharmonic partials, the high ones dying first.
+    for (const [mult, amp, decay] of [
+      [1, 0.22, 2.4],
+      [2.32, 0.1, 1.5],
+      [3.86, 0.06, 0.9],
+      [5.4, 0.03, 0.5],
+    ] as const) {
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = 1318 * mult;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(amp * gain, t + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0005, t + decay);
+      o.connect(g).connect(pan);
+      o.start(t);
+      o.stop(t + decay + 0.1);
+    }
+  };
+  let gathering = false;
+  const ring = async (): Promise<void> => {
+    placeBell();
+    const at = bellMesh.getWorldPosition(new Vector3());
+    swingT = app.clock.now();
+    strike(at, 0, 1);
+    strike(at, 0.42, 0.8);
+    strike(at, 0.86, 0.6);
+    if (gathering || busy() || app.store.phase.peek() !== 'free') return;
+    const folk = (mind.state?.residents ?? []).filter((r) => !r.trip && life.objectOf?.(r.id));
+    if (!folk.length) {
+      void pipSay(DELIGHT_LINES.bellNobody);
+      return;
+    }
+    gathering = true;
+    try {
+      // They come and stand in an arc in front of the seat, facing the person, and wave.
+      const { p, right, fwd } = seatAt();
+      const centre = p.clone().addScaledVector(fwd, 3.2);
+      const spots = folk.map((_, i) => {
+        const n = folk.length;
+        const a = n === 1 ? 0 : -0.75 + (1.5 * i) / (n - 1);
+        return centre.clone().addScaledVector(right, Math.sin(a) * 1.9).addScaledVector(fwd, -Math.cos(a) * 1.9 + 1.4);
+      });
+      void pipSay(DELIGHT_LINES.bell);
+      if (desk()) guide.frame(() => centre.clone().setY(centre.y + 0.3), { lift: 0 });
+      await within(
+        Promise.all(
+          folk.map((r, i) =>
+            Promise.resolve(life.walkTo(r.id, { x: spots[i].x, z: spots[i].z }, { speed: 2.6 })).then(() => {
+              life.face?.(r.id);
+              life.emote(r.id, 'wave');
+            }),
+          ),
+        ),
+        14000,
+        undefined,
+      );
+      for (const r of folk) {
+        life.face?.(r.id);
+        life.emote(r.id, 'wave');
+      }
+      await wait(2600);
+      for (const r of folk) life.emote(r.id, 'happy');
+      await wait(2200);
+    } finally {
+      gathering = false;
+      if (desk()) guide.frame(null);
+      try {
+        life.startDaily();
+      } catch {
+        // Daily life picks up on its own.
+      }
+    }
+  };
+
+  // ------------------------------------------------------------ crumbs for the flock
+  // A pinch of crumbs on the open palm (or on the grass in front of the seat in a page),
+  // and a few birds come down to eat.
+  const crumbGeo = new BufferGeometry();
+  {
+    const pos: number[] = [];
+    let seed = 11;
+    const r = (): number => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 26; i += 1) {
+      const a = r() * Math.PI * 2;
+      const d = Math.sqrt(r());
+      const cx = Math.cos(a) * d;
+      const cz = Math.sin(a) * d;
+      const s = 0.18 + r() * 0.2;
+      // A tiny lumpy crumb: two triangles at an angle.
+      pos.push(cx - s, 0, cz, cx + s, 0, cz - s * 0.6, cx, s * 0.9, cz + s * 0.4);
+      pos.push(cx + s * 0.6, 0, cz + s, cx - s * 0.4, 0, cz - s * 0.5, cx, s * 0.7, cz);
+    }
+    crumbGeo.setAttribute('position', new BufferAttribute(new Float32Array(pos), 3));
+    crumbGeo.computeVertexNormals();
+  }
+  const crumbMat = new MeshLambertMaterial({ color: '#e8c48a', side: DoubleSide });
+  let feeding = false;
+  const feed = async (): Promise<void> => {
+    if (feeding || !life.feed) return;
+    feeding = true;
+    const crumbs = new Mesh(crumbGeo, crumbMat);
+    crumbs.name = 'delight:crumbs';
+    app.roots.fx.add(crumbs);
+    try {
+      const side = SIDES.find((s) => hands.get(s).tracked && hands.get(s).palmUp) ?? hands.primary()?.side;
+      const hand = side ? hands.get(side) : null;
+      const onHand = !desk() && !!hand?.tracked;
+      if (onHand && hand) {
+        // Pip hops off the palm to make room.
+        life.pip.hover();
+        crumbs.scale.setScalar(0.035);
+        const off = app.everyFrame(() => {
+          crumbs.position.copy(hand.palm).add(tmp.set(0, 0.012, 0));
+        });
+        void pipSay(DELIGHT_LINES.crumbsHand);
+        sound.play('paper', { at: hand.palm });
+        await life.feed(() => (hand.tracked ? hand.palm.clone().add(tmp.set(0, 0.02, 0)) : null), { count: 3, seconds: 9, spread: 0.055, scale: 0.42 });
+        off();
+      } else {
+        const { p, fwd } = seatAt();
+        const at = p.clone().addScaledVector(fwd, 2.2);
+        at.y = (world.groundY?.(at.x, at.z) ?? p.y) + 0.01;
+        crumbs.position.copy(at);
+        crumbs.scale.setScalar(0.22);
+        void pipSay(DELIGHT_LINES.crumbsGrass);
+        if (desk()) guide.frame(() => at, { lift: 0.25 });
+        await life.feed(() => at, { count: 5, seconds: 10, spread: 0.55 });
+      }
+    } finally {
+      crumbs.removeFromParent();
+      feeding = false;
+      if (desk()) guide.frame(null);
+    }
+  };
+
+  // ------------------------------------------------------------ umbrellas in the rain
+  // When rain falls each neighbour opens an umbrella in their own colours; they fold them
+  // when it stops (the world shows the rainbow after).
+  const umbrellas = new Map<string, { group: Group; open: number; height: number }>();
+  const canopyGeo = (() => {
+    const g = new ConeGeometry(0.34, 0.16, 16, 1, true);
+    // Scalloped rim: the eight points between the ribs dip a little.
+    const pos = g.attributes.position;
+    for (let i = 0; i < pos.count; i += 1) {
+      if (pos.getY(i) < 0) {
+        const a = Math.atan2(pos.getZ(i), pos.getX(i));
+        pos.setY(i, pos.getY(i) + Math.abs(Math.sin(a * 4)) * 0.03);
+      }
+    }
+    g.computeVertexNormals();
+    return g;
+  })();
+  const shaftGeo = new CylinderGeometry(0.008, 0.008, 0.5, 6).translate(0, -0.25, 0);
+  const tipGeo = new SphereGeometry(0.014, 8, 6);
+  const umbrellaFor = (id: string, color: string): { group: Group; open: number; height: number } => {
+    const group = new Group();
+    group.name = `umbrella:${id}`;
+    const canopy = new Mesh(canopyGeo, new MeshLambertMaterial({ color, side: DoubleSide }));
+    canopy.name = 'canopy';
+    const shaft = new Mesh(shaftGeo, wood);
+    const tip = new Mesh(tipGeo, wood);
+    tip.position.y = 0.08;
+    group.add(canopy, shaft, tip);
+    const o = life.objectOf?.(id);
+    let height = 1;
+    if (o) {
+      const box = new Box3().setFromObject(o);
+      const at = o.getWorldPosition(new Vector3());
+      height = Math.max(0.5, box.max.y - at.y);
+    }
+    return { group, open: 0, height };
+  };
+  let raining = false;
+  app.clock.timers.set(function watchRain() {
+    app.clock.timers.set(watchRain, 600);
+    const kind = (world as { weather?: { kind?: string } }).weather?.kind ?? 'clear';
+    raining = kind !== 'clear';
+    if (raining) {
+      for (const r of mind.state?.residents ?? []) {
+        if (umbrellas.has(r.id) || !life.objectOf?.(r.id)) continue;
+        const u = umbrellaFor(r.id, r.colors?.accent ?? '#e9724c');
+        life.objectOf(r.id)!.add(u.group);
+        umbrellas.set(r.id, u);
+      }
+    }
+  }, 600);
+  app.everyFrame((dtIn) => {
+    const dt = Math.min(0.05, dtIn > 1 ? dtIn / 1000 : dtIn);
+    for (const [id, u] of umbrellas) {
+      const o = life.objectOf?.(id);
+      const want = raining && o ? 1 : 0;
+      u.open += (want - u.open) * Math.min(1, dt * 3);
+      // Held a little to one side, tilted into the weather; it pops open like a real one.
+      const scale = o ? 1 / Math.max(0.001, o.scale.x) : 1;
+      u.group.position.set(0.12 * scale, (u.height + 0.32) * scale, 0.02);
+      u.group.rotation.set(0.08, 0, -0.12);
+      const k = u.open;
+      u.group.scale.set(scale * (0.25 + 0.75 * k), scale, scale * (0.25 + 0.75 * k));
+      if (!raining && u.open < 0.02) {
+        u.group.removeFromParent();
+        umbrellas.delete(id);
+      }
+    }
+    // The bell swings after a ring.
+    if (swingT >= 0) {
+      const t = (app.clock.now() - swingT) / 1000;
+      bellSwing.rotation.z = Math.sin(t * 9) * 0.45 * Math.exp(-t * 1.4);
+      clapper.position.x = Math.sin(t * 9 - 0.6) * 0.012 * Math.exp(-t * 1.4);
+      if (t > 4) {
+        swingT = -1;
+        bellSwing.rotation.z = 0;
+      }
+    }
+    // A fingertip touching the bell rings it.
+    if (!desk() && bellPlaced && swingT < 0) {
+      const b = bellMesh.getWorldPosition(tmp);
+      for (const s of SIDES) {
+        const h = hands.get(s);
+        if (h.tracked && h.indexTip.distanceTo(b) < 0.075) {
+          void ring();
+          break;
+        }
+      }
+    }
+  });
+  canvas.addEventListener('pointerup', (e) => {
+    if (!desk() || !bellPlaced) return;
+    const r = canvas.getBoundingClientRect();
+    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, cam);
+    if (ray.intersectObject(bellGroup, true).length) void ring();
+    else if (!busy() && app.store.phase.peek() === 'free') {
+      // A click near a bird of the flock scatters a few crumbs for them.
+      const birds = (life as { flockObjects?: () => Object3D[] }).flockObjects?.() ?? [];
+      for (const b of birds) {
+        b.getWorldPosition(tmp).project(cam);
+        const sx = ((tmp.x + 1) / 2) * r.width;
+        const sy = ((1 - tmp.y) / 2) * r.height;
+        if (tmp.z < 1 && Math.hypot(sx - (e.clientX - r.left), sy - (e.clientY - r.top)) < 36) {
+          void feed();
+          break;
+        }
+      }
+    }
+  });
+  app.store.phase.subscribe((p) => {
+    if (p === 'free') placeBell();
+  });
+
+  const delights: Delights = { lantern, star, readNote, refreshNotes, ring, feed };
   registerTest('lantern', () => lantern());
   registerTest('star', () => star());
   registerTest('readNote', () => readNote());
@@ -507,6 +848,14 @@ export function createDelights(app: App, mods: Modules, hands: Hands, guide: Gui
     return true;
   });
   registerTest('puff', () => puff());
+  registerTest('ring', () => ring());
+  registerTest('feed', () => feed());
+  registerTest('rain', (seconds = 30) => {
+    const w = world as { weather?: { set(kind: string): void } };
+    w.weather?.set('rain');
+    app.clock.timers.set(() => w.weather?.set('clear'), seconds * 1000);
+    return true;
+  });
   registerDebug('delights', delights);
   return delights;
 }

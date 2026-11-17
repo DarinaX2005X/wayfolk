@@ -2,15 +2,21 @@
  * The meadow: instanced grass in clumps, eight kinds of wild flowers in patches and mixed
  * through the grass, clover and ferns, all swaying on the GPU with the island wind (one draw
  * call per kind). Blades taper to light tips and curve over; tufts round the seat have three
- * segments per blade, further out two, and far away one, so the meadow costs little where it
+ * segment counts per blade, further out two, and far away one, so the meadow costs little where it
  * is small on screen. Every plant has its own turn, lean, size and tint. Anything under a
- * new house or path is hidden by scaling it to zero.
+ * new house or path is hidden.
+ *
+ * Plants are grouped in 4 m chunks. Each frame only chunks inside the view cone are drawn,
+ * thinner the further they are from the viewer (each chunk's plants are shuffled, so a thinner
+ * chunk draws a random part of them), and from the seat the plants hidden behind houses are
+ * left out.
  */
 import { BufferAttribute, BufferGeometry, Color, Euler, InstancedMesh, Matrix4, Object3D, Quaternion, Vector3 } from '@iwsdk/core';
 import { rng } from './geo';
 import { CENTER, Land, PIER, POND, SEAT, STREAM, outlineR, segDist, type Islet, isletR } from './land';
 import { groundTint } from './island';
 import { foliageMaterial } from './materials';
+import { Packer, type ViewCone } from './cull';
 
 /** Geometry builder that writes position, up normals and colour with sway in alpha. */
 class Geo {
@@ -309,16 +315,24 @@ function fern(): BufferGeometry {
   return g.done();
 }
 
-interface Placed { x: number; z: number; s: number; rot: number; tilt: number; tint: Color }
+interface Placed { x: number; z: number; s: number; rot: number; tilt: number; tint: Color; rank: number; chunk: number; hidden: boolean; behind: boolean }
 
 interface Kind {
   name: string;
   geo: BufferGeometry;
   list: Placed[];
   mesh: InstancedMesh | null;
+  packer: Packer | null;
+  /** Runs of the (chunk-sorted) list: chunk id, first index, count. */
+  runs: [number, number, number][];
+  shown: Int32Array;
+  n: number;
   tris: number;
   flowers: boolean;
 }
+
+/** Something that hides plants behind it from the seat: a house as a round tower. */
+export interface Occluder { x: number; z: number; r: number; h: number }
 
 export interface Meadow {
   root: Object3D;
@@ -326,8 +340,21 @@ export interface Meadow {
   clearAlong(points: { x: number; z: number }[], r: number): void;
   refresh(): void;
   addIslet(i: Islet): void;
+  /** Houses that hide plants from the seat. */
+  setOccluders(list: Occluder[]): void;
+  /** Draws the chunks in view (call once a frame). */
+  cull(cone: ViewCone): void;
+  /** Triangles of every plant. */
   triangles(): number;
+  /** Triangles drawn now. */
+  shown(): number;
 }
+
+/** Chunk size and how thin far chunks get (share of plants drawn by distance from the viewer). */
+const CHUNK = 4;
+const DENSITY: [number, number][] = [[10, 1], [16, 0.82], [24, 0.64], [Infinity, 0.5]];
+/** The seat's eye, for the plants hidden behind houses. */
+const SEAT_EYE = { x: SEAT.x, y: 1.2, z: SEAT.z };
 
 const SPECIES: { name: string; geo: () => BufferGeometry; colours: string[] }[] = [
   { name: 'daisies', geo: daisy, colours: ['#ffffff', '#fff3d6', '#ffd9e0'] },
@@ -369,14 +396,34 @@ export function createMeadow(parent: Object3D, land: Land): Meadow {
   const r = rng(808);
   const clump = noise2(31);
   const patchy = noise2(57);
+  const kind = (name: string, geo: BufferGeometry, flowers: boolean): Kind => ({ name, geo, list: [], mesh: null, packer: null, runs: [], shown: new Int32Array(0), n: 0, tris: 0, flowers });
   const kinds: Kind[] = [
-    { name: 'grass', geo: tuftGeometry(7, 3, 3), list: [], mesh: null, tris: 0, flowers: false },
-    { name: 'grass-mid', geo: tuftGeometry(6, 2, 5, 1.1), list: [], mesh: null, tris: 0, flowers: false },
-    { name: 'grass-far', geo: tuftGeometry(4, 1, 7, 1.3), list: [], mesh: null, tris: 0, flowers: false },
-    ...SPECIES.map((s) => ({ name: s.name, geo: s.geo(), list: [] as Placed[], mesh: null, tris: 0, flowers: true })),
-    { name: 'clover', geo: clover(), list: [], mesh: null, tris: 0, flowers: false },
-    { name: 'ferns', geo: fern(), list: [], mesh: null, tris: 0, flowers: false },
+    kind('grass', tuftGeometry(7, 3, 3), false),
+    kind('grass-mid', tuftGeometry(6, 2, 5, 1.1), false),
+    kind('grass-far', tuftGeometry(4, 1, 7, 1.3), false),
+    ...SPECIES.map((s) => kind(s.name, s.geo(), true)),
+    kind('clover', clover(), false),
+    kind('ferns', fern(), false),
   ];
+  // chunks: 4 m cells with bounds grown round their plants
+  const chunkIds = new Map<string, number>();
+  const chunks: { x: number; z: number; y: number; r: number; minX: number; maxX: number; minZ: number; maxZ: number }[] = [];
+  const chunkOf = (x: number, z: number): number => {
+    const key = `${Math.floor(x / CHUNK)},${Math.floor(z / CHUNK)}`;
+    let id = chunkIds.get(key);
+    if (id === undefined) {
+      id = chunks.length;
+      chunkIds.set(key, id);
+      chunks.push({ x: 0, z: 0, y: 0, r: 0, minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity });
+    }
+    const c = chunks[id];
+    c.minX = Math.min(c.minX, x);
+    c.maxX = Math.max(c.maxX, x);
+    c.minZ = Math.min(c.minZ, z);
+    c.maxZ = Math.max(c.maxZ, z);
+    return id;
+  };
+  const plant = (x: number, z: number, s: number, tilt: number, tint: Color): Placed => ({ x, z, s, rot: r() * TAU, tilt, tint, rank: r(), chunk: chunkOf(x, z), hidden: false, behind: false });
   for (const k of kinds) k.tris = k.geo.getAttribute('position').count / 3;
   const byName = (n: string): Kind => kinds.find((k) => k.name === n)!;
 
@@ -405,14 +452,14 @@ export function createMeadow(parent: Object3D, land: Land): Meadow {
     const tall = 0.75 + c * 0.75;
     const tint = groundTint(land, x, z, new Color()).offsetHSL((patchy(x * 0.25, z * 0.25) - 0.5) * 0.05 + (r() - 0.5) * 0.02, (r() - 0.5) * 0.08, (r() - 0.5) * 0.04);
     const kind = d < NEAR ? 'grass' : d < MID ? 'grass-mid' : 'grass-far';
-    byName(kind).list.push({ x, z, s: (0.8 + r() * 0.45) * tall * k * (1 + Math.min(1, d / 16) * 0.35), rot: r() * TAU, tilt: tiltOf() * 0.6, tint });
+    byName(kind).list.push(plant(x, z, (0.8 + r() * 0.45) * tall * k * (1 + Math.min(1, d / 16) * 0.35), tiltOf() * 0.6, tint));
   };
 
   const flower = (sp: (typeof SPECIES)[number], x: number, z: number, main?: string): void => {
     if (!okAt(x, z)) return;
     const hex = main && r() < 0.75 ? main : sp.colours[Math.floor(r() * sp.colours.length)];
     const tint = new Color(hex).offsetHSL((r() - 0.5) * 0.03, (r() - 0.5) * 0.1, (r() - 0.5) * 0.08);
-    byName(sp.name).list.push({ x, z, s: 0.75 + r() * 0.55, rot: r() * TAU, tilt: tiltOf(), tint });
+    byName(sp.name).list.push(plant(x, z, 0.75 + r() * 0.55, tiltOf(), tint));
   };
 
   const scatter = (cx: number, cz: number, R: (t: number) => number, area: number, main: boolean): void => {
@@ -468,7 +515,7 @@ export function createMeadow(parent: Object3D, land: Land): Meadow {
           const a = r() * TAU;
           const x = px + Math.cos(a) * (0.8 + r() * 0.8);
           const z = pz + Math.sin(a) * (0.8 + r() * 0.8);
-          if (k < 3 && okAt(x, z)) cl.list.push({ x, z, s: 1.2 + r() * 0.8, rot: r() * TAU, tilt: 0, tint: new Color().setHSL(0.25, 0.3, 0.85 + r() * 0.12) });
+          if (k < 3 && okAt(x, z)) cl.list.push(plant(x, z, 1.2 + r() * 0.8, 0, new Color().setHSL(0.25, 0.3, 0.85 + r() * 0.12)));
         }
       }
     }
@@ -494,7 +541,7 @@ export function createMeadow(parent: Object3D, land: Land): Meadow {
         const a = r() * TAU;
         const x = o.x + Math.cos(a) * (o.r * 0.7 + 0.3);
         const z = o.z + Math.sin(a) * (o.r * 0.7 + 0.3);
-        if (okAt(x, z)) ferns.list.push({ x, z, s: 0.8 + r() * 0.7, rot: r() * TAU, tilt: tiltOf(), tint: new Color().setHSL(0.24, 0.3, 0.85 + r() * 0.12) });
+        if (okAt(x, z)) ferns.list.push(plant(x, z, 0.8 + r() * 0.7, tiltOf(), new Color().setHSL(0.24, 0.3, 0.85 + r() * 0.12)));
       }
     }
     if (main)
@@ -502,45 +549,67 @@ export function createMeadow(parent: Object3D, land: Land): Meadow {
         const a = r() * TAU;
         const x = POND.x + Math.cos(a) * (POND.r + 0.7);
         const z = POND.z + Math.sin(a) * (POND.r + 0.7);
-        if (okAt(x, z)) ferns.list.push({ x, z, s: 0.7 + r() * 0.5, rot: r() * TAU, tilt: tiltOf(), tint: new Color().setHSL(0.24, 0.3, 0.9) });
+        if (okAt(x, z)) ferns.list.push(plant(x, z, 0.7 + r() * 0.5, tiltOf(), new Color().setHSL(0.24, 0.3, 0.9)));
       }
   };
   scatter(CENTER.x, CENTER.z, outlineR, Math.PI * 13.4 * 13.4, true);
 
-  const hidden = new Set<Placed>();
   const m = new Matrix4();
   const q = new Quaternion();
   const e = new Euler();
   const p = new Vector3();
   const sv = new Vector3();
+  let version = 1;
+  const chunkBounds = (): void => {
+    for (const c of chunks) {
+      c.x = (c.minX + c.maxX) / 2;
+      c.z = (c.minZ + c.maxZ) / 2;
+      c.y = land.height(c.x, c.z) + 0.2;
+      c.r = Math.hypot(c.maxX - c.minX, c.maxZ - c.minZ) / 2 + 0.6;
+    }
+  };
   const write = (k: Kind): void => {
     if (!k.mesh) return;
     const mesh = k.mesh;
     k.list.forEach((it, i) => {
-      const s = hidden.has(it) ? 0 : it.s;
+      const s = it.hidden ? 0 : it.s;
       p.set(it.x, land.height(it.x, it.z) - 0.015, it.z);
       q.setFromEuler(e.set(it.tilt, it.rot, it.tilt * 0.7, 'YXZ'));
       sv.set(s, s, s);
       mesh.setMatrixAt(i, m.compose(p, q, sv));
     });
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.computeBoundingSphere();
+    k.packer?.reloadMatrices();
+    version++;
   };
   const rebuild = (): void => {
+    chunkBounds();
     for (const k of kinds) {
       if (k.mesh) {
         root.remove(k.mesh);
         k.mesh.dispose();
       }
+      // chunk by chunk, each chunk's plants in a shuffled order (a thinner chunk draws the first part)
+      k.list.sort((a, b) => a.chunk - b.chunk || a.rank - b.rank);
+      k.runs = [];
+      k.list.forEach((it, i) => {
+        const last = k.runs[k.runs.length - 1];
+        if (last && last[0] === it.chunk) last[2]++;
+        else k.runs.push([it.chunk, i, 1]);
+      });
       const mesh = new InstancedMesh(k.geo, foliageMaterial(k.flowers), Math.max(1, k.list.length));
       mesh.count = k.list.length;
       mesh.name = `world:${k.name}`;
       k.list.forEach((it, i) => mesh.setColorAt(i, it.tint));
       k.mesh = mesh;
+      k.packer = null;
       write(k);
+      k.packer = new Packer(mesh, k.list.length);
+      k.shown = new Int32Array(k.list.length);
+      k.n = k.list.length;
       mesh.raycast = () => {};
       root.add(mesh);
     }
+    version++;
   };
   rebuild();
 
@@ -548,11 +617,83 @@ export function createMeadow(parent: Object3D, land: Land): Meadow {
     for (const k of kinds) {
       let changed = false;
       for (const it of k.list)
-        if (!hidden.has(it) && test(it)) {
-          hidden.add(it);
+        if (!it.hidden && test(it)) {
+          it.hidden = true;
           changed = true;
         }
       if (changed) write(k);
+    }
+  };
+
+  let occluders: Occluder[] = [];
+  /** Marks plants a house hides from the seat (the line from the eye to the plant's top passes through the house). */
+  const markBehind = (): void => {
+    for (const k of kinds)
+      for (const it of k.list) {
+        it.behind = false;
+        const top = land.height(it.x, it.z) + 0.3;
+        const dx = it.x - SEAT_EYE.x;
+        const dz = it.z - SEAT_EYE.z;
+        const len = Math.hypot(dx, dz);
+        for (const o of occluders) {
+          // closest approach of the sight line to the house's axis
+          const t = ((o.x - SEAT_EYE.x) * dx + (o.z - SEAT_EYE.z) * dz) / (len * len);
+          if (t <= 0) continue;
+          const cx = SEAT_EYE.x + dx * t - o.x;
+          const cz = SEAT_EYE.z + dz * t - o.z;
+          const miss = cx * cx + cz * cz;
+          if (miss > o.r * o.r) continue;
+          // the plant must stand past the house's far wall, and the sight line pass under its eaves
+          const half = Math.sqrt(o.r * o.r - miss) / len;
+          if (t + half >= 1) continue;
+          const y = SEAT_EYE.y + (top - SEAT_EYE.y) * Math.min(1, t + half);
+          if (y < o.h) {
+            it.behind = true;
+            break;
+          }
+        }
+      }
+    version++;
+  };
+
+  const levels = new Float32Array(1);
+  let lv = levels;
+  let lastKey = '';
+  const cull = (cone: ViewCone): void => {
+    if (lv.length < chunks.length) lv = new Float32Array(chunks.length);
+    const atSeat = !cone.active || Math.hypot(cone.eye.x - SEAT_EYE.x, cone.eye.z - SEAT_EYE.z) < 0.9;
+    let key = `${version}|${atSeat ? 1 : 0}|`;
+    for (let i = 0; i < chunks.length; i++) {
+      const c = chunks[i];
+      let k = 0;
+      if (cone.sees(c.x, c.y, c.z, c.r)) {
+        const d = cone.active ? Math.max(0, cone.distance(c.x, c.z) - c.r * 0.5) : 0;
+        for (const [lim, share] of DENSITY)
+          if (d < lim) {
+            k = share;
+            break;
+          }
+      }
+      lv[i] = k;
+      key += k === 1 ? 'a' : k === 0 ? '-' : k > 0.7 ? 'b' : k > 0.55 ? 'c' : 'd';
+    }
+    if (key === lastKey) return;
+    lastKey = key;
+    for (const kd of kinds) {
+      if (!kd.packer) continue;
+      let n = 0;
+      for (const [chunk, start, count] of kd.runs) {
+        const share = lv[chunk];
+        if (share <= 0) continue;
+        const quota = share >= 1 ? count : Math.ceil(count * share);
+        for (let i = start; i < start + quota; i++) {
+          const it = kd.list[i];
+          if (it.hidden || (atSeat && it.behind)) continue;
+          kd.shown[n++] = i;
+        }
+      }
+      kd.n = n;
+      kd.packer.show(kd.shown, n, key);
     }
   };
 
@@ -568,12 +709,21 @@ export function createMeadow(parent: Object3D, land: Land): Meadow {
       });
     },
     refresh() {
+      chunkBounds();
       for (const k of kinds) write(k);
+      markBehind();
     },
     addIslet(i) {
       scatter(i.cx, i.cz, (t) => isletR(i, t), Math.PI * i.r * i.r, false);
       rebuild();
+      markBehind();
     },
+    setOccluders(list) {
+      occluders = list;
+      markBehind();
+    },
+    cull,
     triangles: () => kinds.reduce((a, k) => a + k.tris * k.list.length, 0),
+    shown: () => kinds.reduce((a, k) => a + k.tris * k.n, 0),
   };
 }

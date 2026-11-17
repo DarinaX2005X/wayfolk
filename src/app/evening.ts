@@ -32,6 +32,8 @@ export type Evening = {
   story(id?: string): Promise<void>;
   /** The musician (or anyone) plays for the sunset. */
   concert(id?: string): Promise<void>;
+  /** The light turns to dusk over a few seconds (the evening offer); never back from night. */
+  dusk(): void;
   /** Hurries the story to its next line. */
   next(): void;
   /** Ends what is playing. */
@@ -99,6 +101,36 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
 
   app.everyFrame((dt) => stage.update(dt > 1 ? dt / 1000 : dt));
 
+  // The light of the evening: the sky slides to an hour over a few seconds. It only moves
+  // forward into the evening, so a real night stays night.
+  let skyOff: (() => void) | null = null;
+  const skyHour = (): number => (world as { sky?: { hour?: number } }).sky?.hour ?? app.clock.wall().getHours();
+  const skyTo = (hour: number, seconds = 4): void => {
+    const from = skyHour();
+    const evening = from >= hour - 0.05 || from < 4.5;
+    if (evening) return;
+    skyOff?.();
+    const t0 = app.clock.now();
+    const date = new Date(app.clock.wall());
+    const less = app.store.settings.peek().lessMotion;
+    const off = app.everyFrame((_dt, now) => {
+      const k = less ? 1 : Math.min(1, (now - t0) / (seconds * 1000));
+      const e = k * k * (3 - 2 * k);
+      const h = from + (hour - from) * e;
+      date.setHours(Math.floor(h), Math.floor((h % 1) * 60), Math.floor((((h % 1) * 60) % 1) * 60), 0);
+      try {
+        world.setTime(date);
+      } catch {
+        // The sky keeps its hour.
+      }
+      if (k >= 1) {
+        off();
+        skyOff = null;
+      }
+    });
+    skyOff = off;
+  };
+
   const residents = (): Resident[] => (mind.state?.residents ?? []).filter((r) => !r.trip && life.objectOf?.(r.id));
   const audio = (): AudioContext | null => (life as { audio?: AudioContext | null }).audio ?? null;
   const head = new Vector3();
@@ -128,8 +160,15 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
     fwd.y = 0;
     if (fwd.lengthSq() < 1e-4) fwd.set(0, 0, -1);
     fwd.normalize();
-    const d = 5.6;
-    stage.group.position.set(head.x + fwd.x * d, head.y + 0.05, head.z + fwd.z * d);
+    // In a headset the stage hangs 5.6 m off, its screen a little above the eyes; in a page
+    // it stands back far enough for the whole proscenium to fit the width of the view.
+    let d = 5.6;
+    if (desk()) {
+      const lens = cam as unknown as { aspect?: number; fov?: number };
+      const halfH = Math.atan(Math.tan(((lens.fov ?? 60) * Math.PI) / 360) * (lens.aspect ?? 1.6));
+      d = Math.max(6.5, Math.min(9.5, 4.0 / Math.tan(halfH * 0.92)));
+    }
+    stage.group.position.set(head.x + fwd.x * d, head.y - 0.3, head.z + fwd.z * d);
     stage.group.rotation.set(0, Math.atan2(-fwd.x, -fwd.z), 0);
     stage.group.updateMatrixWorld(true);
     return stage.group.position.clone().add(new Vector3(0, STAGE.height * 0.45, 0));
@@ -172,6 +211,7 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
       }
       playing = 'story';
       app.store.show.value = 'story';
+      skyTo(20.4, 5);
       const ids = residents().map((r) => r.id);
       const ctx = audio();
       let run: MusicRun | null = null;
@@ -227,6 +267,7 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
       const ctx = audio();
       playing = 'concert';
       app.store.show.value = 'concert';
+      skyTo(19.2, 4);
       const ids = list.map((r) => r.id);
       let notes: Points | null = null;
       let off: (() => void) | null = null;
@@ -339,6 +380,9 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
           // Daily life resumes on its own later.
         }
       }
+    },
+    dusk() {
+      skyTo(18.9, 4.5);
     },
     next() {
       if (playing === 'story') stage.next();

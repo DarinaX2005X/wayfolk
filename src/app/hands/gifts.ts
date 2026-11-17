@@ -1,5 +1,6 @@
 /**
- * Gifts by hand (PROJECT «Фишки» 8): a little fruit branch within reach of the seat, and
+ * Gifts by hand (PROJECT «Фишки» 8): a small fruit tree planted by the seat, its fruit
+ * hanging within a seated arm's reach, and
  * at night a falling star that drifts down slowly enough to catch. Pinch near a gift to
  * take it; let go while pointing at a resident (or with the hand near one) and it flies
  * to them; mind.give answers and the resident says thank you. Let go elsewhere and it
@@ -7,10 +8,13 @@
  */
 import {
   AdditiveBlending,
+  BufferAttribute,
   CanvasTexture,
-  ConeGeometry,
+  CatmullRomCurve3,
+  Color,
   CylinderGeometry,
   Group,
+  IcosahedronGeometry,
   Mesh,
   MeshLambertMaterial,
   Object3D,
@@ -18,12 +22,14 @@ import {
   SRGBColorSpace,
   Sprite,
   SpriteMaterial,
+  TubeGeometry,
   Vector3,
+  type BufferGeometry,
 } from '@iwsdk/core';
 import { sound } from '../../feel/sound';
 import type { App } from '../boot/world';
 import { registerTest } from '../debug';
-import type { LifePort, MindPort } from '../ports';
+import { anchorPoint, anchorYaw, type LifePort, type MindPort, type WorldPort } from '../ports';
 import type { Hands, Side } from './hands';
 import type { Replies } from './replies';
 
@@ -61,6 +67,7 @@ export function createGifts(
   mind: MindPort,
   replies: Replies,
   residentsNear: () => { id: string; object: Object3D; name: string }[],
+  world?: WorldPort,
 ): Gifts {
   const group = new Group();
   group.name = 'gifts';
@@ -73,18 +80,105 @@ export function createGifts(
   let enabled = false;
   let nextStarAt = 0;
 
-  const fruitMat = new MeshLambertMaterial({ color: '#ff9f43', flatShading: true });
-  const leafMat = new MeshLambertMaterial({ color: '#5c9e47', flatShading: true });
-  const branchMat = new MeshLambertMaterial({ color: '#7a5236', flatShading: true });
+  // Smooth, soft-lit fruit: a peach blush on the sunny side, a tiny stem and a leaf.
+  const fruitMat = new MeshLambertMaterial({ vertexColors: true });
+  const leafMat = new MeshLambertMaterial({ vertexColors: true });
+  const barkMat = new MeshLambertMaterial({ color: '#7a5236' });
+  const stemMat = new MeshLambertMaterial({ color: '#6b4a2c' });
+  const tint = (g: BufferGeometry, fn: (x: number, y: number, z: number) => Color): BufferGeometry => {
+    const pos = g.attributes.position;
+    const col = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i += 1) {
+      const c = fn(pos.getX(i), pos.getY(i), pos.getZ(i));
+      col[i * 3] = c.r;
+      col[i * 3 + 1] = c.g;
+      col[i * 3 + 2] = c.b;
+    }
+    g.setAttribute('color', new BufferAttribute(col, 3));
+    return g;
+  };
+  const warm = new Color('#ffb347');
+  const blush = new Color('#e8583a');
+  const pale = new Color('#ffd98a');
+  const fruitGeo = tint(new SphereGeometry(0.034, 20, 14).scale(1, 0.94, 1), (x, y, z) => {
+    const side = Math.max(0, Math.min(1, (x + z) / 0.05 + 0.5));
+    return warm.clone().lerp(blush, side * 0.75).lerp(pale, Math.max(0, -y / 0.034) * 0.35);
+  });
+  const leafGeo = tint(new SphereGeometry(0.018, 10, 6).scale(1, 0.25, 0.5), (x) => new Color('#7cbf52').lerp(new Color('#3f7d34'), Math.max(0, Math.min(1, x / 0.018 + 0.5))));
+  const stemGeo = new CylinderGeometry(0.003, 0.004, 0.06, 6).translate(0, 0.03, 0);
 
   const makeFruit = (): Object3D => {
     const g = new Group();
-    const f = new Mesh(new SphereGeometry(0.03, 10, 8), fruitMat);
-    const leaf = new Mesh(new ConeGeometry(0.012, 0.03, 5), leafMat);
-    leaf.position.y = 0.034;
+    const f = new Mesh(fruitGeo, fruitMat);
+    const stem = new Mesh(stemGeo, stemMat);
+    stem.position.y = 0.026;
+    const leaf = new Mesh(leafGeo, leafMat);
+    leaf.position.set(0.016, 0.05, 0);
     leaf.rotation.z = 0.5;
-    g.add(f, leaf);
+    g.add(f, stem, leaf);
     return g;
+  };
+
+  /**
+   * The little tree: a curved trunk from the grass at the seat's right, a branch bending
+   * toward the person's right hand, and a soft round crown overhead. Built once.
+   */
+  let tree: Group | null = null;
+  const hangAt: Vector3[] = [];
+  const plantTree = (): void => {
+    if (tree || !world) return;
+    const seat = anchorPoint(world.seat, new Vector3());
+    const yaw = anchorYaw(world.seat);
+    const right = new Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+    const fwd = new Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+    const ground = (p: Vector3): number => world.groundY?.(p.x, p.z) ?? world.groundAt?.(p.x, p.z) ?? seat.y;
+    const base = ground(seat.clone().addScaledVector(right, 0.9));
+    const at = (r: number, f: number, up: number): Vector3 => {
+      const p = seat.clone().addScaledVector(right, r).addScaledVector(fwd, f);
+      p.y = base + up;
+      return p;
+    };
+    tree = new Group();
+    tree.name = 'gift:tree';
+    const trunk = new CatmullRomCurve3([at(0.92, 0.12, -0.05), at(0.95, 0.06, 0.5), at(0.86, -0.02, 1.05), at(0.78, -0.08, 1.55)]);
+    tree.add(new Mesh(new TubeGeometry(trunk, 16, 0.055, 8, false), barkMat));
+    // The fruiting branch reaches toward the right hand of a seated person.
+    const branch = new CatmullRomCurve3([at(0.88, 0.0, 1.0), at(0.72, -0.14, 1.08), at(0.55, -0.26, 1.06), at(0.42, -0.34, 1.0)]);
+    tree.add(new Mesh(new TubeGeometry(branch, 12, 0.022, 6, false), barkMat));
+    const twig = new CatmullRomCurve3([at(0.86, -0.04, 1.3), at(0.7, -0.2, 1.4), at(0.6, -0.28, 1.36)]);
+    tree.add(new Mesh(new TubeGeometry(twig, 8, 0.014, 5, false), barkMat));
+    // Crown: a few soft clumps, lighter on top.
+    const crownGeo = tint(new IcosahedronGeometry(0.34, 3), (_x, y) => new Color('#4f8f3a').lerp(new Color('#8cc85a'), Math.max(0, Math.min(1, (y / 0.34) * 0.5 + 0.5))));
+    const crownMat = new MeshLambertMaterial({ vertexColors: true });
+    const clumps: [number, number, number, number][] = [
+      [0.8, -0.1, 1.78, 1.0],
+      [1.05, 0.05, 1.68, 0.78],
+      [0.6, -0.22, 1.62, 0.7],
+      [0.86, 0.18, 1.9, 0.72],
+      [0.62, 0.02, 1.95, 0.62],
+    ];
+    for (const [r, f, u, k] of clumps) {
+      const m = new Mesh(crownGeo, crownMat);
+      m.position.copy(at(r, f, u));
+      m.scale.set(k, k * 0.82, k);
+      tree.add(m);
+    }
+    // A few leaves along the fruiting branch.
+    const leaves: [number, number, number, number][] = [
+      [0.66, -0.18, 1.1, 0.4],
+      [0.52, -0.27, 1.09, -0.5],
+      [0.46, -0.33, 1.04, 0.9],
+      [0.74, -0.12, 1.12, -1.2],
+    ];
+    for (const [r, f, u, a] of leaves) {
+      const leaf = new Mesh(leafGeo, leafMat);
+      leaf.position.copy(at(r, f, u));
+      leaf.scale.setScalar(2.2);
+      leaf.rotation.set(0.3, a, 0.4);
+      tree.add(leaf);
+    }
+    hangAt.push(at(0.46, -0.32, 0.93), at(0.56, -0.25, 0.97), at(0.65, -0.21, 1.28));
+    group.add(tree);
   };
 
   const flyTo = (gift: Gift, target: Object3D, done: () => void): void => {
@@ -210,22 +304,23 @@ export function createGifts(
     setUp() {
       for (const g of gifts) g.object.removeFromParent();
       gifts.length = 0;
-      const cam = app.world.camera;
-      cam.updateWorldMatrix(true, false);
-      // A small branch by the right hand of the seat.
-      const branch = new Mesh(new CylinderGeometry(0.008, 0.012, 0.32, 5), branchMat);
-      branch.position.set(0.36, -0.12, -0.38).applyMatrix4(cam.matrixWorld);
-      branch.rotation.z = Math.PI / 2.4;
-      branch.name = 'gift:branch';
-      group.add(branch);
-      for (let i = 0; i < 2; i += 1) {
+      plantTree();
+      // The fruit hangs from the tree by the seat (placed from the seat, not the head, so it
+      // is always in the same place within reach).
+      let homes = hangAt;
+      if (!homes.length) {
+        const cam = app.world.camera;
+        cam.updateWorldMatrix(true, false);
+        homes = [0, 1].map((i) => new Vector3(0.3 + i * 0.09, -0.19 - i * 0.02, -0.38 + i * 0.03).applyMatrix4(cam.matrixWorld));
+      }
+      homes.forEach((home, i) => {
         const f = makeFruit();
         f.name = `gift:fruit:${i}`;
-        const home = new Vector3(0.3 + i * 0.09, -0.19 - i * 0.02, -0.38 + i * 0.03).applyMatrix4(cam.matrixWorld);
         f.position.copy(home);
+        f.rotation.set(0.15 * (i - 1), i * 1.7, 0.1);
         group.add(f);
-        gifts.push({ object: f, kind: 'fruit', home, heldBy: null, flying: false });
-      }
+        gifts.push({ object: f, kind: 'fruit', home: home.clone(), heldBy: null, flying: false });
+      });
     },
     async give(residentId, kind = 'fruit') {
       const to = residentsNear().find((r) => r.id === residentId);

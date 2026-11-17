@@ -99,6 +99,8 @@ export interface Pip {
   follow(hand: HandLike): void;
   /** Hover in front of the person at a comfortable distance. */
   hover(): void;
+  /** Where he hovers from the head: metres ahead, to the right and below the eyes. */
+  setHover?(o: { ahead: number; side: number; drop: number }): void;
   say(text: string, opts?: SayOptions): Promise<void>;
   emote(kind: Emote): void;
   /** Where Pip is now: 'palm' | 'follow' | 'hover' | 'flock' | 'perch'. */
@@ -121,6 +123,11 @@ export interface Life {
   face(id: string, p?: PointLike): void;
   startDaily(): void;
   stopDaily(): void;
+  /**
+   * A few birds of the flock land round a point (crumbs on a palm or on the grass) and peck
+   * for `seconds`, then fly back to the flock. `scale` shrinks them while they eat (a palm).
+   */
+  feed?(at: () => Vector3 | null, opts?: { count?: number; seconds?: number; spread?: number; scale?: number; up?: () => Vector3 }): Promise<void>;
   /** The flock circles a point (a concert), or goes back to its flock with null. */
   flockCircle(at: Vector3 | null, radius?: number): void;
   /** The beat residents dance to, per minute. */
@@ -128,10 +135,14 @@ export interface Life {
   soundAt(pos: PointLike, kind: SoundKind, volume?: number): SoundHandle;
   /** Hurry the current line, arrival or build to its end (a pinch). */
   skip(): void;
+  /** Ends a resident's walk at once where it was going (a pinch or a click hurries them). */
+  hurry?(id: string): void;
   /** Night makes the island quieter and sends residents home. */
   setTime(date: Date): void;
   /** Call every frame when life is not registered as a system. */
   update(dt: number, time: number): void;
+  /** The birds of the flock (a page lets a click near one feed them). */
+  flockObjects?(): Object3D[];
   /** The resident's object (for hit tests or handing gifts). */
   objectOf(id: string): Object3D | undefined;
   /** Shared AudioContext; resume it on the first gesture. */

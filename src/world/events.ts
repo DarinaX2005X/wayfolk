@@ -28,6 +28,7 @@ import { blob, cone, join, paint, place, rng } from './geo';
 import { CENTER } from './land';
 import { U } from './materials';
 import { WIND_GLSL, wind } from './wind';
+import { whaleGeometry, whaleMaterial } from './whale';
 
 export type WeatherKind = 'clear' | 'rain' | 'drizzle';
 
@@ -172,34 +173,6 @@ function quad(): BufferGeometry {
   return g;
 }
 
-/** A soft cloud whale (about 26 m long), nose toward +x, built from smooth lumps. */
-function whaleGeometry(): BufferGeometry {
-  const parts: BufferGeometry[] = [];
-  const lump = (r: number, x: number, y: number, z: number, sx = 1, sy = 1, sz = 1, seed = 1): void => {
-    const g = blob(r, 2, seed, 0.06);
-    g.scale(sx, sy, sz);
-    parts.push(paint(g.translate(x, y, z), '#ffffff', { shade: 0, wobble: 0 }, true));
-  };
-  // body: a line of overlapping lumps tapering to the tail
-  const body: [number, number, number][] = [[6, 0, 3.4], [3, 0.3, 4.2], [0, 0.3, 4.3], [-3.2, 0.3, 3.8], [-6.2, 0.4, 2.9], [-8.8, 0.9, 2.0], [-11, 1.7, 1.25], [-12.8, 2.6, 0.85]];
-  body.forEach(([x, y, r], i) => lump(r, x, y, 0, 1.15, 0.82, 1, 10 + i));
-  // a rounded head with a soft chin, and bumps along the back
-  lump(2.7, 8.6, -0.3, 0, 1.25, 0.9, 1.05, 30);
-  lump(2.0, 8.0, -1.9, 0, 1.4, 0.55, 0.95, 31);
-  for (let i = 0; i < 4; i++) lump(1.2 + (i % 2) * 0.35, 3.5 - i * 3.3, 3.1 - i * 0.3, i % 2 ? 0.7 : -0.6, 1.2, 0.75, 1, 40 + i);
-  // long flippers hanging down and back, visible from the side
-  for (const z of [1, -1]) {
-    lump(1.1, 3.6, -2.6, z * 3.4, 1.9, 0.5, 1.0, 60 + z);
-    lump(0.85, 1.6, -3.4, z * 4.0, 1.7, 0.42, 0.9, 62 + z);
-  }
-  // the tail rises into broad flukes swept up at the tips
-  for (const z of [1, -1]) {
-    lump(1.4, -14.3, 3.2, z * 1.6, 1.5, 0.45, 1.25, 70 + z);
-    lump(1.0, -15.6, 3.9, z * 2.9, 1.4, 0.4, 1.1, 72 + z);
-  }
-  return join(parts);
-}
-
 export interface Events {
   root: Object3D;
   setWeather(kind: WeatherKind): void;
@@ -314,6 +287,8 @@ export function createEvents(parent: Object3D, opts: { firePos: Vector3; cloudMa
   root.add(sparks);
   U.firePos.value.copy(opts.firePos).add(new Vector3(0, 0.45, 0));
 
+  let whaleGeo: BufferGeometry | null = null;
+  let calfGeo: BufferGeometry | null = null;
   let kind: WeatherKind = 'clear';
   let rainK = 0;
   let bowT = -1;
@@ -339,33 +314,60 @@ export function createEvents(parent: Object3D, opts: { firePos: Vector3; cloudMa
       kind = k;
     },
     skyWhale() {
-      const mat = opts.cloudMaterial();
-      const whale = new Mesh(whaleGeometry(), mat);
-      whale.name = 'world:sky-whale';
-      whale.frustumCulled = false;
-      whale.raycast = () => {};
-      root.add(whale);
-      // glides across the front of the island, left to right, rising and dipping gently
-      const from = new Vector3(CENTER.x - 150, 20, CENTER.z - 52);
-      const to = new Vector3(CENTER.x + 150, 26, CENTER.z - 40);
+      const cloud = opts.cloudMaterial();
+      whaleGeo ??= whaleGeometry();
+      calfGeo ??= whaleGeometry(0.6);
+      // a mother and her calf swim an arc round the front of the island, left to right
+      const mother = new Mesh(whaleGeo, whaleMaterial(cloud, 1.25, 0, 1.15));
+      const calf = new Mesh(calfGeo, whaleMaterial(cloud, 1.7, 1.9, 1.0));
+      calf.scale.setScalar(0.4);
+      mother.add(calf);
+      // the calf swims under its mother's fin, a little toward the island
+      calf.position.set(1.5, -8.5, 4.5);
+      for (const m of [mother, calf]) {
+        m.name = 'world:sky-whale';
+        m.frustumCulled = false;
+        m.raycast = () => {};
+      }
+      mother.rotation.order = 'YZX';
+      mother.scale.setScalar(1.3);
+      root.add(mother);
       const dur = 75;
+      const R = 54;
+      const a0 = -1.85;
+      const a1 = 1.85;
       let t0 = -1;
+      const at = (k: number, out: Vector3): Vector3 => {
+        const a = a0 + (a1 - a0) * k;
+        return out.set(CENTER.x + Math.sin(a) * R, 24 + Math.sin(k * Math.PI) * 2.5, CENTER.z - Math.cos(a) * R);
+      };
+      const p = new Vector3();
+      const q = new Vector3();
       return new Promise<void>((resolve) => {
         tweens.add({
           update(t) {
             if (t0 < 0) t0 = t;
             const k = (t - t0) / dur;
             if (k >= 1) {
-              root.remove(whale);
-              whale.geometry.dispose();
+              root.remove(mother);
               resolve();
               return false;
             }
-            whale.position.lerpVectors(from, to, k);
-            whale.position.y += Math.sin(k * Math.PI * 2) * 3 + Math.sin(t * 0.4) * 0.6;
-            whale.rotation.set(Math.sin(t * 0.35) * 0.04, Math.atan2(-(to.z - from.z), to.x - from.x), Math.cos(k * Math.PI * 2) * 0.06);
-            const s = Math.min(1, k * 8, (1 - k) * 8);
-            whale.scale.setScalar(0.3 + 0.7 * s);
+            at(k, p);
+            at(Math.min(1, k + 0.002), q);
+            // rises a little on each down-stroke of the tail
+            mother.position.copy(p);
+            mother.position.y += Math.sin((t - t0) * 1.25 - 0.6) * 0.45;
+            const dir = q.sub(p).normalize();
+            // turned a little onto its side toward the island, as if to look
+            const roll = -0.1 - 0.08 * Math.sin(k * Math.PI);
+            mother.rotation.set(roll + Math.sin((t - t0) * 0.31) * 0.05, Math.atan2(-dir.z, dir.x), Math.cos((t - t0) * 1.25 - 0.6) * 0.035);
+            calf.rotation.set(Math.sin((t - t0) * 0.5) * 0.12, 0.06, Math.sin((t - t0) * 1.7 + 1.9) * 0.05);
+            const fade = Math.min(1, (t - t0) / 6, (dur - (t - t0)) / 6);
+            for (const m of [mother, calf]) {
+              const u = (m.material as ShaderMaterial).uniforms;
+              u.uFade.value = fade;
+            }
             return true;
           },
         });

@@ -41,11 +41,13 @@ export async function stageShot(shot: string): Promise<void> {
   document.body.append(renderer.domElement);
   const scene = new Scene();
   scene.background = skyTexture(chapter.mood === 'night');
-  const camera = new PerspectiveCamera(70, 1440 / 900, 0.05, 200);
+  // As the page shows it (src/app/evening.ts placeStage): 60 degree view, the stage 6.5 m
+  // off with its foot 0.3 m under the eyes, the view aimed a little under its middle.
+  const camera = new PerspectiveCamera(60, 1440 / 900, 0.05, 200);
   camera.position.set(0, 1.15, 0);
   const stage = createStage({ parent: scene });
-  stage.group.position.set(0, 1.15 + 0.7 - STAGE.height / 2, -7.2);
-  camera.lookAt(0, 1.15 + 0.5, -7.2);
+  stage.group.position.set(0, 1.15 - 0.3, -6.5);
+  camera.lookAt(0, 1.15 - 0.3 + STAGE.height * 0.45 - 0.25, -6.5);
   void stage.play(chapter, { name: r.name });
   const tl = stage.timeline(chapter);
   const beat = Number(beatText);
