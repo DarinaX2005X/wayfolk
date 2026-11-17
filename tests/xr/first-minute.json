@@ -1,285 +1,296 @@
 {
-  "name": "first minute: through the clouds, Pip on the palm, a traveler, touch and voice, stay, place, build, goodnight",
-  "route": "/?fresh=1",
-  "pace": 1,
-  "xr": true,
-  "device": "metaQuest3",
-  "environment": "home_office",
-  "mode": "hand",
-  "steps": [
-    {
-      "label": "the island has started",
-      "eval": "store.phase.value !== 'boot'",
-      "equals": true,
-      "within": 40
-    },
-    {
-      "label": "clouds in the room",
-      "eval": "store.look.value",
-      "equals": "entering",
-      "within": 10
-    },
-    {
-      "wait": 1.0
-    },
-    {
-      "shot": "fm-01-clouds.png"
-    },
-    {
-      "label": "right palm up early, so Pip can come down",
-      "run": {
-        "device": "hand-right",
-        "steps": [
-          {
-            "position": {
-              "relativeTo": "head",
-              "x": 0.1,
-              "y": -0.32,
-              "z": -0.36
-            },
-            "anchor": "grasp",
-            "orientation": {
-              "fingers": [
-                0,
-                0,
-                -1
-              ],
-              "palm": [
-                0,
-                1,
-                0
-              ]
-            },
-            "duration": 0.5
-          }
-        ]
-      }
-    },
-    {
-      "label": "the hand reads palm up",
-      "eval": "hands.state().right.palmUp",
-      "equals": true
-    },
-    {
-      "label": "seated on the island",
-      "eval": "store.look.value",
-      "equals": "island",
-      "within": 25
-    },
-    {
-      "shot": "fm-02-island.png"
-    },
-    {
-      "label": "Pip lands on the open palm",
-      "eval": "flow.pipSide()",
-      "equals": "right",
-      "within": 25
-    },
-    {
-      "wait": 0.6
-    },
-    {
-      "shot": "fm-03-pip-on-palm.png"
-    },
-    {
-      "label": "a hand lost for a moment: nothing jumps",
-      "lose": {
-        "hand": "right",
-        "seconds": 0.8
-      }
-    },
-    {
-      "label": "the hand is back",
-      "eval": "hands.state().right.tracked",
-      "equals": true,
-      "within": 3
-    },
-    {
-      "label": "a traveler arrives and the talk begins",
-      "eval": "store.phase.value",
-      "equals": "talk",
-      "within": 90
-    },
-    {
-      "label": "three reply bubbles by the hand",
-      "eval": "store.choices.value.length",
-      "equals": 3,
-      "within": 10
-    },
-    {
-      "wait": 0.8
-    },
-    {
-      "shot": "fm-04-bubbles.png"
-    },
-    {
-      "label": "touch the middle bubble with the left index finger",
-      "run": {
-        "device": "hand-left",
-        "steps": [
-          {
-            "target": "bubble:1",
-            "anchor": "index-tip",
-            "approach": {
-              "distance": 0.05
-            },
-            "duration": 0.6
-          },
-          {
-            "position": {
-              "relativeTo": "head",
-              "x": -0.25,
-              "y": -0.45,
-              "z": -0.2
-            },
-            "anchor": "grasp",
-            "duration": 0.4
-          }
-        ]
-      }
-    },
-    {
-      "label": "the touch was taken: new choices come",
-      "eval": "store.choices.value.length",
-      "equals": 3,
-      "within": 25
-    },
-    {
-      "label": "speak instead: a short clip goes to the traveler",
-      "eval": "(test.clip(), true)",
-      "equals": true
-    },
-    {
-      "label": "the answer to the voice comes with new choices",
-      "eval": "store.choices.value.length",
-      "equals": 3,
-      "within": 25
-    },
-    {
-      "label": "a stay choice is on offer",
-      "eval": "flow.stayIndex() >= 0",
-      "equals": true,
-      "within": 25
-    },
-    {
-      "label": "ask them to stay",
-      "eval": "(test.reply(flow.stayIndex()), true)",
-      "equals": true
-    },
-    {
-      "label": "Pip asks where the house goes",
-      "eval": "store.phase.value",
-      "equals": "place",
-      "within": 30
-    },
-    {
-      "label": "point at a free spot with the right hand ray",
-      "mode": "hand-ray",
-      "run": {
-        "device": "hand-right",
-        "steps": [
-          {
-            "target": "spot:suggested"
-          }
-        ]
-      }
-    },
-    {
-      "wait": 0.5
-    },
-    {
-      "label": "the ghost footprint is on valid ground",
-      "eval": "placement.valid()",
-      "equals": true,
-      "within": 5
-    },
-    {
-      "shot": "fm-05-ghost.png"
-    },
-    {
-      "label": "pinch to place",
-      "mode": "hand-ray",
-      "run": {
-        "device": "hand-right",
-        "steps": [
-          {
-            "target": "spot:suggested",
-            "press": true
-          }
-        ]
-      }
-    },
-    {
-      "label": "the flock builds",
-      "eval": "store.phase.value",
-      "equals": "build",
-      "within": 8
-    },
-    {
-      "wait": 1.5
-    },
-    {
-      "shot": "fm-06-building.png"
-    },
-    {
-      "label": "the light comes on and Pip says goodnight",
-      "eval": "store.phase.value",
-      "equals": "goodnight",
-      "within": 60
-    },
-    {
-      "shot": "fm-07-lit.png"
-    },
-    {
-      "label": "the island is free to wander",
-      "eval": "store.phase.value",
-      "equals": "free",
-      "within": 30
-    },
-    {
-      "label": "the house was remembered",
-      "eval": "modules.mind.state.houses.length",
-      "atLeast": 1
-    },
-    {
-      "label": "draw calls per eye inside the budget",
-      "eval": "perf.info().calls",
-      "atMost": 150
-    },
-    {
-      "label": "triangles per eye inside the budget",
-      "eval": "perf.info().triangles",
-      "atMost": 350000
-    },
-    {
-      "label": "glide to another spot",
-      "eval": "test.glide(1).then(() => true)",
-      "equals": true,
-      "within": 10
-    },
-    {
-      "shot": "fm-08-glide.png"
-    },
-    {
-      "label": "a postcard with a link",
-      "eval": "test.postcard().then((p) => /\\/p\\//.test(p?.url ?? ''))",
-      "equals": true,
-      "within": 15
-    },
-    {
-      "wait": 0.6
-    },
-    {
-      "shot": "fm-09-postcard.png"
-    },
-    {
-      "label": "head home: the island goes small onto the table",
-      "eval": "test.leave().then(() => store.look.value)",
-      "equals": "table",
-      "within": 20
-    },
-    {
-      "shot": "fm-10-table.png"
-    }
-  ]
+ "name": "first minute: through the clouds, Pip on the palm, a traveler, touch and voice, stay, place, build, goodnight",
+ "route": "/?fresh=1",
+ "pace": 1,
+ "xr": true,
+ "device": "metaQuest3",
+ "environment": "home_office",
+ "mode": "hand",
+ "steps": [
+  {
+   "label": "the island has started",
+   "eval": "store.phase.value !== 'boot'",
+   "equals": true,
+   "within": 40
+  },
+  {
+   "label": "clouds in the room",
+   "eval": "store.look.value",
+   "equals": "entering",
+   "within": 10
+  },
+  {
+   "wait": 1.0
+  },
+  {
+   "shot": "fm-01-clouds.png"
+  },
+  {
+   "label": "right palm up early, so Pip can come down",
+   "run": {
+    "device": "hand-right",
+    "steps": [
+     {
+      "position": {
+       "relativeTo": "head",
+       "x": 0.1,
+       "y": -0.32,
+       "z": -0.36
+      },
+      "anchor": "grasp",
+      "orientation": {
+       "fingers": [
+        0,
+        0,
+        -1
+       ],
+       "palm": [
+        0,
+        1,
+        0
+       ]
+      },
+      "duration": 0.5
+     }
+    ]
+   }
+  },
+  {
+   "label": "the hand reads palm up",
+   "eval": "hands.state().right.palmUp",
+   "equals": true
+  },
+  {
+   "label": "seated on the island",
+   "eval": "store.look.value",
+   "equals": "island",
+   "within": 25
+  },
+  {
+   "shot": "fm-02-island.png"
+  },
+  {
+   "label": "Pip lands on the open palm",
+   "eval": "flow.pipSide()",
+   "equals": "right",
+   "within": 25
+  },
+  {
+   "wait": 0.6
+  },
+  {
+   "shot": "fm-03-pip-on-palm.png"
+  },
+  {
+   "label": "a hand lost for a moment: nothing jumps",
+   "lose": {
+    "hand": "right",
+    "seconds": 0.8
+   }
+  },
+  {
+   "label": "the hand is back",
+   "eval": "hands.state().right.tracked",
+   "equals": true,
+   "within": 3
+  },
+  {
+   "label": "a traveler arrives and the talk begins",
+   "eval": "store.phase.value",
+   "equals": "talk",
+   "within": 90
+  },
+  {
+   "label": "three quick replies on offer",
+   "eval": "store.choices.value.length",
+   "equals": 3,
+   "within": 10
+  },
+  {
+   "label": "quiet for a while: the word clouds drift in by the hand",
+   "eval": "test.repliesShown()",
+   "equals": true,
+   "within": 20
+  },
+  {
+   "wait": 0.8
+  },
+  {
+   "shot": "fm-04-bubbles.png"
+  },
+  {
+   "label": "touch the middle bubble with the left index finger",
+   "run": {
+    "device": "hand-left",
+    "steps": [
+     {
+      "target": "bubble:1",
+      "anchor": "index-tip",
+      "approach": {
+       "distance": 0.05
+      },
+      "duration": 0.6
+     },
+     {
+      "position": {
+       "relativeTo": "head",
+       "x": -0.25,
+       "y": -0.45,
+       "z": -0.2
+      },
+      "anchor": "grasp",
+      "duration": 0.4
+     }
+    ]
+   }
+  },
+  {
+   "label": "the touch was taken: new choices come",
+   "eval": "store.choices.value.length",
+   "equals": 3,
+   "within": 25
+  },
+  {
+   "label": "speak instead: a short clip goes to the traveler",
+   "eval": "(test.clip(), true)",
+   "equals": true
+  },
+  {
+   "label": "the answer to the voice comes with new choices",
+   "eval": "store.choices.value.length",
+   "equals": 3,
+   "within": 25
+  },
+  {
+   "label": "a stay choice is on offer",
+   "eval": "flow.stayIndex() >= 0",
+   "equals": true,
+   "within": 25
+  },
+  {
+   "label": "ask them to stay",
+   "eval": "(test.reply(flow.stayIndex()), true)",
+   "equals": true
+  },
+  {
+   "label": "Pip asks where the house goes",
+   "eval": "store.phase.value",
+   "equals": "place",
+   "within": 30
+  },
+  {
+   "label": "point at a free spot with the right hand ray",
+   "mode": "hand-ray",
+   "run": {
+    "device": "hand-right",
+    "steps": [
+     {
+      "target": "spot:suggested"
+     }
+    ]
+   }
+  },
+  {
+   "wait": 0.5
+  },
+  {
+   "label": "the ghost footprint is on valid ground",
+   "eval": "placement.valid()",
+   "equals": true,
+   "within": 5
+  },
+  {
+   "shot": "fm-05-ghost.png"
+  },
+  {
+   "label": "pinch to place",
+   "mode": "hand-ray",
+   "run": {
+    "device": "hand-right",
+    "steps": [
+     {
+      "target": "spot:suggested",
+      "press": true
+     }
+    ]
+   }
+  },
+  {
+   "label": "the flock builds",
+   "eval": "store.phase.value",
+   "equals": "build",
+   "within": 8
+  },
+  {
+   "wait": 1.5
+  },
+  {
+   "shot": "fm-06-building.png"
+  },
+  {
+   "label": "the light comes on and Pip says goodnight",
+   "eval": "store.phase.value",
+   "equals": "goodnight",
+   "within": 60
+  },
+  {
+   "shot": "fm-07-lit.png"
+  },
+  {
+   "label": "the island is free to wander",
+   "eval": "store.phase.value",
+   "equals": "free",
+   "within": 30
+  },
+  {
+   "label": "first-minute timing: seconds from the clouds to the lit window",
+   "eval": "Math.round((phases.find((p) => p.phase === 'goodnight').at - phases.find((p) => p.phase === 'clouds').at) * 10) / 10",
+   "atMost": 120
+  },
+  {
+   "label": "the house was remembered",
+   "eval": "modules.mind.state.houses.length",
+   "atLeast": 1
+  },
+  {
+   "label": "draw calls per eye inside the budget",
+   "eval": "perf.info().calls",
+   "atMost": 150
+  },
+  {
+   "label": "triangles per eye inside the budget",
+   "eval": "perf.info().triangles",
+   "atMost": 350000
+  },
+  {
+   "label": "glide to another spot",
+   "eval": "test.glide(1).then(() => true)",
+   "equals": true,
+   "within": 10
+  },
+  {
+   "shot": "fm-08-glide.png"
+  },
+  {
+   "label": "a postcard with a link",
+   "eval": "test.postcard().then((p) => /\\/p\\//.test(p?.url ?? ''))",
+   "equals": true,
+   "within": 15
+  },
+  {
+   "wait": 0.6
+  },
+  {
+   "shot": "fm-09-postcard.png"
+  },
+  {
+   "label": "head home: the island goes small onto the table",
+   "eval": "test.leave().then(() => store.look.value)",
+   "equals": "table",
+   "within": 20
+  },
+  {
+   "shot": "fm-10-table.png"
+  }
+ ]
 }

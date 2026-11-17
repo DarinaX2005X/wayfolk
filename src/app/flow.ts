@@ -45,7 +45,15 @@ export type Flow = {
   visit(state: IslandState): Promise<void>;
   /** A pinch or a click in a long moment: the line, the arrival, the walk or the build hurries on. */
   hurry(): boolean;
+  /**
+   * Things two people do together while a friend is on the island (src/together/): when
+   * `available()` says so, Pip's menu opens with `label` first, and a friend who joins
+   * hears about it once.
+   */
+  setTogether(t: Together | null): void;
 };
+
+export type Together = { available(): boolean; label: string; open(): Promise<void>; joined?(): Promise<void> };
 
 export const LINES = {
   hello: "Oh, you're here. I'm Pip. Hold out your hand, palm up, and I'll come down.",
@@ -60,10 +68,11 @@ export const LINES = {
   tomorrow: 'Someone else will find the island tomorrow. Come back and see who it is.',
   back: 'You came back. Let me tell you what happened.',
   quiet: 'It was quiet while you were away. Everyone slept well.',
+  talkHint: 'Talk to them. Lift your hand to your mouth and speak.',
   newcomer: 'And look, someone new is drifting this way.',
-  menu: ['Tell us a story', 'Play us a song', 'Send a lantern', 'More'],
-  more: ['Paint the island', 'Visit an island', 'Take a postcard', 'More'],
-  last: ['Invite a friend', 'Head home', 'Who lives here?', 'Back'],
+  menu: ['Tell us a story', 'Play us a song', 'Feed the birds', 'More'],
+  more: ['Send a lantern', 'Paint the island', 'Visit an island', 'More'],
+  last: ['Take a postcard', 'Invite a friend', 'Who lives here?', 'Head home'],
   meet: ['Say hello', 'Give a fruit', 'Go on a trip', 'Peek inside'],
   pipBusy: {
     greet: 'Hello again. Hold on, I am still settling in.',
@@ -104,7 +113,7 @@ export function createFlow(
     postcard: Postcard;
     guide: Guide;
     /** The evening story and concert, and the small delights (lantern...), when present. */
-    shows?: { story(id?: string): Promise<void>; concert(id?: string): Promise<void>; lantern(): Promise<void>; paint(): Promise<void>; dusk?(): void };
+    shows?: { story(id?: string): Promise<void>; concert(id?: string): Promise<void>; lantern(): Promise<void>; paint(): Promise<void>; dusk?(): void; feed?(): Promise<void> };
     /** A neighbour reads a note from the mailbox aloud; false when there is none. */
     readNote?(): Promise<boolean>;
     /** A shooting star falls by the seat (catch it, make a wish). */
@@ -117,6 +126,8 @@ export function createFlow(
   const { entry, hands, replies, placement, glide, gifts, voice, postcard, guide } = parts;
   const store = app.store;
   let pipOn: Side | null = null;
+  let together: Together | null = null;
+  let talkHinted = false;
   let stayIndex = -1;
   let playing = false;
 
@@ -177,6 +188,8 @@ export function createFlow(
     if (near) {
       // Still walking up the path: wait until they stand in front of the person.
       await within(near, 9000, undefined);
+      // Still on the way: they step out of a puff right in front, so the talk is face to face.
+      if (walker === r.id) life.hurry?.(r.id);
     }
     store.phase.value = 'talk';
     store.talkingTo.value = r.id;
@@ -205,7 +218,13 @@ export function createFlow(
             resolve('');
           });
         });
-        const picked = await Promise.race([replies.show(choices, { side: pipOn ?? undefined }), spoken]);
+        // Talking is by voice (or typing in a page); the word clouds drift in only after a
+        // quiet while, for anyone who would rather poke one.
+        if (turns === 1 && !desk() && !talkHinted) {
+          talkHinted = true;
+          void pipSay(LINES.talkHint);
+        }
+        const picked = await Promise.race([replies.show(choices, { side: pipOn ?? undefined, delay: 6500 }), spoken]);
         if (clip) replies.hide();
         if (picked === null && !clip) return false;
         let audio: string | undefined;
@@ -332,8 +351,10 @@ export function createFlow(
     } catch {
       // The intro of the card stays.
     }
-    await say(traveler.id, traveler.name, intro, { voice: traveler.voice });
-    return { traveler, choices, near };
+    // They introduce themselves on the way up; the replies come once they stand in front of
+    // the person and the first sentences are said (the rest of the line may run on).
+    const introduced = say(traveler.id, traveler.name, intro, { voice: traveler.voice });
+    return { traveler, choices, near: Promise.all([near, within(introduced, 6000, undefined)]).then(() => undefined) };
   };
 
   /** A traveler drifts in, talks, and (if asked) stays: the house goes up. True when built. */
@@ -451,21 +472,8 @@ export function createFlow(
     offerEvening(opts.built);
     glide.enable(true);
     store.speaker.value = null;
-    if (desk()) {
-      guide.frame(null);
-      // One next thing: the nearest flag, until the person has gone somewhere.
-      const flag = glide.beacons()[1] ?? glide.beacons()[0];
-      if (flag) {
-        guide.cue(guide.of(() => flag, 1.05), 'Click a flag to go there');
-        const t0 = app.clock.now();
-        const stop = app.everyFrame((_dt, now) => {
-          if (now - t0 > 16000 || store.walked.peek() || rigMoved() || store.phase.peek() !== 'free') {
-            stop();
-            guide.cue(null);
-          }
-        });
-      }
-    }
+    if (desk()) guide.frame(null);
+    void rigMoved;
     gifts.setUp();
     gifts.enable(true);
     postcard.enable(true);
@@ -591,11 +599,15 @@ export function createFlow(
         life.pip.hover();
         await pipSay(LINES.guest(state.name || "a friend's island"));
         goFree();
+        if (together?.available()) await together.joined?.();
       } finally {
         playing = false;
       }
     },
     busy: () => playing,
+    setTogether(t) {
+      together = t;
+    },
     hurry() {
       const phase = store.phase.peek();
       if (!['greet', 'palm', 'arrive', 'talk', 'build', 'goodnight', 'news'].includes(phase)) return false;
@@ -653,7 +665,8 @@ export function createFlow(
       if (playing || replies.open || store.phase.peek() !== 'free') return;
       const lastPage = async (): Promise<void> => {
         const pick = await replies.show([...LINES.last], { side: pipOn ?? undefined });
-        if (pick === LINES.last[0]) {
+        if (pick === LINES.last[0]) await postcard.take();
+        else if (pick === LINES.last[1]) {
           try {
             const out = await Promise.resolve(mods.live.host(mind.state.id));
             postcard.showCard('Come sit on my island', out.link);
@@ -663,7 +676,7 @@ export function createFlow(
             console.warn('[wf] no invite link', error);
             await pipSay(mods.live.message ?? 'The invite did not work just now. Try again in a moment.');
           }
-        } else if (pick === LINES.last[1]) {
+        } else if (pick === LINES.last[3]) {
           store.phase.value = 'farewell';
           await pipSay(LINES.farewell);
           await entry.leave();
@@ -674,17 +687,21 @@ export function createFlow(
       };
       const morePage = async (): Promise<void> => {
         const pick = await replies.show([...LINES.more], { side: pipOn ?? undefined });
-        if (pick === LINES.more[0]) await parts.shows?.paint();
-        else if (pick === LINES.more[1]) await parts.visits?.visit();
-        else if (pick === LINES.more[2]) await postcard.take();
+        if (pick === LINES.more[0]) await parts.shows?.lantern();
+        else if (pick === LINES.more[1]) await parts.shows?.paint();
+        else if (pick === LINES.more[2]) await parts.visits?.visit();
         else if (pick === LINES.more[3]) await lastPage();
       };
       playing = true;
       try {
-        const first = await replies.show([...LINES.menu], { side: pipOn ?? undefined });
-        if (first === LINES.menu[0]) await parts.shows?.story();
+        // With a friend here, doing something together comes first.
+        const both = together?.available() ? together : null;
+        const page = both ? [both.label, LINES.menu[0], LINES.menu[1], LINES.menu[3]] : [...LINES.menu];
+        const first = await replies.show(page, { side: pipOn ?? undefined });
+        if (both && first === both.label) await both.open();
+        else if (first === LINES.menu[0]) await parts.shows?.story();
         else if (first === LINES.menu[1]) await parts.shows?.concert();
-        else if (first === LINES.menu[2]) await parts.shows?.lantern();
+        else if (first === LINES.menu[2]) await parts.shows?.feed?.();
         else if (first === LINES.menu[3]) await morePage();
       } finally {
         playing = false;

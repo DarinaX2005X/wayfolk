@@ -15,6 +15,7 @@ import {
   CylinderGeometry,
   Group,
   IcosahedronGeometry,
+  LatheGeometry,
   Mesh,
   MeshLambertMaterial,
   Object3D,
@@ -23,6 +24,7 @@ import {
   Sprite,
   SpriteMaterial,
   TubeGeometry,
+  Vector2,
   Vector3,
   type BufferGeometry,
 } from '@iwsdk/core';
@@ -41,6 +43,8 @@ export type Gifts = {
   /** Gives a gift to a resident without hands (desk, tests). */
   give(residentId: string, kind?: 'fruit' | 'star'): Promise<void>;
   enable(on: boolean): void;
+  /** True while a hand holds a gift (its pinch is taken). */
+  holding(): boolean;
 };
 
 function starSprite(): Sprite {
@@ -120,8 +124,9 @@ export function createGifts(
   };
 
   /**
-   * The little tree: a curved trunk from the grass at the seat's right, a branch bending
-   * toward the person's right hand, and a soft round crown overhead. Built once.
+   * The little tree: a fruit tree in a clay pot on the porch behind the right shoulder of
+   * the seat, a curved trunk, a soft round crown overhead, and one branch bending forward
+   * over the right hand with the fruit on it. Built once.
    */
   let tree: Group | null = null;
   const hangAt: Vector3[] = [];
@@ -131,8 +136,8 @@ export function createGifts(
     const yaw = anchorYaw(world.seat);
     const right = new Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
     const fwd = new Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
-    const ground = (p: Vector3): number => world.groundY?.(p.x, p.z) ?? world.groundAt?.(p.x, p.z) ?? seat.y;
-    const base = ground(seat.clone().addScaledVector(right, 0.9));
+    const potAt = seat.clone().addScaledVector(right, 1.15).addScaledVector(fwd, -0.5);
+    const base = Math.max(seat.y, world.groundY?.(potAt.x, potAt.z) ?? world.groundAt?.(potAt.x, potAt.z) ?? seat.y);
     const at = (r: number, f: number, up: number): Vector3 => {
       const p = seat.clone().addScaledVector(right, r).addScaledVector(fwd, f);
       p.y = base + up;
@@ -140,22 +145,43 @@ export function createGifts(
     };
     tree = new Group();
     tree.name = 'gift:tree';
-    const trunk = new CatmullRomCurve3([at(0.92, 0.12, -0.05), at(0.95, 0.06, 0.5), at(0.86, -0.02, 1.05), at(0.78, -0.08, 1.55)]);
-    tree.add(new Mesh(new TubeGeometry(trunk, 16, 0.055, 8, false), barkMat));
-    // The fruiting branch reaches toward the right hand of a seated person.
-    const branch = new CatmullRomCurve3([at(0.88, 0.0, 1.0), at(0.72, -0.14, 1.08), at(0.55, -0.26, 1.06), at(0.42, -0.34, 1.0)]);
-    tree.add(new Mesh(new TubeGeometry(branch, 12, 0.022, 6, false), barkMat));
-    const twig = new CatmullRomCurve3([at(0.86, -0.04, 1.3), at(0.7, -0.2, 1.4), at(0.6, -0.28, 1.36)]);
-    tree.add(new Mesh(new TubeGeometry(twig, 8, 0.014, 5, false), barkMat));
+    // The pot: terracotta with a rolled rim and dark soil.
+    const potGeo = new LatheGeometry(
+      [
+        [0, 0],
+        [0.15, 0],
+        [0.17, 0.04],
+        [0.2, 0.26],
+        [0.235, 0.27],
+        [0.24, 0.31],
+        [0.205, 0.32],
+        [0.2, 0.3],
+        [0, 0.3],
+      ].map(([x, y]) => new Vector2(x, y)),
+      24,
+    );
+    const pot = new Mesh(potGeo, new MeshLambertMaterial({ color: '#c46a43' }));
+    pot.position.copy(at(1.15, -0.5, 0));
+    tree.add(pot);
+    const soil = new Mesh(new CylinderGeometry(0.195, 0.195, 0.02, 20), new MeshLambertMaterial({ color: '#4a3020' }));
+    soil.position.copy(at(1.15, -0.5, 0.295));
+    tree.add(soil);
+    const trunk = new CatmullRomCurve3([at(1.15, -0.5, 0.28), at(1.13, -0.46, 0.8), at(1.04, -0.38, 1.32), at(0.98, -0.32, 1.72)]);
+    tree.add(new Mesh(new TubeGeometry(trunk, 16, 0.045, 8, false), barkMat));
+    // The fruiting branch reaches forward over the right hand of a seated person.
+    const branch = new CatmullRomCurve3([at(1.07, -0.41, 1.12), at(0.88, -0.18, 1.19), at(0.68, 0.04, 1.16), at(0.48, 0.27, 1.08)]);
+    tree.add(new Mesh(new TubeGeometry(branch, 14, 0.02, 6, false), barkMat));
+    const twig = new CatmullRomCurve3([at(1.0, -0.34, 1.45), at(0.85, -0.12, 1.52), at(0.74, 0.0, 1.48)]);
+    tree.add(new Mesh(new TubeGeometry(twig, 8, 0.013, 5, false), barkMat));
     // Crown: a few soft clumps, lighter on top.
-    const crownGeo = tint(new IcosahedronGeometry(0.34, 3), (_x, y) => new Color('#4f8f3a').lerp(new Color('#8cc85a'), Math.max(0, Math.min(1, (y / 0.34) * 0.5 + 0.5))));
+    const crownGeo = tint(new IcosahedronGeometry(0.32, 3), (_x, y) => new Color('#4f8f3a').lerp(new Color('#8cc85a'), Math.max(0, Math.min(1, (y / 0.32) * 0.5 + 0.5))));
     const crownMat = new MeshLambertMaterial({ vertexColors: true });
     const clumps: [number, number, number, number][] = [
-      [0.8, -0.1, 1.78, 1.0],
-      [1.05, 0.05, 1.68, 0.78],
-      [0.6, -0.22, 1.62, 0.7],
-      [0.86, 0.18, 1.9, 0.72],
-      [0.62, 0.02, 1.95, 0.62],
+      [0.98, -0.32, 1.92, 1.0],
+      [1.2, -0.5, 1.82, 0.8],
+      [0.78, -0.12, 1.72, 0.7],
+      [1.05, -0.12, 2.05, 0.7],
+      [0.82, -0.4, 2.08, 0.62],
     ];
     for (const [r, f, u, k] of clumps) {
       const m = new Mesh(crownGeo, crownMat);
@@ -163,21 +189,22 @@ export function createGifts(
       m.scale.set(k, k * 0.82, k);
       tree.add(m);
     }
-    // A few leaves along the fruiting branch.
+    // Leaves along the fruiting branch.
     const leaves: [number, number, number, number][] = [
-      [0.66, -0.18, 1.1, 0.4],
-      [0.52, -0.27, 1.09, -0.5],
-      [0.46, -0.33, 1.04, 0.9],
-      [0.74, -0.12, 1.12, -1.2],
+      [0.8, -0.08, 1.21, 0.4],
+      [0.64, 0.08, 1.18, -0.5],
+      [0.52, 0.22, 1.12, 0.9],
+      [0.92, -0.24, 1.22, -1.2],
+      [0.72, 0.0, 1.5, 0.2],
     ];
     for (const [r, f, u, a] of leaves) {
       const leaf = new Mesh(leafGeo, leafMat);
       leaf.position.copy(at(r, f, u));
-      leaf.scale.setScalar(2.2);
+      leaf.scale.setScalar(2.4);
       leaf.rotation.set(0.3, a, 0.4);
       tree.add(leaf);
     }
-    hangAt.push(at(0.46, -0.32, 0.93), at(0.56, -0.25, 0.97), at(0.65, -0.21, 1.28));
+    hangAt.push(at(0.5, 0.25, 1.0), at(0.63, 0.1, 1.07), at(0.78, -0.07, 1.11));
     group.add(tree);
   };
 
@@ -332,6 +359,7 @@ export function createGifts(
       enabled = on;
       group.visible = on;
     },
+    holding: () => gifts.some((g) => g.heldBy !== null),
   };
 }
 

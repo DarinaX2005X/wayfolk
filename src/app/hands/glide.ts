@@ -30,6 +30,8 @@ export type Glide = {
   /** Shows or hides the rings. */
   enable(on: boolean): void;
   to(index: number): Promise<void>;
+  /** Glides to any point of the ground, facing `yaw` (the way the person already looks). */
+  toPoint(p: Vector3, yaw: number): Promise<void>;
   /** Desk: glide to the ring nearest a world point, if one is near. */
   near(p: Vector3): number;
   rings(): Mesh[];
@@ -203,6 +205,15 @@ export function createGlide(app: App, hands: Hands, world: WorldPort, rig: Rig, 
       await fade(1, 380);
       rig.placeAt(s);
       await fade(0, 450);
+      moving = false;
+    },
+    async toPoint(p, yaw) {
+      if (moving) return;
+      moving = true;
+      sound.play('slide');
+      await fade(1, 320);
+      rig.placeAt({ pos: p.clone(), rotY: yaw });
+      await fade(0, 380);
       moving = false;
     },
     near(point) {

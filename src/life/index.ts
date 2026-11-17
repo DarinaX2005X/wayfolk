@@ -186,7 +186,8 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
       flockEnv.hover = o;
     },
     say(text: string, opts?: SayOptions): Promise<void> {
-      return speech.say(pipSpeaker, text, opts);
+      // Pip talks right by the ear: his voice stays soft.
+      return speech.say(pipSpeaker, text, { volume: 0.32, ...opts });
     },
     emote(kind: Emote): void {
       if (kind === 'happy' || kind === 'excited') audio.chirp(pipAgent.pos, 1.25);

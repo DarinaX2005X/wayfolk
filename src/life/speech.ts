@@ -63,7 +63,8 @@ export class Speech {
         this.bubbles.set(speaker.id, b);
         this.root.add(b.mesh);
       }
-      b.show(text, { name: opts.name ?? speaker.name, accent: speaker.accent });
+      // The words come with the babble: they appear over the time the voice takes.
+      b.show(text, { name: opts.name ?? speaker.name, accent: speaker.accent }, babble ? Math.max(0.5, plan.duration * 0.9) : Math.min(2.5, readTime * 0.5));
     }
     speaker.setTalking(true);
     return new Promise<void>((resolve) => {

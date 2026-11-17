@@ -1034,6 +1034,9 @@ export function createStage(opts: StageOptions): Stage {
         o.userData.overlaid = false;
       }
     });
+    // The line being told is a caption: it is never hidden behind a bush or a bench.
+    capMat.depthTest = false;
+    caption.renderOrder = Math.max(caption.renderOrder, 2030);
   }
 
   function makeActor(m: CastMember, info: KindInfoLike, mesh: Mesh<PlaneGeometry, MeshBasicMaterial>, base: Color, h: number): Actor {

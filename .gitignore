@@ -55,4 +55,5 @@ __pycache__/
 # Frames and logs written by scenarios and the spend of live tests
 tests/xr/out/
 tests/web/out/
+tests/keyart/out/
 tests/live/spend.json

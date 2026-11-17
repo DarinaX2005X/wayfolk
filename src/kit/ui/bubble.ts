@@ -30,9 +30,11 @@ export type BubbleStyle = {
    * inner rim, a solid drop under it, one sharp corner toward the speaker, bold text).
    */
   reply?: boolean;
+  /** A little word cloud to poke: puffs round the words, a soft shadow, no tail. */
+  cloud?: boolean;
 };
 
-const DEFAULT: Required<Omit<BubbleStyle, 'label' | 'reply'>> = {
+const DEFAULT: Required<Omit<BubbleStyle, 'label' | 'reply' | 'cloud'>> = {
   paper: '#fff8ec',
   ink: '#3a2c22',
   rim: '#e8c9a0',
@@ -71,8 +73,76 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath();
 }
 
+/**
+ * A word cloud: bold words inside a small puffy cloud with a soft shadow. The canvas keeps
+ * room round the cloud for the puffs and the shadow; the mesh is as wide as `width`.
+ */
+function drawCloud(text: string, s: Required<Omit<BubbleStyle, 'label' | 'reply' | 'cloud'>>): { canvas: HTMLCanvasElement; w: number; h: number } {
+  const W = 512;
+  const canvas = document.createElement('canvas');
+  const measure = canvas.getContext('2d')!;
+  measure.font = `700 ${s.size}px ${FONT}`;
+  const lines = wrapText(measure, text, W - 170);
+  const lineH = s.size * 1.18;
+  const textW = Math.max(...lines.map((l) => measure.measureText(l).width));
+  const bw = Math.max(150, textW + 40);
+  const bh = lines.length * lineH + 26;
+  const H = Math.ceil(bh + 120);
+  canvas.width = W;
+  canvas.height = H;
+  const g = canvas.getContext('2d')!;
+  const x = (W - bw) / 2;
+  const y = (H - bh) / 2 - 6;
+  let seed = text.length * 17 + 3;
+  const rnd = (): number => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  const r0 = Math.min(44, bh * 0.55);
+  const puffs: [number, number, number][] = [];
+  const n = Math.max(2, Math.round(bw / (r0 * 1.15)));
+  for (let i = 0; i <= n; i += 1) {
+    const u = i / n;
+    puffs.push([x + u * bw, y + 4 + rnd() * 6, r0 * (0.8 + rnd() * 0.35) * (1 - 0.25 * Math.abs(u - 0.5))]);
+    puffs.push([x + u * bw, y + bh - 4, r0 * (0.65 + rnd() * 0.25)]);
+  }
+  puffs.push([x, y + bh / 2, r0 * 0.85], [x + bw, y + bh / 2, r0 * 0.85]);
+  const path = (): void => {
+    g.beginPath();
+    g.rect(x, y, bw, bh);
+    for (const [cx, cy, r] of puffs) {
+      g.moveTo(cx + r, cy);
+      g.arc(cx, cy, r, 0, Math.PI * 2);
+    }
+  };
+  g.save();
+  g.shadowColor = 'rgba(70, 60, 90, 0.3)';
+  g.shadowBlur = 18;
+  g.shadowOffsetY = 8;
+  path();
+  g.fillStyle = s.paper;
+  g.fill('nonzero');
+  g.restore();
+  g.save();
+  path();
+  g.clip('nonzero');
+  const grad = g.createLinearGradient(0, y - r0, 0, y + bh + r0);
+  grad.addColorStop(0, '#ffffff');
+  grad.addColorStop(0.6, s.paper);
+  grad.addColorStop(1, s.rim);
+  g.fillStyle = grad;
+  g.fillRect(0, 0, W, H);
+  g.restore();
+  g.font = `700 ${s.size}px ${FONT}`;
+  g.fillStyle = s.ink;
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  lines.forEach((l, i) => g.fillText(l, W / 2, y + bh / 2 + (i - (lines.length - 1) / 2) * lineH));
+  return { canvas, w: s.width, h: (H / W) * s.width };
+}
+
 /** A reply bubble, drawn like the page's `.desk-choice` buttons at this canvas scale. */
-function drawReply(text: string, s: Required<Omit<BubbleStyle, 'label' | 'reply'>>): { canvas: HTMLCanvasElement; w: number; h: number } {
+function drawReply(text: string, s: Required<Omit<BubbleStyle, 'label' | 'reply' | 'cloud'>>): { canvas: HTMLCanvasElement; w: number; h: number } {
   const W = 512;
   const k = s.size / 17;
   const canvas = document.createElement('canvas');
@@ -116,6 +186,7 @@ function drawReply(text: string, s: Required<Omit<BubbleStyle, 'label' | 'reply'
 /** Draws a bubble into a new canvas; returns it with its size in metres. */
 export function drawBubble(text: string, style: BubbleStyle = {}): { canvas: HTMLCanvasElement; w: number; h: number } {
   const s = { ...DEFAULT, ...style };
+  if (style.cloud) return drawCloud(text, s);
   if (style.reply) return drawReply(text, s);
   const W = 512;
   const scale = W / (s.width * 1000) * 1000; // px per metre of this texture

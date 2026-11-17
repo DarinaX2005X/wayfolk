@@ -60,6 +60,8 @@ export { wind, WIND_GLSL, createWindSound } from './wind';
 export { createAmbience, type Ambience } from './ambience';
 export type { WeatherKind } from './events';
 export type { Stage } from './recipes';
+export { neighbourIsland, bridgePlank, bridgePost, ropeCoil, ropeTube, type NeighbourShape, type NeighbourLook } from './neighbour';
+export { mainMaterial } from './materials';
 
 /** What createWorld needs from the app: an IWSDK World fits. */
 export interface WorldHost {
@@ -165,6 +167,20 @@ export interface World {
   grow(): boolean;
   readonly growth: number;
   groundY(x: number, z: number): number;
+  /**
+   * Extra ground beside the island (a friend's docked island, a rope bridge): `fn` answers
+   * a height in world.root space, or null where it has no ground. groundY asks these first.
+   */
+  addGround(id: string, fn: (x: number, z: number) => number | null): void;
+  removeGround(id: string): void;
+  /**
+   * A crossing to ground beyond the island: a straight walk from a to b (a bridge), used by
+   * route() whenever one end of a walk is inside `region` and the other is not.
+   */
+  addCrossing(id: string, a: P2, b: P2, region: (x: number, z: number) => boolean): void;
+  removeCrossing(id: string): void;
+  /** Takes trees, bushes, rocks and grass away round a point (a bridge head needs room). */
+  clearSpace(x: number, z: number, r: number): void;
   /** Rain and clear skies: rain streaks, rings on the pond, darker light, a rainbow after. */
   weather: { set(kind: WeatherKind): void; readonly kind: WeatherKind };
   /** A soft cloud whale and her calf swim an arc round the front of the island (about 75 s); resolves when gone. */
@@ -333,7 +349,15 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: 
     meadow?.setOccluders(walls);
   };
 
-  const groundY = (x: number, z: number): number => land.height(x, z);
+  const grounds = new Map<string, (x: number, z: number) => number | null>();
+  const crossings = new Map<string, { a: P2; b: P2; region: (x: number, z: number) => boolean }>();
+  const groundY = (x: number, z: number): number => {
+    for (const g of grounds.values()) {
+      const h = g(x, z);
+      if (h !== null && Number.isFinite(h)) return h;
+    }
+    return land.height(x, z);
+  };
   // level of detail follows the viewer (in world.root space)
   const lodEye = new Vector3(SEAT.x, 1.2, SEAT.z);
   const lastLodEye = new Vector3(1e9, 0, 0);
@@ -579,6 +603,20 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: 
 
   /** Shortest walk over the path network, or a winding line round obstacles. */
   function routeAlong(a: P2, b: P2): P2[] {
+    // a walk to or from ground beyond the island goes over its bridge (c.a at home, c.b there)
+    for (const c of crossings.values()) {
+      const away = c.region(a.x, a.z);
+      if (away === c.region(b.x, b.z)) continue;
+      const from = away ? c.b : c.a;
+      const to = away ? c.a : c.b;
+      const n = Math.max(2, Math.round(Math.hypot(to.x - from.x, to.z - from.z) / 0.6));
+      const over: P2[] = [];
+      for (let i = 0; i <= n; i++) over.push({ x: from.x + ((to.x - from.x) * i) / n, z: from.z + ((to.z - from.z) * i) / n });
+      // over there the ground is small and open: straight lines; at home, the island's routes
+      const first = away ? [a, from] : routeAlong(a, from);
+      const last = away ? routeAlong(to, b) : [to, b];
+      return [...first.slice(0, -1), ...over, ...last.slice(1)];
+    }
     const avoid: { x: number; z: number; r: number }[] = [];
     for (const h of houses.values()) avoid.push({ x: h.spec.pos.x, z: h.spec.pos.z, r: h.plan.radius * 0.9 });
     avoid.push({ x: POND.x, z: POND.z, r: POND.r + 0.7 });
@@ -898,6 +936,44 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: 
     },
     grow: () => growNow(),
     groundY,
+    addGround(id, fn) {
+      grounds.set(id, fn);
+    },
+    removeGround(id) {
+      grounds.delete(id);
+    },
+    addCrossing(id, a, b, region) {
+      crossings.set(id, { a: { x: a.x, z: a.z }, b: { x: b.x, z: b.z }, region });
+    },
+    removeCrossing(id) {
+      crossings.delete(id);
+    },
+    clearSpace(x, z, r) {
+      if (!island) return;
+      const gone = land.obstacles.filter((o) => o.id && /^(tree|bush|rock):/.test(o.id) && Math.hypot(o.x - x, o.z - z) < r + o.r * 0.6);
+      if (!gone.length) {
+        meadow?.clear(x, z, r);
+        meadow?.refresh();
+        return;
+      }
+      for (const o of gone) {
+        staticBatch.remove(o.id!);
+        decorBatch.remove(o.id!);
+        decorBatch.remove(`${o.id}:b`);
+        shadowList = shadowList.filter((sh) => Math.hypot(sh[0] - o.x, sh[1] - o.z) > 0.01);
+        const i = island.decor.findIndex((d) => d.key === o.id);
+        if (i >= 0) island.decor.splice(i, 1);
+        const pi = island.perches.findIndex((p) => p.kind === 'tree' && Math.hypot(p.pos.x - o.x, p.pos.z - o.z) < 0.05);
+        if (pi >= 0) island.perches.splice(pi, 1);
+      }
+      const ids = new Set(gone.map((o) => o.id));
+      land.obstacles = land.obstacles.filter((o) => !ids.has(o.id));
+      island.shadows.splice(0, island.shadows.length, ...shadowList);
+      meadow?.clear(x, z, r);
+      meadow?.refresh();
+      refreshShadows();
+      flush();
+    },
     route(a, b) {
       return routeAlong(a, b);
     },

@@ -13,7 +13,7 @@
  * Both work the same in the headset and in a page; in a page the view turns to the stage
  * or the player (src/app/desk/guide.ts) and the page offers the two tags.
  */
-import { AdditiveBlending, BufferAttribute, BufferGeometry, CanvasTexture, Points, PointsMaterial, SRGBColorSpace, Vector3, type Object3D } from '@iwsdk/core';
+import { AdditiveBlending, BufferAttribute, BufferGeometry, CanvasTexture, DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry, Points, PointsMaterial, SRGBColorSpace, Vector3, type Object3D } from '@iwsdk/core';
 import { say as caption } from '../feel/captions';
 import { createMusic, songFor, type MusicRun } from '../feel/music';
 import { directChapter, nextChapterNumber } from '../mind/chapters';
@@ -85,13 +85,46 @@ function noteTexture(): CanvasTexture {
   return t;
 }
 
+/** A soft ring of light for the ground, drawn once: bright at its edge, clear inside. */
+function ringTexture(): CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d')!;
+  const grad = g.createRadialGradient(128, 128, 60, 128, 128, 128);
+  grad.addColorStop(0, 'rgba(255,220,150,0)');
+  grad.addColorStop(0.72, 'rgba(255,214,140,0.15)');
+  grad.addColorStop(0.88, 'rgba(255,236,190,0.95)');
+  grad.addColorStop(1, 'rgba(255,200,120,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 256, 256);
+  const t = new CanvasTexture(c);
+  t.colorSpace = SRGBColorSpace;
+  return t;
+}
+
+/** A warm round glow for the motes that rise over the island with the music. */
+function moteTexture(): CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d')!;
+  const grad = g.createRadialGradient(32, 32, 1, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(255,250,225,1)');
+  grad.addColorStop(0.3, 'rgba(255,215,140,0.7)');
+  grad.addColorStop(1, 'rgba(255,170,90,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  const t = new CanvasTexture(c);
+  t.colorSpace = SRGBColorSpace;
+  return t;
+}
+
 export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hands): Evening {
   const { world, life, mind } = mods;
   const W = world as typeof world & WorldExtras;
   const M = mind as typeof mind & MindExtras;
   const L = life as typeof life & LifeExtras;
   const desk = (): boolean => app.store.mode.peek() === 'desk';
-  const stage = createStage({ parent: app.roots.fx, lessMotion: () => app.store.settings.peek().lessMotion, overlay: () => desk() });
+  const stage = createStage({ parent: app.roots.fx, lessMotion: () => app.store.settings.peek().lessMotion, overlay: () => desk() && !app.params.keyart });
   let playing: 'story' | 'concert' | null = null;
   let music: MusicRun | null = null;
   let stopNow: (() => void) | null = null;
@@ -168,7 +201,7 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
       const halfH = Math.atan(Math.tan(((lens.fov ?? 60) * Math.PI) / 360) * (lens.aspect ?? 1.6));
       d = Math.max(6.5, Math.min(9.5, 4.0 / Math.tan(halfH * 0.92)));
     }
-    stage.group.position.set(head.x + fwd.x * d, head.y - 0.3, head.z + fwd.z * d);
+    stage.group.position.set(head.x + fwd.x * d, head.y + (desk() ? -0.3 : -0.05), head.z + fwd.z * d);
     stage.group.rotation.set(0, Math.atan2(-fwd.x, -fwd.z), 0);
     stage.group.updateMatrixWorld(true);
     return stage.group.position.clone().add(new Vector3(0, STAGE.height * 0.45, 0));
@@ -211,6 +244,7 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
       }
       playing = 'story';
       app.store.show.value = 'story';
+      guide.cue(null);
       skyTo(20.4, 5);
       const ids = residents().map((r) => r.id);
       const ctx = audio();
@@ -267,23 +301,31 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
       const ctx = audio();
       playing = 'concert';
       app.store.show.value = 'concert';
+      guide.cue(null);
       skyTo(19.2, 4);
       const ids = list.map((r) => r.id);
       let notes: Points | null = null;
+      let motes: Points | null = null;
+      let rings: { mesh: Mesh<PlaneGeometry, MeshBasicMaterial>; born: number }[] = [];
       let off: (() => void) | null = null;
       try {
         caption({ source: 'Pip', text: EVENING_LINES.concert(player.name) });
         void within(Promise.resolve(life.pip.say(EVENING_LINES.concert(player.name))), 6000, undefined);
-        // The player stands where everyone can see, the others around.
-        const spot = firePoint();
-        await within(Promise.resolve(life.walkTo(player.id, spot, { speed: 1.6 })), 8000, undefined);
+        // The player stands beside the fire on the side of the seat, where everyone can see;
+        // the others gather round.
+        const fire = firePoint();
+        const seatPos = (world.seat as { pos?: Vector3 }).pos;
+        const seatW = seatPos?.isVector3 ? world.root.localToWorld(seatPos.clone()) : new Vector3();
+        const toSeat = seatW.clone().sub(fire).setY(0).normalize();
+        const spot = fire.clone().addScaledVector(toSeat, 1.15).addScaledVector(new Vector3(-toSeat.z, 0, toSeat.x), 0.7);
+        await within(Promise.resolve(life.walkTo(player.id, spot, { speed: 1.8 })), 8000, undefined);
         life.face?.(player.id);
         const playerObj = (): Object3D | null | undefined => life.objectOf?.(player.id);
         if (desk()) guide.frame(guide.of(playerObj, 0.6), { lift: 0.3 });
         const others = list.filter((r) => r.id !== player.id);
         others.forEach((r, i) => {
           const a = (i / Math.max(1, others.length)) * Math.PI * 1.2 + 0.9;
-          void life.walkTo(r.id, spot.clone().add(new Vector3(Math.cos(a) * 2.2, 0, Math.sin(a) * 2.2)), { speed: 1.4 });
+          void life.walkTo(r.id, fire.clone().add(new Vector3(Math.cos(a) * 2.2, 0, Math.sin(a) * 2.2)), { speed: 1.6 });
         });
         if (!ctx) {
           await wait(4000);
@@ -311,9 +353,45 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
         geo.setAttribute('position', new BufferAttribute(pos, 3));
         const born = new Float32Array(COUNT).fill(-10);
         const drift = new Float32Array(COUNT * 2);
-        notes = new Points(geo, new PointsMaterial({ map: noteTexture(), size: 0.32, transparent: true, depthWrite: false, blending: AdditiveBlending, toneMapped: false, opacity: 0.95 }));
+        notes = new Points(geo, new PointsMaterial({ map: noteTexture(), size: 0.42, transparent: true, depthWrite: false, blending: AdditiveBlending, toneMapped: false, opacity: 0.95 }));
         notes.frustumCulled = false;
         app.roots.fx.add(notes);
+        // Rings of light run out over the grass from the player on every bar, and warm motes
+        // rise over the whole island and swell with the tune.
+        const ringTex = ringTexture();
+        rings = [0, 1, 2, 3].map(() => {
+          const m = new Mesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({ map: ringTex, transparent: true, depthWrite: false, blending: AdditiveBlending, toneMapped: false, side: DoubleSide, opacity: 0 }));
+          m.rotation.x = -Math.PI / 2;
+          m.renderOrder = 3;
+          m.visible = false;
+          app.roots.fx.add(m);
+          return { mesh: m, born: -10 };
+        });
+        let ringNext = 0;
+        const MOTES = 70;
+        const moteGeo = new BufferGeometry();
+        const motePos = new Float32Array(MOTES * 3);
+        const moteBase = new Float32Array(MOTES * 4);
+        for (let i = 0; i < MOTES; i += 1) {
+          const a = Math.random() * Math.PI * 2;
+          const r = 2 + Math.sqrt(Math.random()) * 11;
+          const x = fire.x + Math.cos(a) * r;
+          const z = fire.z + Math.sin(a) * r;
+          const gy = (world as { groundY?: (x: number, z: number) => number }).groundY?.(x, z) ?? fire.y;
+          moteBase[i * 4] = x;
+          moteBase[i * 4 + 1] = (Number.isFinite(gy) ? gy : fire.y) + 0.6 + Math.random() * 2.6;
+          moteBase[i * 4 + 2] = z;
+          moteBase[i * 4 + 3] = Math.random() * Math.PI * 2;
+        }
+        moteGeo.setAttribute('position', new BufferAttribute(motePos, 3));
+        motes = new Points(moteGeo, new PointsMaterial({ map: moteTexture(), size: 0.42, transparent: true, depthWrite: false, blending: AdditiveBlending, toneMapped: false, opacity: 0 }));
+        motes.frustumCulled = false;
+        app.roots.fx.add(motes);
+        const launchRing = (): void => {
+          const r = rings[ringNext++ % rings.length];
+          r.born = (app.clock.now() - t0) / 1000;
+          r.mesh.visible = true;
+        };
         let slot = 0;
         let hue = 0.08;
         const t0 = app.clock.now();
@@ -327,6 +405,7 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
             drift[i * 2 + 1] = (Math.random() - 0.5) * 0.6;
           },
           onBar: (bar) => {
+            launchRing();
             hue = 0.06 + ((bar % 8) / 8) * 0.12;
             // Everyone else dances; now and then someone hops.
             for (const r of others) life.emote(r.id, bar % 4 === 3 ? 'excited' : 'dance');
@@ -337,9 +416,36 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
         off = app.everyFrame(() => {
           if (!music || !notes) return;
           const level = music.level();
-          W.setPulse?.(level, hue);
+          // The island answers clearly even in daylight: a floor under the pulse, then the tune.
+          W.setPulse?.(Math.min(1, 0.22 + level * 1.5), hue);
           playerObj()?.getWorldPosition(p);
           const now = (app.clock.now() - t0) / 1000;
+          const less = app.store.settings.peek().lessMotion;
+          for (const r of rings) {
+            const age = now - r.born;
+            if (age < 0 || age > 2.4) {
+              r.mesh.visible = false;
+              continue;
+            }
+            const k = age / 2.4;
+            const size = 0.8 + (less ? 4 : k * 9);
+            r.mesh.position.set(p.x, p.y + 0.06, p.z);
+            r.mesh.scale.set(size, size, 1);
+            r.mesh.material.opacity = (1 - k) * (1 - k) * 0.9;
+          }
+          if (motes) {
+            const fade = Math.min(1, now / 3);
+            for (let i = 0; i < MOTES; i += 1) {
+              const ph = moteBase[i * 4 + 3];
+              motePos[i * 3] = moteBase[i * 4] + (less ? 0 : Math.sin(now * 0.3 + ph) * 0.25);
+              motePos[i * 3 + 1] = moteBase[i * 4 + 1] + (less ? 0 : Math.sin(now * 0.6 + ph * 2) * 0.35 + level * 0.25);
+              motePos[i * 3 + 2] = moteBase[i * 4 + 2] + (less ? 0 : Math.cos(now * 0.27 + ph) * 0.25);
+            }
+            motes.geometry.attributes.position.needsUpdate = true;
+            const mm = motes.material as PointsMaterial;
+            mm.opacity = fade * (0.45 + level * 0.55);
+            mm.size = 0.34 + level * 0.22;
+          }
           for (let i = 0; i < COUNT; i += 1) {
             const age = now - born[i];
             if (age < 0 || age > 3.2) {
@@ -364,12 +470,20 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
         stopNow = null;
         W.setPulse?.(0);
         L.flockCircle?.(null);
-        if (notes) {
-          notes.removeFromParent();
-          notes.geometry.dispose();
-          (notes.material as PointsMaterial).map?.dispose();
-          (notes.material as PointsMaterial).dispose();
+        for (const pts of [notes, motes]) {
+          if (!pts) continue;
+          pts.removeFromParent();
+          pts.geometry.dispose();
+          (pts.material as PointsMaterial).map?.dispose();
+          (pts.material as PointsMaterial).dispose();
         }
+        if (rings.length) rings[0].mesh.material.map?.dispose();
+        for (const r of rings) {
+          r.mesh.removeFromParent();
+          r.mesh.geometry.dispose();
+          r.mesh.material.dispose();
+        }
+        rings = [];
         playing = null;
         app.store.show.value = null;
         if (desk()) guide.frame(null);

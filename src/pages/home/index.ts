@@ -39,6 +39,8 @@ export const TEXT = {
   story: 'A story by the fire',
   song: 'A song',
   lantern: 'Send a lantern',
+  bell: 'Ring the bell',
+  feed: 'Feed the birds',
   next: 'Next',
   enough: "That's enough for tonight",
   vr: 'Enter in VR',
@@ -131,7 +133,18 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   const lanternTag = el('button', 'tag tag-small', TEXT.lantern);
   lanternTag.type = 'button';
   lanternTag.addEventListener('click', () => void wf?.delights.lantern());
-  menu.append(storyTag, songTag, lanternTag, snap, inviteTag, vrTag);
+  // The bell by the seat and crumbs for the flock: small things that answer at once.
+  const bellTag = el('button', 'tag tag-small', TEXT.bell);
+  bellTag.type = 'button';
+  bellTag.addEventListener('click', () => void wf?.delights.ring());
+  const feedTag = el('button', 'tag tag-small', TEXT.feed);
+  feedTag.type = 'button';
+  feedTag.addEventListener('click', () => void wf?.delights.feed());
+  menu.append(storyTag, songTag, bellTag, feedTag, lanternTag, snap, inviteTag);
+  // A headset in this browser: going in stays one small tag away, in the corner.
+  const vrCorner = el('div', 'home-vr');
+  vrCorner.hidden = true;
+  vrCorner.append(vrTag);
   // While a story plays: hurry a line, or stop.
   const showBar = el('div', 'home-menu home-show');
   const nextTag = el('button', 'tag tag-small', TEXT.next);
@@ -143,14 +156,19 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   showBar.append(nextTag, enoughTag);
   effect(() => {
     const show = store.show.value;
+    // Click for the next line and Esc to stop (src/app/wayfolk.ts); the bar stays for
+    // screen readers and the keyboard only.
     showBar.hidden = !show || store.mode.value !== 'desk';
+    showBar.classList.add('home-show-quiet');
     nextTag.hidden = show !== 'story';
     enoughTag.textContent = show === 'concert' ? 'Stop the music' : TEXT.enough;
   });
 
   effect(() => {
-    // One thing at a time: while replies are on offer, the menu waits.
-    menu.hidden = store.phase.value !== 'free' || store.mode.value !== 'desk' || store.show.value !== null || store.choices.value.length > 0;
+    // Everything on the menu lives in the world now (Pip's menu, the bell, the flock): only
+    // the way into a headset stays on the page, when there is one.
+    menu.hidden = true;
+    vrCorner.hidden = vrTag.hidden || store.mode.value !== 'desk' || store.phase.value === 'boot';
   });
   const prepared = el('p', 'home-prepared', 'prepared traveler');
   prepared.hidden = true;
@@ -159,6 +177,7 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   const deskUi = createDeskUi(store, {
     pick: (i) => wf?.replies.pick(i),
     answer: (text) => wf?.replies.answer(text),
+    hold: () => wf?.replies.hold(),
     micStart: () => void wf?.voice.start(),
     micStop: () => wf?.voice.stop(),
     walk: (f, r) => wf?.guide.setWalk(f, r),
@@ -170,7 +189,7 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   const card = el('aside', 'home-card');
   card.hidden = true;
 
-  page.append(stage, sky, plate, balloon, strip, card, ...deskUi);
+  page.append(stage, sky, plate, balloon, strip, card, vrCorner, ...deskUi);
   root.replaceChildren(page);
 
   effect(() => {

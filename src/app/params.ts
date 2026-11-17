@@ -8,6 +8,7 @@
  *   later=1         pretend this is a later visit (Pip tells what happened meanwhile)
  *   capture=1       frozen clock, stepped by the capture tool
  *   offline=1       no model calls at all, prepared travelers and lines only
+ *   keyart=1        still frames for the cover (src/app/keyart.ts): the theatre keeps depth
  */
 export type AppParams = {
   pace: number;
@@ -15,13 +16,14 @@ export type AppParams = {
   later: boolean;
   capture: boolean;
   offline: boolean;
+  keyart: boolean;
   debug: boolean;
 };
 
 /** Reads the parameters; with `enabled` false only the defaults come back. */
 export function parseAppParams(search: string, enabled: boolean): AppParams {
   const q = new URLSearchParams(search);
-  const params: AppParams = { pace: 1, fresh: false, later: false, capture: false, offline: false, debug: q.get('debug') === '1' };
+  const params: AppParams = { pace: 1, fresh: false, later: false, capture: false, offline: false, keyart: false, debug: q.get('debug') === '1' };
   if (!enabled) return params;
   const pace = Number(q.get('pace'));
   if (q.has('pace') && Number.isFinite(pace) && pace >= 0 && pace <= 10) params.pace = pace;
@@ -29,5 +31,6 @@ export function parseAppParams(search: string, enabled: boolean): AppParams {
   params.later = q.get('later') === '1';
   params.capture = q.get('capture') === '1';
   params.offline = q.get('offline') === '1';
+  params.keyart = q.get('keyart') === '1';
   return params;
 }

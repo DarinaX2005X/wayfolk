@@ -10,6 +10,8 @@ const up = new Vector3();
 const q4 = new Quaternion();
 
 export class LifeAudio {
+  /** When the last chirp sounded (audio clock), so chirps stay rare. */
+  private lastChirp = -10;
   ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private ambientBus: GainNode | null = null;
@@ -144,8 +146,11 @@ export class LifeAudio {
   /** Little pick-up chirp. */
   chirp(pos: Vector3, pitch = 1): void {
     const ctx = this.ensure();
+    // Rare and soft: a chirp by the ear is charming once, tiring the fifth time.
+    if (!ctx || ctx.currentTime - this.lastChirp < 2.5) return;
     const p = this.panner(pos, 'main', 1);
-    if (!ctx || !p) return;
+    if (!p) return;
+    this.lastChirp = ctx.currentTime;
     const t = ctx.currentTime + 0.01;
     const o = ctx.createOscillator();
     o.type = 'sine';
@@ -154,8 +159,8 @@ export class LifeAudio {
     o.frequency.exponentialRampToValueAtTime(1900 * pitch, t + 0.11);
     const g = ctx.createGain();
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.12, t + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+    g.gain.linearRampToValueAtTime(0.04, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0005, t + 0.13);
     o.connect(g).connect(p);
     o.start(t);
     o.stop(t + 0.15);

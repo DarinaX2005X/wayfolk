@@ -24,6 +24,8 @@ type Hooks = {
   micStart(): void;
   micStop(): void;
   walk(forward: number, right: number): void;
+  /** The person is typing or about to speak: the quick-reply clouds wait. */
+  hold(): void;
 };
 
 export const DESK_TEXT = {
@@ -44,6 +46,9 @@ export const DESK_TEXT = {
     flags: 'Click a flag to go there',
     space: 'Hold Space to talk',
     hurry: 'Click anywhere to hurry',
+    pip: 'Click Pip for things to do',
+    story: 'Click for the next line, Esc to stop',
+    song: 'Esc stops the music',
   },
 } as const;
 
@@ -85,6 +90,8 @@ export function createDeskUi(store: Store, hooks: Hooks): HTMLElement[] {
   const send = el('button', 'desk-send', DESK_TEXT.send);
   send.type = 'submit';
   form.append(input, send);
+  input.addEventListener('input', () => hooks.hold());
+  input.addEventListener('focus', () => hooks.hold());
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const text = input.value.trim();
@@ -106,6 +113,7 @@ export function createDeskUi(store: Store, hooks: Hooks): HTMLElement[] {
   const on = (e: Event): void => {
     e.preventDefault();
     mic.setPointerCapture?.((e as PointerEvent).pointerId);
+    hooks.hold();
     hooks.micStart();
   };
   mic.addEventListener('pointerdown', on);
@@ -167,7 +175,10 @@ export function createDeskUi(store: Store, hooks: Hooks): HTMLElement[] {
   effect(() => {
     const text = store.cue.value;
     cueText.textContent = text ? (touch ? text.replace(/^Click/, 'Tap') : text) : '';
-    cue.hidden = !text || store.mode.value !== 'desk' || (store.choices.value.length > 0 && store.phase.value === 'free');
+    // The next thing is shown in the world (a glowing arrow over it); the page keeps only
+    // the words for screen readers.
+    cue.hidden = true;
+    void text;
   });
 
   // ---- one line of keys at a time
@@ -211,9 +222,14 @@ export function createDeskUi(store: Store, hooks: Hooks): HTMLElement[] {
     all.hidden = !all.hidden;
   });
   const [dragLine, walkLine] = lineEls();
+  const pipLine = el('p', 'desk-line');
+  pipLine.append(el('span', 'desk-glyph desk-glyph-tap'), document.createTextNode(touch ? DESK_TEXT.lines.pip.replace('Click', 'Tap') : DESK_TEXT.lines.pip));
+  const storyLine = el('p', 'desk-line', touch ? 'Tap for the next line' : DESK_TEXT.lines.story);
+  const songLine = el('p', 'desk-line', DESK_TEXT.lines.song);
   const hurryLine = el('p', 'desk-line');
   hurryLine.append(el('span', 'desk-glyph desk-glyph-tap'), document.createTextNode(touch ? DESK_TEXT.lines.hurry.replace('Click', 'Tap') : DESK_TEXT.lines.hurry));
   let shown: HTMLElement | null = null;
+  let fadeTimer = 0;
   effect(() => {
     // Only once inside: the landing has its own tags.
     const desk = store.mode.value === 'desk' && store.phase.value !== 'boot';
@@ -223,14 +239,34 @@ export function createDeskUi(store: Store, hooks: Hooks): HTMLElement[] {
     const free = phase === 'free';
     // In a long moment (a traveler on the way, a house going up) a click hurries it.
     const long = (phase === 'arrive' || phase === 'build') && !store.hurried.value;
-    // Look first; walking matters once the island is free to wander.
-    const next = !desk ? null : long ? hurryLine : !looked ? dragLine : !walked && free ? walkLine : null;
+    const show = store.show.value;
+    const pipUsed = store.pipUsed.value;
+    // Look first; walking matters once the island is free to wander; then Pip's menu.
+    const next = !desk
+      ? null
+      : show === 'story'
+        ? storyLine
+        : show === 'concert' && !touch
+          ? songLine
+          : long
+            ? hurryLine
+            : !looked
+              ? dragLine
+              : !walked && free
+                ? walkLine
+                : !pipUsed && free && store.choices.value.length === 0
+                  ? pipLine
+                  : null;
     if (next !== shown) {
       shown = next;
       hint.replaceChildren(...(next ? [next] : []));
+      // Each line stays a few seconds and goes; the "?" brings them all back.
+      hint.classList.remove('is-gone');
+      clearTimeout(fadeTimer);
+      if (next) fadeTimer = window.setTimeout(() => hint.classList.add('is-gone'), 9000);
     }
     hint.hidden = !next;
-    help.hidden = !desk || !!next;
+    help.hidden = !desk || (!!next && !hint.classList.contains('is-gone'));
   });
 
   // ---- the stick on a phone
@@ -271,7 +307,8 @@ export function createDeskUi(store: Store, hooks: Hooks): HTMLElement[] {
   stick.addEventListener('pointerup', stickUp);
   stick.addEventListener('pointercancel', stickUp);
   effect(() => {
-    stick.hidden = !(touch && store.mode.value === 'desk' && store.phase.value === 'free');
+    // Only while the island is free to wander: not over a story, a song or a choice.
+    stick.hidden = !(touch && store.mode.value === 'desk' && store.phase.value === 'free' && store.show.value === null && store.choices.value.length === 0);
   });
 
   // ---- placing things where the world says, every frame

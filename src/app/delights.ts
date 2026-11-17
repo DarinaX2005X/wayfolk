@@ -556,20 +556,22 @@ export function createDelights(app: App, mods: Modules, hands: Hands, guide: Gui
   const cord = new Mesh(new CylinderGeometry(0.0025, 0.0025, 0.012, 5), wood);
   cord.position.y = -0.006;
   bellSwing.add(bellMesh, clapper, loop, cord);
-  const post = new Mesh(new CylinderGeometry(0.022, 0.03, 1.12, 8).translate(0, 0.56, 0), wood);
+  // Low enough that it never stands at eye height: the bell hangs where a seated hand rests.
+  const post = new Mesh(new CylinderGeometry(0.022, 0.03, 0.96, 8).translate(0, 0.48, 0), wood);
   const arm = new Mesh(new CylinderGeometry(0.016, 0.018, 0.26, 7).rotateZ(Math.PI / 2).translate(0.13, 0, 0), wood);
-  arm.position.y = 1.08;
+  arm.position.y = 0.92;
   const cap = new Mesh(new SphereGeometry(0.03, 12, 8), wood);
-  cap.position.y = 1.12;
-  bellSwing.position.set(0.23, 1.08, 0);
+  cap.position.y = 0.96;
+  bellSwing.position.set(0.23, 0.92, 0);
   bellGroup.add(post, arm, cap, bellSwing);
   let bellPlaced = false;
   const placeBell = (): void => {
     if (bellPlaced) return;
     bellPlaced = true;
     const { p, right, fwd } = seatAt();
-    const at = p.clone().addScaledVector(right, -0.82).addScaledVector(fwd, -0.12);
-    at.y = (world.groundY?.(at.x, at.z) ?? p.y) - 0.02;
+    // Just off the left end of the bench, the bell hanging in toward the person.
+    const at = p.clone().addScaledVector(right, -1.08).addScaledVector(fwd, 0.15);
+    at.y = Math.max(p.y, world.groundY?.(at.x, at.z) ?? p.y) - 0.01;
     bellGroup.position.copy(at);
     // The arm reaches in toward the person.
     bellGroup.rotation.y = Math.atan2(right.z, right.x) * -1;

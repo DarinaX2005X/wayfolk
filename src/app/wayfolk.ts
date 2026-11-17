@@ -10,22 +10,25 @@ import { Box3, Object3D, Raycaster, Vector3, type Mesh } from '@iwsdk/core';
 import { effect } from '@preact/signals-core';
 import { bindFeel } from '../feel/bind';
 import type { App } from './boot/world';
-import { registerDebug, registerTest } from './debug';
+import { debugEnabled, registerDebug, registerTest } from './debug';
 import { bindDesk } from './desk/input';
 import { createGuide, type Guide } from './desk/guide';
 import { createDelights, type Delights } from './delights';
 import { createEvening, type Evening } from './evening';
 import { createVisits } from './visits';
 import { createPainter } from './painter';
+import { createKeyArt } from './keyart';
 import { createEntry, type Entry } from './entry/entry';
-import { createFlow, type Flow } from './flow';
+import { createFlow, type Flow, type Together } from './flow';
 import { createGifts, registerGiftTest } from './hands/gifts';
 import { createGlide } from './hands/glide';
+import { createMove } from './hands/move';
 import { createHands, type Hands } from './hands/hands';
 import { createPlacement } from './hands/place';
 import { createReplies, type Replies } from './hands/replies';
 import { createVoice, type Voice } from './hands/voice';
 import { createModules, type Modules } from './modules';
+import { createMusic, songFor, type MusicRun } from '../feel/music';
 import type { IslandState } from '../mind/types';
 import { anchorPoint, type AppHandle } from './ports';
 import { createPostcard, type Postcard } from './postcard';
@@ -51,6 +54,8 @@ export type Wayfolk = {
   showcase(on: boolean): void;
   /** Invites a friend: a link and QR for a live visit. */
   invite(): Promise<{ code: string; link: string } | null>;
+  /** Plugs in the things two people do together (src/together/); see Flow.setTogether. */
+  setTogether(t: Together | null): void;
 };
 
 export async function startWayfolk(app: App): Promise<Wayfolk> {
@@ -93,6 +98,10 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
   for (const h of [hands.left, hands.right]) app.roots.fx.add(h.anchor);
 
   const replies = createReplies(app, hands);
+  // Typing or speaking keeps the quick-reply clouds away.
+  app.store.listening.subscribe((on) => {
+    if (on) replies.hold();
+  });
   const placement = createPlacement(app, hands, mods.world, replies);
   let flow: Flow | null = null;
   const glide = createGlide(app, hands, mods.world, rig, replies, () => (flow?.busy() ?? true) || placement.active);
@@ -112,16 +121,24 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
   const guide = createGuide(app, rig, mods.world, () => (mods.mind.state?.houses ?? []).map((h) => ({ x: h.pos.x, z: h.pos.z, r: 2.1 })));
   {
     const at = new Vector3();
-    (guide as unknown as { speakerAt(fn: (id: string) => Vector3 | null): void }).speakerAt((id) => {
+    const speakerAt = (id: string): Vector3 | null => {
       const o = id === 'pip' ? mods.life.pip.object : (mods.life.objectOf?.(id) as Object3D | undefined);
       if (!o) return null;
       o.updateWorldMatrix(true, false);
       return o.getWorldPosition(at).add(new Vector3(0, id === 'pip' ? 0.05 : 0.5, 0));
+    };
+    (guide as unknown as { speakerAt(fn: (id: string) => Vector3 | null): void }).speakerAt(speakerAt);
+    // In a page the word clouds float beside whoever is speaking.
+    replies.anchorAt(() => {
+      const id = app.store.speaker.peek();
+      return id ? speakerAt(id) : null;
     });
   }
   const evening = createEvening(app, mods, guide, hands);
   const painter = createPainter(app, mods, guide);
   const delights = createDelights(app, mods, hands, guide, () => (flow?.busy() ?? true) || evening.playing !== null || replies.open);
+  // Moving in a headset: real steps, a hop to any spot of grass, pulling yourself along.
+  createMove(app, hands, mods.world, glide, guide.walkable, (side) => replies.open || replies.consumed(side) || placement.active || gifts.holding() || (flow?.busy() ?? true) || evening.playing !== null);
   flow = createFlow(app, mods, {
     entry,
     hands,
@@ -132,7 +149,7 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     voice,
     postcard,
     guide,
-    shows: { story: (id) => evening.story(id), concert: (id) => evening.concert(id), lantern: () => delights.lantern(), paint: () => painter.paint(), dusk: () => evening.dusk() },
+    shows: { story: (id) => evening.story(id), concert: (id) => evening.concert(id), lantern: () => delights.lantern(), paint: () => painter.paint(), dusk: () => evening.dusk(), feed: () => delights.feed() },
     readNote: () => delights.readNote(),
     star: () => delights.star(),
     visits: {
@@ -145,7 +162,13 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
   const talker = flow as Flow & { say(id: string, name: string, text: string): Promise<void>; pipSay(text: string): Promise<void> };
   const visits = createVisits(app, mods, { replies, guide, glide, rig, say: (id, name, text) => talker.say(id, name, text), pipSay: (text) => talker.pipSay(text) });
   bindDesk(app, rig, replies, placement, glide, guide, voice, [
-    { objects: () => (mods.life.pip.object ? [mods.life.pip.object] : []), pick: () => void flow?.pokePip() },
+    {
+      objects: () => (mods.life.pip.object ? [mods.life.pip.object] : []),
+      pick: () => {
+        app.store.pipUsed.value = true;
+        void flow?.pokePip();
+      },
+    },
     {
       objects: () => residents().map((r) => r.object),
       pick: (object) => {
@@ -164,7 +187,8 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     const cam = world.camera as unknown as { aspect?: number; fov?: number };
     const desk = app.store.mode.peek() === 'desk';
     const aspect = cam.aspect || 1.6;
-    const key = desk ? `d${aspect.toFixed(2)}` : 'xr';
+    // The page's lens narrows on a far speaker, so the fov is part of the key.
+    const key = desk ? `d${aspect.toFixed(2)}:${Math.round(cam.fov ?? 60)}` : 'xr';
     if (key === hoverKey) return;
     hoverKey = key;
     if (!desk) {
@@ -176,6 +200,24 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     const ahead = 1.55;
     setHover.call(mods.life.pip, { ahead, side: ahead * Math.tan(Math.min(0.46, halfH * 0.62)), drop: ahead * Math.tan(halfV) * 0.42 });
   });
+
+  // In a page a story moves on with a click anywhere, and Esc ends a story or a song.
+  {
+    const canvas = world.renderer.domElement;
+    let downAt: { x: number; y: number } | null = null;
+    canvas.addEventListener('pointerdown', (e) => {
+      downAt = { x: e.clientX, y: e.clientY };
+    });
+    canvas.addEventListener('pointerup', (e) => {
+      if (app.store.mode.peek() !== 'desk' || !downAt) return;
+      const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
+      downAt = null;
+      if (moved < 6 && evening.playing === 'story') evening.next();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && app.store.mode.peek() === 'desk' && evening.playing) evening.stop();
+    });
+  }
 
   // Re-seat when a session starts or ends (the head pose changes frame).
   let lastMode = app.store.mode.peek();
@@ -230,9 +272,10 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
   });
   // Life's sounds and the wind in the grass start with the first gesture, like the rest.
   // The island's ambience (wind, sea, birds, the fire; src/world/) follows the head.
-  type Ambience = { update(x: number, z: number, yaw?: number): void };
+  type Ambience = { update(x: number, z: number, yaw?: number): void; setVolume?(v: number): void };
   const ambienceMods = import.meta.glob('../world/index.ts') as Record<string, () => Promise<{ createAmbience?: (ctx: AudioContext, dest: AudioNode) => Ambience }>>;
   let ambience: Ambience | null = null;
+  let bedStarted = false;
   const resume = (): void => {
     const ctx = (mods.life as { audio?: AudioContext | null }).audio;
     void ctx?.resume?.();
@@ -241,9 +284,44 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
       void load()
         .then((m) => {
           ambience ??= m.createAmbience?.(ctx, ctx.destination) ?? null;
+          // The island's bed sits under everything else.
+          ambience?.setVolume?.(0.6);
         })
         .catch(() => undefined);
     }
+    if (ctx && !bedStarted) {
+      bedStarted = true;
+      startBed(ctx);
+    }
+  };
+  // A soft musical bed by the hour: a short tune now and then, with long quiet between,
+  // never while someone talks, a story plays or a song is on.
+  const startBed = (ctx: AudioContext): void => {
+    const bus = ctx.createGain();
+    bus.gain.value = 1;
+    bus.connect(ctx.destination);
+    let run: MusicRun | null = null;
+    const next = (ms: number): void => {
+      app.clock.timers.set(() => {
+        const quiet = !app.store.show.peek() && !app.store.talkingTo.peek() && app.store.phase.peek() === 'free';
+        if (!quiet || !app.store.settings.peek().sound) {
+          next(20000);
+          return;
+        }
+        const hour = (mods.world as { sky?: { hour?: number } }).sky?.hour ?? app.clock.wall().getHours();
+        const trade = hour < 9 ? 'gardener' : hour < 17 ? 'baker' : hour < 21 ? 'storyteller' : 'stargazer';
+        run = createMusic(ctx, bus).play(songFor(Math.floor(Math.random() * 100000), trade, 'story'), { volume: 0.06 });
+        void run.done.then(() => {
+          run = null;
+          next(50000 + Math.random() * 60000);
+        });
+      }, ms);
+    };
+    // Hush the bed the moment a scene with its own music begins.
+    app.store.show.subscribe((s) => {
+      if (s && run) run.stop();
+    });
+    next(25000);
   };
   const ear = new Vector3();
   const look = new Vector3();
@@ -306,7 +384,8 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
       perch.position.y += 0.9;
       void mods.life.pip.landOn({ object: perch, palmNormal: { x: 0, y: 1, z: 0 }, tracked: () => true });
     }
-    const a = 2.6 + (now / 1000) * 0.02;
+    // The drift stands still for people who asked for less motion.
+    const a = 2.6 + (app.store.settings.peek().lessMotion ? 0 : (now / 1000) * 0.02);
     const cam = world.camera;
     world.player.position.set(0, 0, 0);
     world.player.rotation.set(0, 0, 0);
@@ -384,6 +463,9 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
       });
       return begun;
     },
+    setTogether(t) {
+      flow?.setTogether(t);
+    },
     async invite() {
       try {
         const out = await Promise.resolve(mods.live.host(mods.mind.state.id));
@@ -397,6 +479,11 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     },
   };
   registerDebug('wf', wf);
+  // When each phase began, seconds since the page started (first-minute timing in scenarios).
+  const phases: { phase: string; at: number }[] = [];
+  app.store.phase.subscribe((phase) => phases.push({ phase, at: Math.round(performance.now() / 100) / 10 }));
+  registerDebug('phases', phases);
+  if (debugEnabled()) createKeyArt(app, mods, { rig, guide, evening, showcase: (on) => wf.showcase(on) });
   registerTest('begin', () => wf.begin());
   registerTest('leave', () => entry.leave());
   registerTest('back', () => entry.back());

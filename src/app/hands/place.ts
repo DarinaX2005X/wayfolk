@@ -212,11 +212,11 @@ export function createPlacement(app: App, hands: Hands, world: WorldPort, replie
         const dx = offered.snapped.x - seatP.x;
         const dz = offered.snapped.z - seatP.z;
         const d = Math.hypot(dx, dz);
-        if (d > 1 && d < 10.5) {
-          const k = 11.2 / d;
+        if (d > 1 && d < 9.4) {
+          const k = 10.2 / d;
           const v = world.validSpot({ x: seatP.x + dx * k, y: seatP.y, z: seatP.z + dz * k });
           const far = v.snapped ? Math.hypot(v.snapped.x - seatP.x, v.snapped.z - seatP.z) : 0;
-          if (v.ok && v.snapped && far >= 10 && far <= 13.5) return { x: v.snapped.x, z: v.snapped.z, rotY: v.rotY };
+          if (v.ok && v.snapped && far >= 9.3 && far <= 12) return { x: v.snapped.x, z: v.snapped.z, rotY: v.rotY };
         }
         return { x: offered.snapped.x, z: offered.snapped.z, rotY: offered.rotY };
       }

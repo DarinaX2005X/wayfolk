@@ -107,19 +107,16 @@ export function bindDesk(
       app.store.hurried.value = true;
       return;
     }
+    // A flag, or anywhere on the grass: walk there.
     const rings = glide.rings();
     const g = hitFirst([...rings, ...glide.beacons()]);
     if (g >= 0) {
-      void glide.to(g % Math.max(1, rings.length));
-      return;
+      const target = rings[g % Math.max(1, rings.length)];
+      if (target && guide.goTo(target.getWorldPosition(new Vector3()))) return;
     }
-    // Anywhere else on the island: glide to the nearest flag when the click is close to one.
-    const ground = ray.ray.direction.y < -0.02 ? -ray.ray.origin.y / ray.ray.direction.y : -1;
-    if (ground > 0) {
-      const p = ray.ray.at(ground, new Vector3());
-      const i = glide.near(p);
-      if (i >= 0) void glide.to(i);
-    }
+    if (app.store.phase.peek() !== 'free') return;
+    const p = guide.groundHit(ray.ray);
+    if (p) guide.goTo(p);
   };
   canvas.addEventListener('pointerup', up);
   canvas.addEventListener('pointercancel', () => {

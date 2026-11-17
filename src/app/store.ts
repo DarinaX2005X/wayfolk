@@ -116,6 +116,8 @@ export type Store = {
   walked: Signal<boolean>;
   /** Browser mode: the person has hurried a long moment with a click. */
   hurried: Signal<boolean>;
+  /** Browser mode: the person has opened Pip's menu. */
+  pipUsed: Signal<boolean>;
   /** What the person just said (typed, or heard from the microphone), shown back to them. */
   heard: Signal<string | null>;
   /** Who is speaking now ('pip', a resident id), for the page to place the replies by them. */
@@ -151,6 +153,7 @@ export const store: Store = {
   cue: signal<string | null>(null),
   walked: signal(false),
   hurried: signal(false),
+  pipUsed: signal(false),
   heard: signal<string | null>(null),
   speaker: signal<string | null>(null),
   show: signal<'story' | 'concert' | null>(null),

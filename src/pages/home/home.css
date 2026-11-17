@@ -648,6 +648,46 @@
   }
 }
 
+/* On a small screen the menu tags shrink, so the island keeps most of the view. */
+@media (max-height: 560px), (max-width: 640px) {
+  .home-menu {
+    gap: 6px 8px;
+  }
+  .home-menu .tag-small {
+    padding: 15px 11px 7px;
+    font-size: 14px;
+  }
+  .home-menu .tag-small::before {
+    top: 6px;
+    width: 7px;
+    height: 7px;
+    margin-left: -3.5px;
+  }
+}
+
+/* On a phone the tags make one row along the bottom that scrolls sideways, under the
+   walking stick instead of across it. */
+@media (max-width: 640px) {
+  .home-strip {
+    width: calc(100% - 16px);
+    bottom: 10px;
+  }
+  .home-menu:not(.home-show) {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    width: 100%;
+    overflow-x: auto;
+    padding: 2px 6px 10px;
+    scrollbar-width: none;
+  }
+  .home-menu:not(.home-show)::-webkit-scrollbar {
+    display: none;
+  }
+  .home-menu .tag-small {
+    flex: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ls-left,
   .ls-right,
@@ -683,8 +723,26 @@
 }
 
 .home-menu[hidden],
-.home-card-img[hidden] {
+.home-card-img[hidden],
+.home-vr[hidden] {
   display: none;
+}
+
+/* The story controls are kept for screen readers and the keyboard, out of sight. */
+.home-show-quiet:not(:focus-within) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.home-vr {
+  position: absolute;
+  top: max(14px, 2vh);
+  right: max(14px, 2vw);
+  pointer-events: auto;
 }
 
 /* How to play in the browser: a paper note in the corner, gone after first use. */
