@@ -11,7 +11,7 @@
  * from a hand already within 12 cm of a takeable object is left to the grab.
  */
 import type { Object3D } from '@iwsdk/core';
-import type { InputKind } from '../agents/types';
+import type { InputKind } from '../app/store';
 import { answer, type FeelName } from '../feel';
 import { RULES, SelectGuard } from './logic';
 import {

@@ -32,7 +32,7 @@ import {
   type Object3D,
   type World,
 } from '@iwsdk/core';
-import type { InputKind } from '../agents/types';
+import type { InputKind } from '../app/store';
 import type { App, Interaction } from '../app/boot/world';
 import { registerDebug, registerTest } from '../app/debug';
 import { store } from '../app/store';
