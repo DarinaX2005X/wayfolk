@@ -35,7 +35,7 @@ import { createMeadow } from './grass';
 import { createHorizon, type HorizonIsland } from './horizon';
 import { createIsland } from './island';
 import { kitGeometry, loadKit } from './kit';
-import { CENTER, HILL, LOTS, Land, PIER, POND, SEAT, faceSeat } from './land';
+import { CENTER, HILL, HOUSE_R, LOTS, Land, PIER, POND, SEAT, faceSeat } from './land';
 import { mainMaterial, U } from './materials';
 import { pathGeometry, routePath } from './paths';
 import { buildProp } from './props';
@@ -141,13 +141,21 @@ export interface World {
   horizon(id: string): HorizonIsland | undefined;
   /** Places the person can glide to. */
   spots(): Spot[];
+  /** A walking line from a to b along the paths where they help, round houses and the pond otherwise. */
+  route(a: P2, b: P2): P2[];
+  /** Places a bird can sit: tree tops, roofs and chimneys, posts, lamps. */
+  perches(): { pos: Vector3; kind: 'tree' | 'roof' | 'post' | 'lamp' }[];
+  /** Benches someone can sit on (the porch bench first). */
+  benches(): Anchor[];
+  /** Height of the cloud sea (top of the far cloud layer). */
+  readonly cloudY: number;
   /** Adds the next islet with a bridge; false when the island cannot grow further. */
   grow(): boolean;
   readonly growth: number;
   groundY(x: number, z: number): number;
   /** Per-frame tick (runs on its own from the sky's render callback). */
   update(timeMs?: number): void;
-  stats(): { triangles: number; houses: number; props: number };
+  stats(): { triangles: number; houses: number; props: number; parts: Record<string, number> };
   dispose(): void;
 }
 
@@ -250,6 +258,9 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
     }
     for (const p of props.values()) if (CATALOG[p.kind]?.glow) lights.push([p.mesh.position.x, p.mesh.position.z, 1.4]);
     blobs.setLights(lights);
+    const tops: Vector3[] = [];
+    for (const h of houses.values()) if (h.built && h.plan.smoke) tops.push(new Vector3(...h.plan.top).applyMatrix4(h.matrix));
+    critters?.setSmoke(tops);
   };
 
   const groundY = (x: number, z: number): number => land.height(x, z);
@@ -313,6 +324,7 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
       const d = island.decor[i];
       if (Math.hypot(d.x - x, d.z - z) < r + d.r * 0.5) {
         decorBatch.remove(d.key);
+        decorBatch.remove(`${d.key}:b`);
         island.decor.splice(i, 1);
         land.obstacles = land.obstacles.filter((o) => o.id !== d.key);
         shadowList = shadowList.filter((s) => Math.hypot(s[0] - d.x, s[1] - d.z) > 0.01);
@@ -401,7 +413,7 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
 
   function freeLots(): number {
     let n = 0;
-    for (const l of LOTS) if (!land.blocked(l.x, l.z, 2.4)) n++;
+    for (const l of LOTS) if (!land.blocked(l.x, l.z, HOUSE_R)) n++;
     return n;
   }
 
@@ -434,6 +446,71 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
     paths.set(key, line);
     pathBatch.flush();
     return line;
+  }
+
+  /** Shortest walk over the path network, or a winding line round obstacles. */
+  function routeAlong(a: P2, b: P2): P2[] {
+    const avoid: { x: number; z: number; r: number }[] = [];
+    for (const h of houses.values()) avoid.push({ x: h.spec.pos.x, z: h.spec.pos.z, r: h.plan.radius * 0.9 });
+    avoid.push({ x: POND.x, z: POND.z, r: POND.r + 0.7 });
+    const free = (): P2[] => routePath(a, b, avoid, 7);
+    const nodes: Vector3[] = [];
+    const edges: number[][] = [];
+    for (const line of paths.values()) {
+      const base = nodes.length;
+      line.forEach((p, i) => {
+        nodes.push(p);
+        edges.push([]);
+        if (i > 0) {
+          edges[base + i].push(base + i - 1);
+          edges[base + i - 1].push(base + i);
+        }
+      });
+    }
+    if (nodes.length < 2) return free();
+    for (let i = 0; i < nodes.length; i++)
+      for (let j = i + 1; j < nodes.length; j++)
+        if (!edges[i].includes(j) && Math.hypot(nodes[i].x - nodes[j].x, nodes[i].z - nodes[j].z) < 1.1) {
+          edges[i].push(j);
+          edges[j].push(i);
+        }
+    const nearest = (p: P2): [number, number] => {
+      let best = -1;
+      let bd = Infinity;
+      nodes.forEach((n, i) => {
+        const d = Math.hypot(n.x - p.x, n.z - p.z);
+        if (d < bd) {
+          bd = d;
+          best = i;
+        }
+      });
+      return [best, bd];
+    };
+    const [sa, da] = nearest(a);
+    const [sb, db] = nearest(b);
+    const direct = Math.hypot(a.x - b.x, a.z - b.z);
+    if (da > 5 || db > 5 || da + db > direct) return free();
+    const dist = new Array(nodes.length).fill(Infinity);
+    const prev = new Array(nodes.length).fill(-1);
+    const done = new Array(nodes.length).fill(false);
+    dist[sa] = 0;
+    for (;;) {
+      let u = -1;
+      for (let i = 0; i < nodes.length; i++) if (!done[i] && dist[i] < Infinity && (u < 0 || dist[i] < dist[u])) u = i;
+      if (u < 0 || u === sb) break;
+      done[u] = true;
+      for (const v of edges[u]) {
+        const w = dist[u] + nodes[u].distanceTo(nodes[v]);
+        if (w < dist[v]) {
+          dist[v] = w;
+          prev[v] = u;
+        }
+      }
+    }
+    if (dist[sb] === Infinity || dist[sb] + da + db > direct * 1.8 + 3) return free();
+    const chain: P2[] = [];
+    for (let v = sb; v >= 0; v = prev[v]) chain.unshift({ x: nodes[v].x, z: nodes[v].z });
+    return [a, ...chain, b];
   }
 
   // ---------- frame tick ----------
@@ -483,6 +560,9 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
       }
     }
     critters?.update(t);
+    // light shifts as high clouds pass the sun
+    const cover = Math.max(0, Math.sin(t * 0.045) * Math.sin(t * 0.027 + 1.3) - 0.35) / 0.65;
+    skyRig.sun.intensity = sky.sunI * (1 - 0.28 * cover * (1 - sky.night));
     flush();
   };
 
@@ -516,15 +596,21 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
       applySky();
     },
     validSpot(p) {
-      const s = land.findSpot(p.x, p.z, 2.4);
-      const reason = s.ok ? undefined : land.blocked(p.x, p.z, 2.4) ?? undefined;
+      const s = land.findSpot(p.x, p.z, HOUSE_R);
+      const reason = s.ok ? undefined : land.blocked(p.x, p.z, HOUSE_R) ?? undefined;
       return { ok: s.ok, snapped: new Vector3(s.x, land.height(s.x, s.z), s.z), rotY: s.rotY, reason };
     },
     suggestSpot() {
       ensureRoom();
-      for (const l of LOTS) if (!land.blocked(l.x, l.z, 2.4)) return { ok: true, snapped: new Vector3(l.x, land.height(l.x, l.z), l.z), rotY: faceSeat(l.x, l.z) };
-      const s = land.findSpot(LOTS[0].x, LOTS[0].z, 2.4);
-      return { ok: s.ok, snapped: new Vector3(s.x, land.height(s.x, s.z), s.z), rotY: s.rotY };
+      for (const l of LOTS) if (!land.blocked(l.x, l.z, HOUSE_R)) return { ok: true, snapped: new Vector3(l.x, land.height(l.x, l.z), l.z), rotY: faceSeat(l.x, l.z) };
+      // no prepared lot left: the nearest free ground anywhere
+      for (let rad = 6; rad < 30; rad += 1)
+        for (let a = -1.4; a <= 1.4; a += 0.1) {
+          const x = Math.sin(a) * rad;
+          const z = -Math.cos(a) * rad;
+          if (!land.blocked(x, z, HOUSE_R)) return { ok: true, snapped: new Vector3(x, land.height(x, z), z), rotY: faceSeat(x, z) };
+        }
+      return { ok: false, snapped: new Vector3(LOTS[0].x, land.height(LOTS[0].x, LOTS[0].z), LOTS[0].z), rotY: faceSeat(LOTS[0].x, LOTS[0].z) };
     },
     buildPlan(spec) {
       const rec = planFor(spec);
@@ -634,6 +720,27 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
     },
     grow: () => growNow(),
     groundY,
+    route(a, b) {
+      return routeAlong(a, b);
+    },
+    perches() {
+      const out: ReturnType<World['perches']> = island ? island.perches.map((p) => ({ pos: p.pos.clone(), kind: p.kind })) : [];
+      for (const rec of houses.values()) if (rec.built) out.push({ pos: new Vector3(...rec.plan.top).applyMatrix4(rec.matrix), kind: 'roof' });
+      return out;
+    },
+    benches() {
+      const out: Anchor[] = [{ pos: new Vector3(SEAT.x, 0.16, SEAT.z + 0.32), rotY: 0 }];
+      for (const rec of houses.values())
+        rec.plan.pieces.forEach((piece) => {
+          if (piece.name !== 'prop:bench') return;
+          const p = new Vector3(...piece.pos).applyMatrix4(rec.matrix);
+          p.y = land.height(p.x, p.z);
+          out.push({ pos: p, rotY: rec.spec.rotY });
+        });
+      for (const p of props.values()) if (p.kind === 'bench') out.push({ pos: p.mesh.position.clone(), rotY: p.mesh.rotation.y });
+      return out;
+    },
+    cloudY: SEA_Y,
     update(timeMs) {
       tick(timeMs);
     },
@@ -642,7 +749,12 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string } = {})
       for (const b of [staticBatch, decorBatch, houseBatch, propBatch, pathBatch, horizonBatch]) triangles += b.triangles();
       triangles += (island?.triangles() ?? 0) + (meadow?.triangles() ?? 0) + clouds.triangles() + (critters?.triangles() ?? 0) + 32 * 18 * 2;
       for (const rec of houses.values()) for (const m of rec.pieces) triangles += m.geometry.getAttribute('position').count / 3;
-      return { triangles, houses: houses.size, props: props.size };
+      const parts: Record<string, number> = {};
+      for (const b of [staticBatch, decorBatch, houseBatch, propBatch, pathBatch, horizonBatch]) parts[b.mesh.name] = Math.round(b.triangles());
+      parts.ground = Math.round(island?.triangles() ?? 0);
+      parts.meadow = Math.round(meadow?.triangles() ?? 0);
+      parts.clouds = Math.round(clouds.triangles());
+      return { triangles, houses: houses.size, props: props.size, parts };
     },
     dispose() {
       app.scene?.remove(root);

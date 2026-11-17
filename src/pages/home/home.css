@@ -500,3 +500,14 @@
 .home-prepared[hidden] {
   display: none;
 }
+
+.home-menu {
+  display: flex;
+  gap: 12px;
+  pointer-events: auto;
+}
+
+.home-menu[hidden],
+.home-card-img[hidden] {
+  display: none;
+}

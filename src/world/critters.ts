@@ -190,7 +190,40 @@ void main() {
   #include <colorspace_fragment>
 }`;
 
+const smokeVertex = /* glsl */ `
+${WIND_GLSL}
+uniform float uTime;
+uniform vec3 uSources[16];
+uniform float uCount;
+attribute vec3 aSeedV;
+varying float vA;
+void main() {
+  float idx = floor(aSeedV.x * 16.0);
+  vec3 src = uSources[int(idx)];
+  float life = fract(uTime * 0.11 + aSeedV.y);
+  float up = life * 2.6;
+  vec2 drift = uWindDir * (0.4 + windGust(src.xz)) * uWindStrength * life * life * 2.2;
+  vec3 p = src + vec3(drift.x + sin(uTime * 0.7 + aSeedV.z * 6.0) * 0.15 * life, up, drift.y + cos(uTime * 0.6 + aSeedV.z * 4.0) * 0.15 * life);
+  vA = (idx < uCount ? 1.0 : 0.0) * smoothstep(0.0, 0.12, life) * (1.0 - life);
+  vec4 mv = modelViewMatrix * vec4(p, 1.0);
+  gl_PointSize = (0.25 + life * 0.6) * (1.0 / max(0.5, -mv.z)) * 300.0;
+  gl_Position = projectionMatrix * mv;
+}`;
+
+const smokeFragment = /* glsl */ `
+uniform vec3 uColor;
+varying float vA;
+void main() {
+  vec2 d = gl_PointCoord - 0.5;
+  float a = smoothstep(0.5, 0.15, length(d)) * vA * 0.45;
+  if (a < 0.01) discard;
+  gl_FragColor = vec4(uColor, a);
+  #include <colorspace_fragment>
+}`;
+
 export interface Critters {
+  /** Chimney tops that smoke (up to 16). */
+  setSmoke(tops: Vector3[]): void;
   update(t: number): void;
   setDaylight(night: number, glow: number): void;
   triangles(): number;
@@ -336,7 +369,35 @@ export function createCritters(parent: Object3D, land: Land): Critters {
   ripple.frustumCulled = false;
   root.add(fish, ripple);
 
+  // chimney smoke leaning with the wind
+  const smokeSrc = Array.from({ length: 16 }, () => new Vector3(0, -100, 0));
+  const nSmoke = 160;
+  const sp = new Float32Array(nSmoke * 3);
+  const sd = new Float32Array(nSmoke * 3);
+  for (let i = 0; i < nSmoke; i++) sd.set([(i % 16) / 16 + 0.001, r(), r()], i * 3);
+  const smokeGeo = new BufferGeometry();
+  smokeGeo.setAttribute('position', new BufferAttribute(sp, 3));
+  smokeGeo.setAttribute('aSeedV', new BufferAttribute(sd, 3));
+  const smokeMat = new ShaderMaterial({
+    uniforms: { uTime: time, uSources: { value: smokeSrc }, uCount: { value: 0 }, uColor: { value: new Color('#e9e4dc') }, ...wind.uniforms },
+    vertexShader: smokeVertex,
+    fragmentShader: smokeFragment,
+    transparent: true,
+    depthWrite: false,
+  });
+  const smoke = new Points(smokeGeo, smokeMat);
+  smoke.name = 'world:smoke';
+  smoke.frustumCulled = false;
+  smoke.raycast = () => {};
+  smoke.visible = false;
+  root.add(smoke);
+
   return {
+    setSmoke(tops) {
+      tops.slice(0, 16).forEach((t, i) => smokeSrc[i].copy(t));
+      smokeMat.uniforms.uCount.value = Math.min(16, tops.length);
+      smoke.visible = tops.length > 0;
+    },
     update() {
       // everything moves in shaders from the shared time uniform
     },
@@ -348,6 +409,7 @@ export function createCritters(parent: Object3D, land: Land): Critters {
       fireflies.visible = glow > 0.25;
       (seeds.material as ShaderMaterial).uniforms.uShow.value = 0.35 + 0.65 * day;
       birdMat.uniforms.uColor.value.set(night > 0.5 ? '#1a2033' : '#3b3a46');
+      smokeMat.uniforms.uColor.value.set(night > 0.5 ? '#5d6678' : '#ebe5dc');
     },
     triangles: () => n * 5 + 16 * 2 + 5 + 48,
   };

@@ -29,7 +29,8 @@ const SET = [
 ];
 
 const args = process.argv.slice(2);
-const shots = args.length >= 2 ? [[args[0], args[1]]] : SET;
+const HOUSES = Array.from({ length: 12 }, (_, i) => [`house-${i + 1}`, `?view=house&house=${i + 1}&time=17.6&dist=5.2`]);
+const shots = args[0] === 'houses' ? HOUSES : args.length >= 2 ? [[args[0], args[1]]] : SET;
 const W = Number(process.env.W ?? 1280);
 const H = Number(process.env.H ?? 800);
 
@@ -59,6 +60,7 @@ try {
     const file = path.join(OUT, `${name}.png`);
     await page.screenshot({ path: file });
     const stats = await page.evaluate(() => window.__stats);
+    if (process.env.HOUSES) console.log(stats.houses);
     console.log(`${name}: calls ${stats.calls}, tris ${stats.triangles}, world ${JSON.stringify(stats.world)} (${Date.now() - t0} ms)`);
   }
 } finally {

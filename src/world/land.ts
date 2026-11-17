@@ -250,18 +250,19 @@ export class Land {
     if (ds < 5.6) return 'too close to the seat';
     if (ds > 34) return 'too far';
     if (z > -1.5) return 'behind the seat';
-    if (!this.inside(x, z, r + 0.5)) return 'off the edge';
+    if (!this.inside(x, z, r + 0.15)) return 'off the edge';
     if (segDist(x, z, PIER.base, PIER.end) < r + 1.3) return 'on the pier';
+    if (segDist(x, z, { x: 0.6, z: -1.7 }, PIER.base) < r + 0.9) return 'in the way to the pier';
     if (Math.hypot(x - POND.x, z - POND.z) < POND.r + r + 0.8) return 'in the pond';
     if (segDist(x, z, STREAM[0], STREAM[1]) < r + 0.6) return 'in the stream';
     const t = angleOf(x, z);
     if (Math.abs(angDiff(t, THETA_SPIT)) < 0.3 && this.mainS(x, z) > 0.6) return 'on the sand';
-    for (const p of this.pads) if (p.id !== ignore && Math.hypot(x - p.x, z - p.z) < p.r + r + 1.0) return 'next to a house';
+    for (const p of this.pads) if (p.id !== ignore && Math.hypot(x - p.x, z - p.z) < p.r + r + 0.9) return 'next to a house';
     for (const o of this.obstacles) if (!o.clearable && Math.hypot(x - o.x, z - o.z) < o.r + r * 0.8) return 'a tree is there';
     for (const line of this.keepClear)
       for (let i = 1; i < line.length; i++) if (segDist(x, z, line[i - 1], line[i]) < r + 0.5) return 'on the path';
     for (const i of this.islets) if (segDist(x, z, i.from, i.to) < r + 0.8) return 'on the bridge';
-    if (this.slope(x, z) > 0.9) return 'too steep';
+    if (this.slope(x, z) > 1.25) return 'too steep';
     return null;
   }
 
@@ -286,6 +287,9 @@ export class Land {
   }
 }
 
+/** Radius a house needs on the ground (walls and the props round them). */
+export const HOUSE_R = 2.1;
+
 /** Rotation about y that turns a front facing +z toward the seat. */
 export function faceSeat(x: number, z: number): number {
   return Math.atan2(SEAT.x - x, SEAT.z - z);
@@ -301,22 +305,31 @@ export function segDist(x: number, z: number, a: P2, b: P2): number {
 
 /**
  * Good lots for houses, in order of preference: near the seat and in front first, fanning
- * out, then the islets. Picked once from the empty land, at least 6.2 m apart.
+ * out, then the islets. Picked once from the empty land, at least 5.6 m apart.
  */
 export const LOTS: P2[] = (() => {
   const land = new Land();
   const cand: { x: number; z: number; score: number }[] = [];
   for (let x = -16; x <= 16; x += 0.5)
     for (let z = -28; z <= -3; z += 0.5) {
-      if (land.blocked(x, z, 2.4)) continue;
+      if (land.blocked(x, z, HOUSE_R)) continue;
       const d = Math.hypot(x - SEAT.x, z - SEAT.z);
       const ang = Math.abs(Math.atan2(x - SEAT.x, -(z - SEAT.z)));
-      cand.push({ x, z, score: d + ang * 6 });
+      // keep the middle of the view open near the seat: close houses stand to the sides
+      cand.push({ x, z, score: d + ang * 4 + (ang < 0.4 && d < 10.5 ? 12 : 0) });
     }
   cand.sort((a, b) => a.score - b.score);
   const out: P2[] = [];
   for (const c of cand) {
-    if (out.some((o) => Math.hypot(o.x - c.x, o.z - c.z) < 6.2)) continue;
+    if (out.some((o) => Math.hypot(o.x - c.x, o.z - c.z) < 5.3)) continue;
+    // do not hide a house right behind a nearer one
+    const ca = Math.atan2(c.x - SEAT.x, -(c.z - SEAT.z));
+    const cd = Math.hypot(c.x - SEAT.x, c.z - SEAT.z);
+    if (out.some((o) => {
+      const oa = Math.atan2(o.x - SEAT.x, -(o.z - SEAT.z));
+      const od = Math.hypot(o.x - SEAT.x, o.z - SEAT.z);
+      return Math.abs(oa - ca) < 0.13 && cd > od && cd - od < 7;
+    })) continue;
     out.push({ x: c.x, z: c.z });
     if (out.length >= 14) break;
   }

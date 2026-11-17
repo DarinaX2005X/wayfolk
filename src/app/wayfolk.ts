@@ -21,6 +21,7 @@ import { createPlacement } from './hands/place';
 import { createReplies, type Replies } from './hands/replies';
 import { createVoice } from './hands/voice';
 import { createModules, type Modules } from './modules';
+import type { IslandState } from '../mind/types';
 import { anchorPoint, type AppHandle } from './ports';
 import { createPostcard, type Postcard } from './postcard';
 import { createRig, type Rig } from './rig';
@@ -121,8 +122,30 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     if (near.distanceTo(h.indexTip) < 0.5) void entry.back();
   });
 
-  // Live visits: join from ?live=<code> once inside.
-  const liveCode = new URLSearchParams(location.search).get('live');
+  // Live visits: join from ?live=<code>&island=<id> once inside.
+  const query = new URLSearchParams(location.search);
+  const liveCode = query.get('live');
+  const liveIsland = query.get('island');
+  // Voice notes to friends: the talk gesture works outside conversations while live.
+  app.everyFrame(() => {
+    if (app.store.talkingTo.peek()) return;
+    const liveState = (mods.live as { state?: unknown }).state;
+    voice.armed = app.store.phase.peek() === 'free' && liveState === 'live';
+  });
+  // A pinch hurries a long line, an arrival or a build (DESIGN «Движение»).
+  hands.onPinch((side, down) => {
+    if (!down || replies.consumed(side) || placement.active || replies.open) return;
+    const phase = app.store.phase.peek();
+    if (phase === 'arrive' || phase === 'build' || phase === 'greet' || phase === 'goodnight') mods.life.skip?.();
+  });
+  // Life's sounds start with the first gesture, like the rest.
+  const resume = (): void => {
+    void (mods.life as { audio?: AudioContext | null }).audio?.resume?.();
+  };
+  window.addEventListener('pointerup', resume, { once: true });
+  app.store.mode.subscribe((m) => {
+    if (m !== 'desk') resume();
+  });
   voice.onClip((clip) => {
     if (!app.store.talkingTo.peek()) {
       try {
@@ -140,7 +163,10 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
   const measureIsland = (): void => {
     const box = new Box3();
     mods.world.root.updateMatrixWorld(true);
-    mods.world.root.traverse((o) => {
+    // The world's ground mesh is the island itself; without it, every mesh smaller than the sky.
+    const ground = (mods.world as { ground?: Mesh }).ground;
+    if (ground?.isMesh) box.setFromObject(ground);
+    else mods.world.root.traverse((o) => {
       const m = o as Mesh;
       if (!m.isMesh || !m.visible) return;
       m.geometry.computeBoundingSphere?.();
@@ -194,10 +220,31 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
       mods.life.pip.hover();
       begun ??= (async () => {
         if (liveCode) {
+          // A guest: the host's island arrives as a snapshot; without live, its saved copy.
+          let state: IslandState | null = null;
+          const snapshot = new Promise<IslandState | null>((resolve) => {
+            const off = mods.live.on('snapshot', ((s: IslandState) => {
+              if (typeof off === 'function') off();
+              resolve(s);
+            }) as never);
+            setTimeout(() => resolve(null), 12000);
+          });
           try {
             await Promise.resolve(mods.live.join(liveCode));
+            state = await snapshot;
           } catch (error) {
             console.warn('[wf] could not join the live visit', error);
+          }
+          if (!state && liveIsland && mods.mind.visit) {
+            try {
+              state = await mods.mind.visit(liveIsland);
+            } catch (error) {
+              console.warn("[wf] the friend's island could not be read", error);
+            }
+          }
+          if (state) {
+            await flow!.visit(state);
+            return;
           }
         }
         await flow!.run();
@@ -210,6 +257,7 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
       try {
         const out = await Promise.resolve(mods.live.host(mods.mind.state.id));
         postcard.showCard('Come sit on my island', out.link);
+        app.store.invite.value = out.link;
         return out;
       } catch (error) {
         console.warn('[wf] no invite link', error);

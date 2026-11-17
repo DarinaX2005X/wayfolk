@@ -104,6 +104,8 @@ export type Store = {
   listening: Signal<boolean>;
   /** The traveler or the line now on offer came from the prepared set, not a live model. */
   prepared: Signal<boolean>;
+  /** The live invite link, once made. */
+  invite: Signal<string | null>;
   /** The last postcard link, once made. */
   postcard: Signal<{ url: string; image: string } | null>;
 };
@@ -122,6 +124,7 @@ export const store: Store = {
   listening: signal(false),
   postcard: signal<{ url: string; image: string } | null>(null),
   prepared: signal(false),
+  invite: signal<string | null>(null),
 };
 
 bindPersist(store.settings, KEYS.settings, sanitizeSettings);

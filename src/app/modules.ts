@@ -76,7 +76,13 @@ export async function createModules(app: AppHandle): Promise<Modules> {
   };
   const life = await attempt<LifePort>('life', lifeMods, 'createLife', [app, lifeWorld], () => createStandinLife(app, world));
   const mind = await attempt<MindPort>('mind', mindMods, 'createMind', [{ demo: true }], () => createStandinMind());
-  const live = await attempt<LivePort>('live', liveMods, 'createLive', [app], () => createStandinLive());
+  // Live presence is shared in the island's frame; avatars go into the island root.
+  const liveApp = { world: app.world, space: world.root, everyFrame: app.everyFrame };
+  const liveOpts = {
+    snapshot: () => mind.state ?? null,
+    ground: (x: number, z: number) => world.groundY?.(x, z) ?? world.groundAt?.(x, z) ?? null,
+  };
+  const live = await attempt<LivePort>('live', liveMods, 'createLive', [liveApp, liveOpts], () => createStandinLive());
   registerDebug('modules', { world, life, mind, live, report });
   return { world, life, mind, live, report };
 }

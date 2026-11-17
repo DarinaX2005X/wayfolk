@@ -77,7 +77,16 @@ export default defineConfig({
     ? []
     : [iwsdkDev(), devApi(), ...(serveDist ? [distServer()] : [])],
   // No error overlay: module packages land in parallel, and a half-written module must not cover the frames.
-  server: { host: '0.0.0.0', port: 8081, open: false, hmr: { overlay: false } },
+  // The module packages (world, life, mind, live) are built in parallel and preview their
+  // work on their own ports; their edits must not reload the app page in the middle of a
+  // scenario. Restart the dev server to pick them up. WF_WATCH_ALL=1 watches everything.
+  server: {
+    host: '0.0.0.0',
+    port: 8081,
+    open: false,
+    hmr: { overlay: false },
+    watch: process.env.WF_WATCH_ALL === '1' ? {} : { ignored: ['**/src/world/**', '**/src/life/**', '**/src/mind/**', '**/src/live/**', '**/public/assets/**', '**/content/**', '**/api/**', '**/relay/**', '**/tests/**/out/**'] },
+  },
   build: {
     outDir: 'dist',
     sourcemap: process.env.NODE_ENV !== 'production',

@@ -169,7 +169,7 @@ export function createReplies(app: App, hands: Hands): Replies {
   return {
     show(choices, opts) {
       if (resolve) finish(null);
-      current = choices.slice(0, 3);
+      current = choices.slice(0, 4);
       side = opts?.side;
       shownAt = app.clock.now();
       bubbles = current.map((text, i) => {

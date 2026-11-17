@@ -101,6 +101,7 @@ export type MindPort = {
   endTalk?(id: string): Promise<void>;
   /** The traveler at the pier leaves without staying. */
   dismiss?(id: string): Promise<void>;
+  readonly persistent?: boolean;
   /** Marks events as told. */
   seen?(events: WorldEvent[]): Promise<void>;
   /** Starts a fresh island. */
@@ -119,12 +120,17 @@ export type MindPort = {
 
 /** Live visits (package 01.5, `src/live/`): a friend joins the island by a link. */
 export type LivePort = {
-  host(islandId: string): Promise<{ code: string; link: string }> | { code: string; link: string };
+  host(islandId: string, opts?: unknown): Promise<{ code: string; link: string }> | { code: string; link: string };
+  readonly message?: string | null;
+  readonly role?: 'host' | 'guest' | null;
+  startTalk?(): Promise<boolean>;
+  stopTalk?(): Promise<boolean>;
+  retry?(): void;
   join(code: string): Promise<unknown> | unknown;
   leave(): void;
   readonly peers?: unknown;
-  send(event: unknown): void;
-  on(kind: string, fn: (payload: unknown) => void): (() => void) | void;
+  send(kind: string, data?: unknown, opts?: { to?: string }): unknown;
+  on(kind: string, fn: (...args: never[]) => void): (() => void) | void;
   sendVoice?(blob: Blob): unknown;
   readonly state?: unknown;
 };

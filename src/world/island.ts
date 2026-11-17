@@ -19,7 +19,7 @@ import { M, MAT, blob, build, cbox, cyl, join, paint, place, rng, surfaceAlpha, 
 import { kitGeometry } from './kit';
 import { CENTER, HILL, ISLETS, LOTS, Land, PIER, POND, SEAT, STREAM, isletR, outlineR, segDist, type Islet } from './land';
 import { mainMaterial, U } from './materials';
-import { buildProp } from './props';
+import { buildProp, mossyRock } from './props';
 import type { Batch } from './batch';
 
 const TAU = Math.PI * 2;
@@ -37,6 +37,7 @@ interface GroundShape {
 
 const GRASS = [new Color('#7cb24b'), new Color('#5e9a3e'), new Color('#9fc45a'), new Color('#6aa443')];
 const SAND = new Color('#ecd59f');
+const DRY = new Color('#b7b45a');
 const LIP = new Color('#8fae4e');
 
 let lastSand = 0;
@@ -44,8 +45,11 @@ let lastSand = 0;
 function groundColor(land: Land, x: number, z: number, s: number, out: Color): Color {
   const n1 = Math.sin(x * 0.31 + 1.7) * Math.sin(z * 0.27 + 0.3) + 0.5 * Math.sin(x * 0.9 - z * 0.7);
   const n2 = Math.sin(x * 1.3 + z * 0.4) * 0.5 + 0.5;
-  out.copy(GRASS[0]).lerp(n1 > 0.25 ? GRASS[2] : GRASS[1], Math.min(1, Math.abs(n1) * 0.7));
-  out.lerp(GRASS[3], n2 * 0.25);
+  out.copy(GRASS[0]).lerp(n1 > 0.25 ? GRASS[2] : GRASS[1], Math.min(1, Math.abs(n1) * 0.95));
+  out.lerp(GRASS[3], n2 * 0.35);
+  // sun-dried patches
+  const dry = Math.max(0, Math.sin(x * 0.23 + 2.1) * Math.sin(z * 0.19 + 0.7) - 0.55) * 1.6;
+  out.lerp(DRY, Math.min(0.5, dry));
   // higher ground is a touch warmer and lighter
   const h = land.height(x, z);
   out.lerp(GRASS[2], Math.max(0, Math.min(0.35, (h - 1.2) * 0.2)));
@@ -155,14 +159,14 @@ function cliffGeometry(land: Land, sh: GroundShape, depth: number): BufferGeomet
       const b = k * segs + i1;
       const c = (k + 1) * segs + i;
       const d = (k + 1) * segs + i1;
-      idx.push(a, c, b, b, c, d);
+      idx.push(a, b, c, b, d, c);
     }
   }
   const last = (depths.length - 1) * segs;
   const tipIndex = pos.length / 3;
   pos.push(sh.cx, pos[last * 3 + 1] - 0.8 * (depth / 16), sh.cz);
   col.push(STRATA[STRATA.length - 1].r, STRATA[STRATA.length - 1].g, STRATA[STRATA.length - 1].b, surfaceAlpha(M.rock));
-  for (let i = 0; i < segs; i++) idx.push(last + i, tipIndex, last + ((i + 1) % segs));
+  for (let i = 0; i < segs; i++) idx.push(last + i, last + ((i + 1) % segs), tipIndex);
   const g = new BufferGeometry();
   g.setAttribute('position', new BufferAttribute(new Float32Array(pos), 3));
   g.setAttribute('color', new BufferAttribute(new Float32Array(col), 4));
@@ -260,12 +264,15 @@ export interface IslandParts {
   lights: [number, number, number][];
   /** Ids of clearable decor in the batch, with position and radius. */
   decor: { key: string; x: number; z: number; r: number }[];
+  /** Places a bird can sit: tree tops, posts, lamps. */
+  perches: { pos: Vector3; kind: 'tree' | 'post' | 'lamp' }[];
 }
 
 export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatch: Batch): IslandParts {
   const shadows: [number, number, number, number][] = [];
   const lights: [number, number, number][] = [];
   const decor: { key: string; x: number; z: number; r: number }[] = [];
+  const perches: IslandParts['perches'] = [];
   const mainShape: GroundShape = { cx: CENTER.x, cz: CENTER.z, r: outlineR, rings: 22, segs: 96, seed: 3 };
 
   const ground = new Mesh(groundGeometry(land, mainShape), mainMaterial());
@@ -348,10 +355,9 @@ export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatc
   for (let i = 0; i < 11; i++) {
     const a = (i / 11) * TAU + r() * 0.3;
     if (Math.abs(a - Math.atan2(s0.z - POND.z, s0.x - POND.x)) < 0.4) continue;
-    const id = ['rock-c', 'rock-b', 'rock-e', 'rock-d'][i % 4];
     const x = POND.x + Math.cos(a) * (POND.r + 0.45);
     const z = POND.z + Math.sin(a) * (POND.r + 0.45);
-    batch.add(`pond-rock:${i}`, place(kitGeometry(id, 2.2 + r() * 1.5), [x, land.height(x, z) - 0.05, z], [0, r() * TAU, 0]));
+    batch.add(`pond-rock:${i}`, place(mossyRock(0.18 + r() * 0.22, 300 + i, 0.6), [x, land.height(x, z) - 0.06, z], [0, r() * TAU, 0]));
   }
   for (let i = 0; i < 4; i++) {
     const a = r() * TAU;
@@ -378,6 +384,8 @@ export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatc
   batch.add('porch:bench', place(kitGeometry('bench', benchItem.scale), [SEAT.x, deckY, SEAT.z + 0.32], [0, 0, 0]));
   batch.add('porch:rug', place(kitGeometry('rug', 0.5), [SEAT.x, deckY + 0.005, SEAT.z - 0.55], [0, 0, 0]));
   batch.add('porch:lamp', place(kitGeometry('post-lantern', 0.62), [-1.6, deckY, 0.55], [0, Math.PI / 2, 0]));
+  perches.push({ pos: new Vector3(-1.6, 2.2, 0.55), kind: 'lamp' });
+  for (const x of [-1.7, -0.6, 0.6, 1.7]) perches.push({ pos: new Vector3(x, deckY + 0.72, 1.48), kind: 'post' });
   lights.push([-1.6, 0.2, 2.2]);
   const side: [string, number, number, number, number][] = [
     ['tea-table', 1.25, -0.55, -0.4, 0.75],
@@ -418,7 +426,11 @@ export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatc
     const z = PIER.base.z + PIER.dir.z * d + sideV.z * s;
     pierParts.push([place(cbox(0.18, h + below, 0.18, 0.03), [x, pierY - below, z]), MAT.woodDark]);
   };
-  for (const d of [1.5, 3.5, 5.5, PIER.length]) for (const s of [-1, 1]) post(d, s * (PIER.width / 2 + 0.05), 0.65);
+  for (const d of [1.5, 3.5, 5.5, PIER.length])
+    for (const s of [-1, 1]) {
+      post(d, s * (PIER.width / 2 + 0.05), 0.65);
+      perches.push({ pos: new Vector3(PIER.base.x + PIER.dir.x * d + sideV.x * s * (PIER.width / 2 + 0.05), pierY + 0.68, PIER.base.z + PIER.dir.z * d + sideV.z * s * (PIER.width / 2 + 0.05)), kind: 'post' });
+    }
   for (const s of [-1, 1]) post(landingEnd, s * 1.45, 0.65);
   for (const s of [-1, 1]) {
     const a = { x: PIER.base.x + PIER.dir.x * 1.5 + sideV.x * s * (PIER.width / 2 + 0.05), z: PIER.base.z + PIER.dir.z * 1.5 + sideV.z * s * (PIER.width / 2 + 0.05) };
@@ -441,7 +453,7 @@ export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatc
   batch.add('pier:flag', place(kitGeometry('flag-yellow', 3.4), [endX + sideV.x * 1.4 + PIER.dir.x * 0.2, pierY + 0.6, endZ + sideV.z * 1.4 + PIER.dir.z * 0.2], [0, pa, 0]));
 
   // ---- trees, bushes, rocks ----
-  scatterDecor(land, batch, decorBatch, shadows, decor);
+  scatterDecor(land, batch, decorBatch, shadows, decor, perches);
 
   let islandTris = 0;
   const parts: IslandParts = {
@@ -450,6 +462,7 @@ export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatc
     shadows,
     lights,
     decor,
+    perches,
     refreshGround() {
       const shapes: GroundShape[] = [mainShape, ...land.islets.map((i) => isletShape(i))];
       const geo = join(shapes.map((s) => groundGeometry(land, s)));
@@ -534,6 +547,7 @@ function scatterDecor(
   decorBatch: Batch,
   shadows: [number, number, number, number][],
   decor: { key: string; x: number; z: number; r: number }[],
+  perches: IslandParts['perches'],
 ): void {
   const r = rng(1234);
   const placed: { x: number; z: number; r: number }[] = [];
@@ -580,6 +594,7 @@ function scatterDecor(
     land.obstacles.push({ x, z, r: rad * 0.8, id: key, clearable });
     if (clearable) decor.push({ key, x, z, r: rad });
     shadows.push([x, z, rad * 1.35, 0.6]);
+    perches.push({ pos: new Vector3(x, y + item.height * k * 0.92, z), kind: 'tree' });
   };
   for (const [id, x, z, k] of anchors) if (free(x, z, 0.8) && lotClear(x, z, 0.6)) addTree(id, x, z, k * (0.9 + r() * 0.2), false);
   // scatter round the rim and over the hill, leaving the meadow in front open
@@ -611,10 +626,16 @@ function scatterDecor(
     let g: BufferGeometry | null;
     let rad: number;
     if (rock) {
-      const id = ['rock-c', 'rock-e', 'rock-b', 'rock-d'][Math.floor(r() * 4)];
-      const k = 3 + r() * 4;
-      g = place(kitGeometry(id, k), [x, land.height(x, z) - 0.04, z], [0, r() * TAU, 0]);
-      rad = 0.15 * k;
+      const k = 0.18 + r() * 0.45;
+      g = place(mossyRock(k, 400 + b), [x, land.height(x, z) - 0.05, z], [0, r() * TAU, 0]);
+      rad = k * 1.1;
+      // a smaller stone beside the big ones
+      if (k > 0.35) {
+        const a = r() * TAU;
+        const x2 = x + Math.cos(a) * (k + 0.2);
+        const z2 = z + Math.sin(a) * (k + 0.2);
+        decorBatch.add(`${key}:b`, place(mossyRock(k * 0.4, 500 + b), [x2, land.height(x2, z2) - 0.03, z2], [0, r() * TAU, 0]));
+      }
     } else {
       g = buildProp('bush', b * 7 + 1);
       const k = 0.7 + r() * 0.6;
@@ -651,14 +672,14 @@ function scatterDecor(
   }
   if (mush.length) batch.add('mushrooms', join(mush));
   const pebbles: BufferGeometry[] = [];
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 16; i++) {
     const a = r() * TAU;
     const d = 1.9 + r() * 2.2;
     const x = SEAT.x + Math.cos(a) * d * 1.1;
     const z = SEAT.z - 0.4 + Math.sin(a) * d * 0.8;
     if (!land.inside(x, z, 0.3) || (Math.abs(x) < 1.9 && z > -1.5)) continue;
-    const s = 0.03 + r() * 0.05;
-    pebbles.push(paint(blob(s, 1, i, 0.2, 0.55).translate(x, land.height(x, z) + s * 0.2, z), r() < 0.5 ? '#b9b0a2' : '#a59b8c', { shade: 0.15, mat: M.rock }, true));
+    const s = 0.025 + r() * 0.035;
+    pebbles.push(paint(blob(s, 1, i, 0.2, 0.5).translate(x, land.height(x, z) + s * 0.1, z), r() < 0.5 ? '#bdb7ad' : '#a9a49b', { shade: 0.15, mat: M.rock }, true));
   }
   if (pebbles.length) batch.add('pebbles', join(pebbles));
 
@@ -668,7 +689,7 @@ function scatterDecor(
     const x = spit.x + (r() - 0.5) * 2.4;
     const z = spit.z + (r() - 0.5) * 1.6;
     if (!land.inside(x, z, 0.3)) continue;
-    batch.add(`spit:rock:${i}`, place(kitGeometry(['rock-a', 'rock-c', 'rock-e'][i % 3], 3 + r() * 3), [x, land.height(x, z) - 0.03, z], [0, r() * TAU, 0]));
+    batch.add(`spit:rock:${i}`, place(mossyRock(0.15 + r() * 0.25, 600 + i, 0.2), [x, land.height(x, z) - 0.04, z], [0, r() * TAU, 0]));
   }
   const boat = build([
     [place(cbox(0.9, 0.32, 2.0, 0.12), [0, 0, 0]), MAT.wood],

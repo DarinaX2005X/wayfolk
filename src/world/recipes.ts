@@ -5,7 +5,7 @@
  * glass and brass are shared. Every recipe has its own silhouette so a house reads from
  * across the island: the baker's chimney and oven, the stargazer's dome, the fisher's stilts…
  */
-import type { BufferGeometry } from '@iwsdk/core';
+import { CylinderGeometry, type BufferGeometry } from '@iwsdk/core';
 import type { HouseSpec, Trade } from '../mind/types';
 import { CATALOG } from './catalog';
 import { M, MAT, autoSurface, ball, build, cbox, cone, cyl, dome, gear, hull, lathe, mixHex, place, rng, tone, type Hex, type PaintOpts } from './geo';
@@ -43,6 +43,8 @@ export interface HousePlan {
   sign: SignSpot;
   /** Top of the chimney or the highest point, for smoke or a bird to perch. */
   top: [number, number, number];
+  /** True when `top` is a chimney or pipe that smokes. */
+  smoke?: boolean;
 }
 
 type Part = [BufferGeometry, Hex, PaintOpts?];
@@ -227,7 +229,12 @@ function doorParts(w: number, h: number, wood: Hex, trim: Hex, arch = true): Par
     [place(ball(0.04, 6, 4), [w / 2 - 0.1, h * 0.48, 0.05]), MAT.brass, { shade: 0 }],
     [B(w + 0.45, 0.1, 0.42, 0, 0.05, 0.22), MAT.stone],
   ];
-  if (arch) parts.push([place(cyl(w / 2 + t, w / 2 + t, 0.1, 10, false), [0, h, 0], [Math.PI / 2, 0, 0], [1, 1, 1]), trim]);
+  if (arch) {
+    // half-round top: a trim arch with the door's wood inside it
+    const half = (r: number, d: number): BufferGeometry => new CylinderGeometry(r, r, d, 12, 1, false, -Math.PI / 2, Math.PI).rotateX(Math.PI / 2).rotateZ(0);
+    parts.push([place(half(w / 2 + t, 0.1), [0, h, -0.005]), trim]);
+    parts.push([place(half(w / 2, 0.08), [0, h, 0.012]), wood, { shade: 0 }]);
+  }
   else parts.push([B(w + t * 2, t, 0.1, 0, h + t / 2, 0), trim]);
   return parts;
 }
@@ -247,6 +254,17 @@ function signBoard(x: number, y: number, z: number, rotY: number, w = 1.0, h = 0
     for (const s of [-1, 1]) parts.push([place(B(0.02, 0.16, 0.02, s * w * 0.35, h / 2 + 0.08, 0), [x, y, z], [0, rotY, 0]), MAT.iron]);
   }
   return parts;
+}
+
+/** A small lantern on an iron bracket, facing +z; glows at night. */
+function wallLamp(): Part[] {
+  return [
+    [B(0.05, 0.05, 0.22, 0, 0.12, 0.11), MAT.iron],
+    [B(0.04, 0.2, 0.04, 0, 0.02, 0.02), MAT.iron],
+    [B(0.15, 0.03, 0.15, 0, 0.13, 0.22), MAT.iron],
+    [B(0.11, 0.15, 0.11, 0, 0.04, 0.22), '#ffd27a', GLOW],
+    [place(cone(0.11, 0.08, 4), [0, 0.12, 0.22], [0, Math.PI / 4, 0]), MAT.iron],
+  ];
 }
 
 const at = (parts: Part[], pos: [number, number, number], rotY = 0): Part[] =>
@@ -276,10 +294,13 @@ const RECIPES: Record<Trade, RecipeFn> = {
     hb.add('details', 'window-side', at(windowParts(0.55, 0.5, hb.trim, null), [-w / 2 - 0.04, y0 + 1.15, 0], -Math.PI / 2));
     hb.add('details', 'awning', [[B(1.2, 0.06, 0.55, 0.95, y0 + 1.62, d / 2 + 0.28, [0.35, 0, 0]), mixHex(hb.roof, MAT.cream, 0.35)]]);
     hb.add('details', 'sign', signBoard(-1.25, y0 + 1.95, d / 2 + 0.45, 0, 0.9, 0.3));
+    hb.add('details', 'window-back-l', at(windowParts(0.55, 0.5, hb.trim, hb.roof), [-0.8, y0 + 1.15, -d / 2 - 0.04], Math.PI));
+    hb.add('details', 'window-back-r', at(windowParts(0.55, 0.5, hb.trim, hb.roof, true), [0.8, y0 + 1.15, -d / 2 - 0.04], Math.PI));
+    hb.add('details', 'lamp', at(wallLamp(), [0.62, y0 + 1.35, d / 2 + 0.02]));
     hb.prop('crate-buns', 1.75, 1.75, 0.3);
     hb.prop('sack', -1.9, 1.5, 0.8);
     hb.prop('barrel', 1.9, -1.1);
-    return { radius: 2.4, height: 4.3, door: [0, 0, d / 2 + 0.6], window: [0.95, y0 + 1.15, d / 2 + 0.1], sign: { pos: [-1.25, y0 + 1.95, d / 2 + 0.49], rotY: 0, w: 0.9, h: 0.3 }, top: [0.85, y0 + h + 2.4, -0.55] };
+    return { radius: 2.4, height: 4.3, door: [0, 0, d / 2 + 0.6], window: [0.95, y0 + 1.15, d / 2 + 0.1], sign: { pos: [-1.25, y0 + 1.95, d / 2 + 0.49], rotY: 0, w: 0.9, h: 0.3 }, top: [0.85, y0 + h + 2.4, -0.55], smoke: true };
   },
 
   stargazer(hb) {
@@ -305,6 +326,9 @@ const RECIPES: Record<Trade, RecipeFn> = {
     }
     hb.add('details', 'stars', stars);
     hb.add('details', 'sign', signBoard(1.25, y0 + 0.75, r + 0.5, -0.3, 0.8, 0.28, false).concat([[B(0.06, 0.8, 0.06, 1.25, 0.4, r + 0.45), MAT.woodDark]]));
+    hb.add('details', 'porthole-back', at(roundWindowParts(0.24, hb.trim), [0, y0 + 1.5, -r - 0.02], Math.PI));
+    hb.add('details', 'porthole-side', at(roundWindowParts(0.22, hb.trim), [-r - 0.02, y0 + 1.1, 0], -Math.PI / 2));
+    hb.add('details', 'lamp', at(wallLamp(), [0.62, y0 + 1.2, r - 0.08], 0.3));
     hb.prop('star-lamp', -1.7, 1.2, 0.4);
     hb.prop('globe', 1.9, -0.6, 0);
     hb.prop('telescope', -1.9, -0.7, 1.2);
@@ -337,6 +361,8 @@ const RECIPES: Record<Trade, RecipeFn> = {
     hb.add('details', 'steps', steps);
     hb.add('details', 'flag', [[B(0.05, 0.9, 0.05, -1.05, deckY + h + 0.5, -0.5), MAT.woodDark], [B(0.03, 0.3, 0.42, -1.05, deckY + h + 0.82, -0.29), MAT.sea]]);
     hb.add('details', 'sign', signBoard(-0.6, deckY + 1.55, d / 2 + 0.1, 0, 0.9, 0.24, false));
+    hb.add('details', 'window-back', at(windowParts(0.5, 0.45, hb.trim, hb.roof), [0, deckY + 0.95, -d / 2 - 0.04], Math.PI));
+    hb.add('details', 'lamp', at(wallLamp(), [0.95, deckY + 1.25, d / 2 + 0.02]));
     hb.prop('net', -2.2, 0.3, Math.PI / 2);
     hb.prop('fishing-rod', 1.6, 1.4, -0.4, deckY + 0.04);
     hb.prop('barrel', -1.2, 1.15, 0, deckY + 0.04);
@@ -383,6 +409,7 @@ const RECIPES: Record<Trade, RecipeFn> = {
     const plants: Part[] = [];
     for (let i = 0; i < 4; i++) plants.push([place(cbox(0.5, 0.25, 0.3, 0.03), [-1.1 + i * 0.6, y0 + h + 0.0, 0.0]), MAT.terracotta]);
     hb.add('details', 'sign', signBoard(-0.6, y0 + 1.25, d / 2 + 0.12, 0, 0.9, 0.28, false));
+    hb.add('details', 'lamp', at(wallLamp(), [-w / 2 - 0.62 + 0.45, 1.15, 0.72]));
     hb.prop('flower-bed', -0.6, 1.9, 0);
     hb.prop('sunflower', 2.0, 0.2, -0.6);
     hb.prop('wheelbarrow', 2.1, 1.5, -0.9);
@@ -423,11 +450,15 @@ const RECIPES: Record<Trade, RecipeFn> = {
     hb.add('details', 'window-side', at(windowParts(0.7, 0.55, hb.trim, null), [w / 2 + 0.04, y0 + 1.2, 0.1], Math.PI / 2));
     hb.add('details', 'window-top', at(roundWindowParts(0.22, hb.trim), [0.65, y0 + 1.92, d / 2 + 0.04]));
     hb.add('details', 'sign', signBoard(-0.95, y0 + 2.08, d / 2 + 0.1, 0, 1.0, 0.26, false));
+    hb.add('details', 'window-back', at(windowParts(0.6, 0.5, hb.trim, null), [-0.6, y0 + 1.0, -d / 2 - 0.04], Math.PI));
+    hb.add('details', 'window-back-2', at(windowParts(0.6, 0.5, hb.trim, null), [0.7, y0 + 1.0, -d / 2 - 0.04], Math.PI));
+    hb.add('details', 'window-left', at(windowParts(0.6, 0.5, hb.trim, null), [-w / 2 - 0.04, y0 + 1.1, 0], -Math.PI / 2));
+    hb.add('details', 'lamp', at(wallLamp(), [-0.1, y0 + 1.55, d / 2 + 0.02]));
     hb.prop('crate-big', 2.0, 1.4, 0.3);
     hb.prop('crate-small', 2.05, 1.4, 0.8, 0.75);
     hb.prop('lumber', -2.1, 0.3, Math.PI / 2);
     hb.prop('anvil', -1.4, 1.9, 0.5);
-    return { radius: 2.5, height: 4.2, door: [0.65, 0, d / 2 + 0.7], window: [w / 2 + 0.1, y0 + 1.2, 0.1], sign: { pos: [-0.95, y0 + 2.08, d / 2 + 0.14], rotY: 0, w: 1.0, h: 0.26 }, top: [1.0, y0 + hf + 1.35, -0.5] };
+    return { radius: 2.5, height: 4.2, door: [0.65, 0, d / 2 + 0.7], window: [w / 2 + 0.1, y0 + 1.2, 0.1], sign: { pos: [-0.95, y0 + 2.08, d / 2 + 0.14], rotY: 0, w: 1.0, h: 0.26 }, top: [1.0, y0 + hf + 1.35, -0.5], smoke: true };
   },
 
   storyteller(hb) {
@@ -450,11 +481,15 @@ const RECIPES: Record<Trade, RecipeFn> = {
     hb.add('details', 'upper-window-r', at(windowParts(0.5, 0.5, hb.trim, hb.roof), [0.75, y0 + h1 + 0.72, D2 / 2 + 0.04]));
     hb.add('details', 'round-window', at(roundWindowParts(0.22, hb.trim), [0, y0 + h1 + h2 + 0.55, D2 / 2 + 0.04]));
     hb.add('details', 'sign', signBoard(0.75, y0 + h1 - 0.12, d / 2 + 0.55, 0, 0.9, 0.26));
+    hb.add('details', 'window-back', at(windowParts(0.5, 0.5, hb.trim, hb.roof, true), [0.4, y0 + 0.85, -d / 2 - 0.04], Math.PI));
+    hb.add('details', 'upper-back', at(windowParts(0.5, 0.5, hb.trim, hb.roof), [0, y0 + h1 + 0.72, -D2 / 2 - 0.04], Math.PI));
+    hb.add('details', 'upper-side', at(windowParts(0.45, 0.45, hb.trim, hb.roof), [W2 / 2 + 0.04, y0 + h1 + 0.72, 0], Math.PI / 2));
+    hb.add('details', 'lamp', at(wallLamp(), [-0.98, y0 + 1.25, d / 2 + 0.02]));
     hb.prop('books', 1.5, 1.6, -0.3);
     hb.prop('armchair', -1.75, 1.55, 0.5);
     hb.prop('lamp-standing', -2.2, 0.6, 0);
     hb.prop('book', 1.2, 1.9, 0.9);
-    return { radius: 2.3, height: 5.3, door: [-0.45, 0, d / 2 + 0.7], window: [0.65, y0 + 0.85, d / 2 + 0.1], sign: { pos: [0.75, y0 + h1 - 0.12, d / 2 + 0.59], rotY: 0, w: 0.9, h: 0.26 }, top: [-0.7, y0 + h1 + h2 + 2.2, -0.6] };
+    return { radius: 2.3, height: 5.3, door: [-0.45, 0, d / 2 + 0.7], window: [0.65, y0 + 0.85, d / 2 + 0.1], sign: { pos: [0.75, y0 + h1 - 0.12, d / 2 + 0.59], rotY: 0, w: 0.9, h: 0.26 }, top: [-0.7, y0 + h1 + h2 + 2.2, -0.6], smoke: true };
   },
 
   'tea-maker'(hb) {
@@ -483,6 +518,7 @@ const RECIPES: Record<Trade, RecipeFn> = {
     hb.add('details', 'round-window', at(roundWindowParts(0.34, hb.trim), [-w / 2 - 0.03, y0 + 0.85, 0], -Math.PI / 2));
     hb.add('details', 'round-window-r', at(roundWindowParts(0.34, hb.trim), [w / 2 + 0.03, y0 + 0.85, 0], Math.PI / 2));
     hb.add('details', 'sign', signBoard(0, y0 + h - 0.2, d / 2 + 0.43, 0, 1.1, 0.26, false));
+    hb.add('details', 'round-window-back', at(roundWindowParts(0.34, hb.trim), [0, y0 + 0.85, -d / 2 - 0.03], Math.PI));
     hb.prop('lantern-hanging', -1.75, d / 2 + 0.36, 0, y0 + h - 0.05 + 0.6);
     hb.prop('lantern-hanging', 1.75, d / 2 + 0.36, 0, y0 + h - 0.05 + 0.6);
     hb.prop('tea-table', 1.6, 2.6, -0.2);
@@ -515,6 +551,9 @@ const RECIPES: Record<Trade, RecipeFn> = {
     const notes: Part[] = [[place(ball(0.09, 6, 4), [0, 0, 0], [0, 0, 0], [1.2, 0.85, 0.5]), MAT.iron], [B(0.035, 0.36, 0.035, 0.09, 0.17, 0), MAT.iron], [B(0.14, 0.04, 0.035, 0.15, 0.34, 0, [0, 0, -0.4]), MAT.iron]];
     hb.add('details', 'note', at(notes, [0.75, y0 + h - 0.2, d / 2 + 0.06]));
     hb.add('details', 'sign', signBoard(-0.55, y0 + 1.68, d / 2 + 0.08, 0, 0.9, 0.24, false));
+    hb.add('details', 'window-back', at(windowParts(0.55, 0.5, hb.trim, hb.roof, true), [0, y0 + 1.15, -d / 2 - 0.04], Math.PI));
+    hb.add('details', 'window-left', at(windowParts(0.55, 0.5, hb.trim, hb.roof), [-w / 2 - 0.04, y0 + 1.15, 0], -Math.PI / 2));
+    hb.add('details', 'lamp', at(wallLamp(), [-0.05, y0 + 1.3, d / 2 + 0.02]));
     hb.prop('drum', 1.7, 1.7, 0.3);
     hb.prop('bench', -1.6, 1.8, 0, 0, 0.8);
     hb.prop('wind-chime', 2.1, 0.2, -0.5);
@@ -547,6 +586,10 @@ const RECIPES: Record<Trade, RecipeFn> = {
     for (let i = 0; i < 7; i++) splash.push([place(cyl(0.06 + r() * 0.06, 0.06 + r() * 0.06, 0.02, 7), [-w / 2 + 0.2 + r() * 0.5, y0 + 0.3 + r() * 1.4, d / 2 + 0.02], [Math.PI / 2, 0, 0]), cols[i % cols.length], { shade: 0 }]);
     hb.add('details', 'paint', splash);
     hb.add('details', 'sign', signBoard(-1.15, y0 + 1.72, d / 2 + 0.08, 0, 0.75, 0.22, false));
+    hb.add('details', 'window-back', at(windowParts(0.55, 0.5, hb.trim, hb.roof), [-0.7, y0 + 1.0, -d / 2 - 0.04], Math.PI));
+    hb.add('details', 'window-back-2', at(windowParts(0.55, 0.5, hb.trim, hb.roof), [0.7, y0 + 1.0, -d / 2 - 0.04], Math.PI));
+    hb.add('details', 'window-side', at(windowParts(0.6, 0.6, hb.trim, hb.roof, true), [w / 2 + 0.04, y0 + 1.2, 0.1], Math.PI / 2));
+    hb.add('details', 'lamp', at(wallLamp(), [-1.15, y0 + 1.95, d / 2 + 0.02]));
     hb.prop('easel', 1.4, 2.0, -0.4);
     hb.prop('frame-standing', -0.4, 2.1, 0.2);
     hb.prop('stool', 0.75, 2.4, 0);
@@ -572,6 +615,9 @@ const RECIPES: Record<Trade, RecipeFn> = {
     hb.add('details', 'window-l', at(roundWindowParts(0.22, hb.trim), [-1.0, y0 + 0.95, 1.02], -0.78));
     hb.add('details', 'window-r', at(roundWindowParts(0.22, hb.trim), [1.0, y0 + 0.95, 1.02], 0.78));
     hb.add('details', 'sign', signBoard(0, y0 + 1.48, r + 0.12, 0, 0.8, 0.22, false));
+    hb.add('details', 'window-back', at(roundWindowParts(0.22, hb.trim), [0, y0 + 0.95, -r - 0.01], Math.PI));
+    hb.add('details', 'window-side', at(roundWindowParts(0.22, hb.trim), [-r - 0.01, y0 + 0.95, 0], -Math.PI / 2));
+    hb.add('details', 'lamp', at(wallLamp(), [0.55, y0 + 1.15, r - 0.12], 0.4));
     hb.prop('beehive', -2.0, 0.9, 0.3);
     hb.prop('beehive', -2.25, -0.4, 0.8);
     hb.prop('beehive', 2.05, 0.7, -0.4);
@@ -609,6 +655,8 @@ const RECIPES: Record<Trade, RecipeFn> = {
     hb.add('roof', 'hut-roof', at(roofSlab(hw, hd, 0.15 + hh, 0.7, 0.25, 1, hb.roof).concat(roofSlab(hw, hd, 0.15 + hh, 0.7, 0.25, -1, hb.roof)), [1.9, 0, -0.3]));
     hb.add('details', 'hut-window', at(windowParts(0.45, 0.4, hb.trim, hb.roof, true), [1.9, 0.9, -0.3 + hd / 2 + 0.04]));
     hb.add('details', 'sign', signBoard(-1.1, 1.05, 1.15, 0.5, 0.8, 0.22, false).concat([[B(0.06, 1.0, 0.06, -1.1, 0.5, 1.1), MAT.woodDark]]));
+    hb.add('details', 'window-back', at(windowParts(0.3, 0.42, hb.trim, null, false, false), [0, y0 + 2.5, -0.95], Math.PI));
+    hb.add('details', 'lamp', at(wallLamp(), [0.5, y0 + 1.1, 1.0]));
     hb.prop('bell', -1.9, 0.2, 0.8, 0, 0.7);
     hb.prop('shell', 0.9, 1.9, 0.4);
     hb.prop('lantern', -0.9, 1.7, 0);
@@ -643,6 +691,9 @@ const RECIPES: Record<Trade, RecipeFn> = {
       [B(0.3, 0.22, 0.01, -0.15, 0.1, 0.05), '#8fbf7a', { shade: 0 }], [B(0.25, 0.3, 0.01, 0.2, -0.05, 0.05), '#8fbf7a', { shade: 0 }], [B(0.6, 0.08, 0.01, 0, -0.2, 0.05), '#7fb7d4', { shade: 0 }],
     ], [w / 2 + 0.04, y0 + 2.6, 0], Math.PI / 2));
     hb.add('details', 'sign', signBoard(-0.85, y0 + 1.5, d / 2 + 0.1, 0, 0.6, 0.22, false));
+    hb.add('details', 'window-back', at(windowParts(0.5, 0.5, hb.trim, hb.roof), [0, y0 + 1.05, -d / 2 - 0.04], Math.PI));
+    hb.add('details', 'window-back-up', at(windowParts(0.6, 0.55, hb.trim, hb.roof, true), [0, y0 + h * 0.5 + 0.85, -d / 2 - 0.04], Math.PI));
+    hb.add('details', 'lamp', at(wallLamp(), [0.62, y0 + 1.25, d / 2 + 0.02]));
     hb.prop('map', 1.6, 1.6, -0.5);
     hb.prop('globe', -1.5, 1.6, 0);
     hb.prop('books', -1.85, 0.6, 1.0);

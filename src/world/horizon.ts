@@ -33,7 +33,7 @@ function islandGeometry(seed: number, radius: number, village: boolean): BufferG
   const hill = hillIds[seed % hillIds.length];
   parts.push(place(kitGeometry(hill, (radius / 1.9) * (0.7 + r() * 0.2)), [radius * -0.35, radius * 0.05, radius * -0.25], [0, r() * 6.28, 0]));
   const trees = ['tree-round-a', 'tree-round-b', 'pine-yellow-medium', 'pine-orange-medium', 'trees-a-medium'];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < (village ? 5 : 3); i++) {
     const a = r() * Math.PI * 2;
     const d = radius * (0.35 + r() * 0.5);
     const id = trees[Math.floor(r() * trees.length)];
@@ -41,7 +41,7 @@ function islandGeometry(seed: number, radius: number, village: boolean): BufferG
   }
   if (village) {
     const blds = ['bld-home-a', 'bld-home-b', 'bld-windmill', 'bld-tower', 'bld-church', 'bld-tavern', 'bld-well', 'bld-watermill', 'bld-market'];
-    const n = 3 + Math.floor(r() * 3);
+    const n = 2 + Math.floor(r() * 2);
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + r();
       const d = radius * (0.15 + r() * 0.4);
@@ -67,7 +67,7 @@ export function createHorizon(batch: Batch): Horizon {
     [-0.95, 330, 26, 14], [0.35, 380, 34, 30], [1.05, 300, 22, 6], [-0.35, 420, 40, 22], [2.3, 360, 28, 18], [-2.4, 340, 30, 10],
   ];
   far.forEach(([bearing, dist, rad, y], i) => {
-    const g = islandGeometry(900 + i, rad, i % 2 === 0);
+    const g = islandGeometry(900 + i, rad, false);
     batch.add(`far:${i}`, place(g, [Math.sin(bearing) * dist, y - 8, -Math.cos(bearing) * dist], [0, bearing, 0]));
   });
   const place1 = (id: string, name: string, slot: number): HorizonIsland => {

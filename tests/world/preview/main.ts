@@ -104,7 +104,20 @@ async function main(): Promise<void> {
       const side = new Vector3(fwd.z, 0, -fwd.x);
       const base = new Vector3(spec.pos.x, world.groundY(spec.pos.x, spec.pos.z), spec.pos.z);
       const dist = Number(q.get('dist') ?? '7.5');
-      look(base.clone().addScaledVector(fwd, dist).addScaledVector(side, dist * 0.35).add(new Vector3(0, 2.2, 0)), base.clone().add(new Vector3(0, 1.6, 0)));
+      // walk round the front until no other house is in the way
+      let cam = base.clone();
+      for (const a of [0.35, -0.35, 0.8, -0.8, 1.2, -1.2, 0]) {
+        const dir = fwd.clone().multiplyScalar(Math.cos(a)).addScaledVector(side, Math.sin(a));
+        cam = base.clone().addScaledVector(dir, dist).add(new Vector3(0, 2.0, 0));
+        const clear = built.every((b) => b.id === id || Math.hypot(b.pos.x - cam.x, b.pos.z - cam.z) > 3.4) && built.every((b) => {
+          if (b.id === id) return true;
+          // the line from camera to house should not pass through another house
+          const t = Math.max(0, Math.min(1, ((b.pos.x - cam.x) * (base.x - cam.x) + (b.pos.z - cam.z) * (base.z - cam.z)) / ((base.x - cam.x) ** 2 + (base.z - cam.z) ** 2)));
+          return Math.hypot(cam.x + (base.x - cam.x) * t - b.pos.x, cam.z + (base.z - cam.z) * t - b.pos.z) > 2.6;
+        });
+        if (clear) break;
+      }
+      look(cam, base.clone().add(new Vector3(0, 1.5, 0)));
     }
   }
   if (q.get('camx')) look(new Vector3(Number(q.get('camx')), Number(q.get('camy')), Number(q.get('camz'))), new Vector3(Number(q.get('tx')), Number(q.get('ty')), Number(q.get('tz'))));
@@ -115,7 +128,7 @@ async function main(): Promise<void> {
     frames++;
     if (frames === 20) {
       const w = window as unknown as Record<string, unknown>;
-      w.__stats = { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, world: world.stats(), programs: renderer.info.programs?.length };
+      w.__stats = { houses: built.map((b) => `${b.recipe}@${b.pos.x.toFixed(1)},${b.pos.z.toFixed(1)}`).join(' '), calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, world: world.stats(), programs: renderer.info.programs?.length };
       w.__ready = true;
     }
     requestAnimationFrame(loop);

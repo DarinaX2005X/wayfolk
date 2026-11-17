@@ -2,8 +2,8 @@
  * Props built in code, in metres, origin on the ground at the centre, front toward +z.
  * Same chunky style as the KayKit pieces: few faces, bevelled boxes, warm flat colours.
  */
-import type { BufferGeometry } from '@iwsdk/core';
-import { MAT, ball, blob, build, cbox, cone, cyl, dome, gear, hull, lathe, place, rng, type Hex, type PaintOpts } from './geo';
+import { Color, type BufferGeometry } from '@iwsdk/core';
+import { M, MAT, ball, blob, build, cbox, cone, cyl, dome, gear, hull, lathe, paint, place, rng, surfaceAlpha, type Hex, type PaintOpts } from './geo';
 
 type Part = [BufferGeometry, Hex, PaintOpts?];
 const GLOW: PaintOpts = { glow: true, shade: 0 };
@@ -276,6 +276,38 @@ function gableRoof(w: number, d: number, h: number): BufferGeometry {
     [-w / 2, 0, -d / 2], [-w / 2, 0, d / 2], [-w / 2, h, 0],
     [w / 2, 0, -d / 2], [w / 2, 0, d / 2], [w / 2, h, 0],
   ]);
+}
+
+/**
+ * A rounded boulder with a mossy top: smooth normals, flattened base, warm grey stone,
+ * moss where the surface faces up. Size is the radius in metres.
+ */
+export function mossyRock(size: number, seed: number, moss = 0.75): BufferGeometry {
+  const r = rng(seed);
+  const g = blob(1, 2, seed, 0.22, 0.55 + r() * 0.25);
+  const pos = g.getAttribute('position');
+  // stretch a little and sink the bottom so it sits in the ground
+  const sx = 0.8 + r() * 0.5;
+  const sz = 0.8 + r() * 0.4;
+  for (let i = 0; i < pos.count; i++) {
+    let y = pos.getY(i);
+    if (y < -0.15) y = -0.15 + (y + 0.15) * 0.3;
+    pos.setXYZ(i, pos.getX(i) * sx * size, (y + 0.15) * size, pos.getZ(i) * sz * size);
+  }
+  const geo = paint(g, '#a69c8e', { mat: M.rock, shade: 0.3 }, true);
+  const nor = geo.getAttribute('normal');
+  const col = geo.getAttribute('color');
+  const stone = new Color(r() < 0.5 ? '#a69c8e' : '#9a9184');
+  const mossC = new Color(r() < 0.5 ? '#6f9a3e' : '#7fa548');
+  const c = new Color();
+  for (let i = 0; i < col.count; i++) {
+    const ny = nor.getY(i);
+    const k = Math.max(0, Math.min(1, (ny - 0.35) / 0.4)) * moss;
+    const y = geo.getAttribute('position').getY(i) / size;
+    c.copy(stone).multiplyScalar(0.7 + 0.3 * Math.min(1, y * 1.5 + 0.2)).lerp(mossC, k);
+    col.setXYZW(i, c.r, c.g, c.b, surfaceAlpha(k > 0.5 ? M.grass : M.rock));
+  }
+  return geo;
 }
 
 /** Builds a procedural prop by id (catalog source `proc`), or null if unknown. */

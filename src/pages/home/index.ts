@@ -34,6 +34,8 @@ export const TEXT = {
   copied: 'Copied',
   close: 'Close',
   invite: 'Invite a friend',
+  snap: 'Take a postcard',
+  inviteTitle: 'Come sit on my island',
   again: 'The island is ready. Press Enter again to put the headset on.',
 } as const;
 
@@ -98,9 +100,21 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   const captions = el('div', 'home-captions');
   captions.setAttribute('aria-live', 'polite');
   const choices = el('div', 'home-choices');
+  // Once the first minute is over, Pip's little menu as tags at the desk.
+  const menu = el('div', 'home-menu');
+  const snap = el('button', 'tag tag-small', TEXT.snap);
+  snap.type = 'button';
+  snap.addEventListener('click', () => void wf?.postcard.take());
+  const inviteTag = el('button', 'tag tag-small', TEXT.invite);
+  inviteTag.type = 'button';
+  inviteTag.addEventListener('click', () => void wf?.invite());
+  menu.append(snap, inviteTag);
+  effect(() => {
+    menu.hidden = store.phase.value !== 'free' || store.mode.value !== 'desk';
+  });
   const prepared = el('p', 'home-prepared', 'prepared traveler');
   prepared.hidden = true;
-  strip.append(captions, choices, prepared);
+  strip.append(captions, choices, prepared, menu);
   effect(() => {
     prepared.hidden = !(store.prepared.value && store.choices.value.length > 0);
   });
@@ -134,14 +148,13 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
       }),
     );
   });
-  effect(() => {
-    const pc = store.postcard.value;
-    if (!pc) return;
+  const showCard = (pc: { url: string; image?: string; title: string }): void => {
     card.replaceChildren();
     const img = el('img', 'home-card-img');
-    img.src = pc.image;
+    if (pc.image) img.src = pc.image;
     img.alt = 'The island, seen from the bench';
-    const h = el('h2', 'home-card-title', TEXT.postcard);
+    img.hidden = !pc.image;
+    const h = el('h2', 'home-card-title', pc.title);
     const qr = el('div', 'home-card-qr');
     qr.innerHTML = qrSvg(pc.url);
     const link = el('a', 'home-card-link', pc.url.replace(/^https?:\/\//, ''));
@@ -160,6 +173,14 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
     row.append(copy, close);
     card.append(img, h, qr, link, row);
     card.hidden = false;
+  };
+  effect(() => {
+    const pc = store.postcard.value;
+    if (pc) showCard({ ...pc, title: TEXT.postcard });
+  });
+  effect(() => {
+    const link = store.invite.value;
+    if (link) showCard({ url: link, title: TEXT.inviteTitle });
   });
 
   // ---- the world boots in the background

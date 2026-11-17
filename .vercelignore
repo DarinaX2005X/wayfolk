@@ -1,0 +1,6 @@
+dist
+tests/xr/out
+tests/web/out
+tests/app/out
+tests/*/out
+.env.local

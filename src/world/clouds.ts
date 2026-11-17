@@ -205,9 +205,9 @@ export function createClouds(parent: Object3D): Clouds {
   const r = rng(2024);
   type Ring = { n: number; r0: number; r1: number; y0: number; y1: number; s0: number; s1: number; sq: number; speed: number };
   const rings: Ring[] = [
-    { n: 26, r0: 17, r1: 48, y0: -22, y1: -13, s0: 4, s1: 8, sq: 0.8, speed: 0.0022 },
-    { n: 36, r0: 55, r1: 190, y0: -21, y1: -12, s0: 10, s1: 22, sq: 0.75, speed: 0.0011 },
-    { n: 18, r0: 240, r1: 460, y0: -14, y1: 14, s0: 26, s1: 55, sq: 0.9, speed: 0.0004 },
+    { n: 22, r0: 17, r1: 48, y0: -22, y1: -13, s0: 4, s1: 8, sq: 0.8, speed: 0.0022 },
+    { n: 30, r0: 55, r1: 190, y0: -21, y1: -12, s0: 10, s1: 22, sq: 0.75, speed: 0.0011 },
+    { n: 16, r0: 240, r1: 460, y0: -14, y1: 14, s0: 26, s1: 55, sq: 0.9, speed: 0.0004 },
   ];
   // mist where the waterfall meets the clouds
   const extra: [number, number, number, number][] = [[-16.5, -16, -15.5, 4.5], [-14.5, -18, -18.5, 3.8], [-18.5, -15, -12, 3.2]];

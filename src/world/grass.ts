@@ -33,13 +33,13 @@ class Geo {
 const WHITE = new Color('#ffffff');
 const STEM = new Color('#4f8a35');
 
-function tuftGeometry(): BufferGeometry {
+function tuftGeometry(blades = 7): BufferGeometry {
   const g = new Geo();
-  const root = new Color('#5a963c');
-  const tip = new Color('#b9d66c');
+  const root = new Color('#63a043');
+  const tip = new Color('#c6df78');
   const r = rng(3);
-  for (let i = 0; i < 7; i++) {
-    const a = (i / 7) * Math.PI * 2 + r() * 0.5;
+  for (let i = 0; i < blades; i++) {
+    const a = (i / blades) * Math.PI * 2 + r() * 0.5;
     const h = 0.11 + r() * 0.12;
     const w = 0.014 + r() * 0.008;
     const lean = 0.03 + r() * 0.06;
@@ -228,7 +228,8 @@ export function createMeadow(parent: Object3D, land: Land): Meadow {
   parent.add(root);
   const r = rng(808);
   const kinds: Kind[] = [
-    { name: 'grass', geo: tuftGeometry(), list: [], mesh: null, tris: 0 },
+    { name: 'grass', geo: tuftGeometry(7), list: [], mesh: null, tris: 0 },
+    { name: 'grass-far', geo: tuftGeometry(4), list: [], mesh: null, tris: 0 },
     ...SPECIES.map((s) => ({ name: s.name, geo: s.geo(), list: [] as Placed[], mesh: null, tris: 0 })),
     { name: 'clover', geo: clover(), list: [], mesh: null, tris: 0 },
     { name: 'ferns', geo: fern(), list: [], mesh: null, tris: 0 },
@@ -253,23 +254,34 @@ export function createMeadow(parent: Object3D, land: Land): Meadow {
 
   const scatter = (cx: number, cz: number, R: (t: number) => number, nTufts: number, nPatches: number): void => {
     const grass = byName('grass');
+    const far = byName('grass-far');
+    const tuft = (x: number, z: number): void => {
+      // thick near the seat, thinning with distance; far tufts have fewer blades
+      const d = Math.hypot(x - SEAT.x, z - SEAT.z);
+      if (r() > 0.28 + 0.72 * Math.exp(-d / 6)) return;
+      if (!okAt(x, z)) return;
+      // a light tint over the blade colours: hue drifts, brightness varies a little
+      const tint = new Color().setHSL(0.2 + (r() - 0.5) * 0.12, 0.3 + r() * 0.25, 0.82 + r() * 0.16);
+      (d < 11 ? grass : far).list.push({ x, z, s: (0.8 + r() * 0.7) * (1 + Math.min(1, d / 14) * 0.6), rot: r() * Math.PI * 2, tint });
+    };
     for (let i = 0; i < nTufts; i++) {
       const t = r() * Math.PI * 2;
       const s = Math.sqrt(r());
-      const x = cx + Math.cos(t) * R(t) * s;
-      const z = cz + Math.sin(t) * R(t) * s;
-      // thick near the seat, thinning with distance
-      const d = Math.hypot(x - SEAT.x, z - SEAT.z);
-      if (r() > 0.3 + 0.7 * Math.exp(-d / 7)) continue;
-      if (!okAt(x, z)) continue;
-      const tint = new Color().setHSL(0.25 + (r() - 0.5) * 0.05, 0.42 + r() * 0.18, 0.46 + r() * 0.14);
-      grass.list.push({ x, z, s: (0.8 + r() * 0.6) * (1 + Math.min(1, d / 14) * 0.5), rot: r() * Math.PI * 2, tint });
+      tuft(cx + Math.cos(t) * R(t) * s, cz + Math.sin(t) * R(t) * s);
     }
+    // the lawn round the seat
+    if (cx === CENTER.x)
+      for (let i = 0; i < nTufts * 0.6; i++) {
+        const a = r() * Math.PI * 2;
+        const d = Math.sqrt(r()) * 6.5;
+        tuft(SEAT.x + Math.cos(a) * d * 1.3, SEAT.z - 3.2 + Math.sin(a) * d);
+      }
     for (let p = 0; p < nPatches; p++) {
       const t = r() * Math.PI * 2;
       const s = Math.sqrt(r()) * 0.94;
-      const px = cx + Math.cos(t) * R(t) * s;
-      const pz = cz + Math.sin(t) * R(t) * s;
+      const nearSeat = cx === CENTER.x && p % 3 === 0;
+      const px = nearSeat ? SEAT.x + (r() - 0.5) * 12 : cx + Math.cos(t) * R(t) * s;
+      const pz = nearSeat ? SEAT.z - 2.5 - r() * 6 : cz + Math.sin(t) * R(t) * s;
       const sp = SPECIES[p % SPECIES.length];
       const kind = byName(sp.name);
       const main = sp.colours[Math.floor(r() * sp.colours.length)];
@@ -290,7 +302,7 @@ export function createMeadow(parent: Object3D, land: Land): Meadow {
           const a = r() * Math.PI * 2;
           const x = px + Math.cos(a) * (0.8 + r() * 0.8);
           const z = pz + Math.sin(a) * (0.8 + r() * 0.8);
-          if (okAt(x, z)) cl.list.push({ x, z, s: 1.2 + r() * 0.8, rot: r() * 6.28, tint: new Color().setHSL(0.27, 0.45, 0.5 + r() * 0.1) });
+          if (okAt(x, z)) cl.list.push({ x, z, s: 1.2 + r() * 0.8, rot: r() * 6.28, tint: new Color().setHSL(0.25, 0.3, 0.85 + r() * 0.12) });
         }
       }
     }
@@ -302,17 +314,17 @@ export function createMeadow(parent: Object3D, land: Land): Meadow {
         const a = r() * Math.PI * 2;
         const x = o.x + Math.cos(a) * (o.r * 0.7 + 0.3);
         const z = o.z + Math.sin(a) * (o.r * 0.7 + 0.3);
-        if (okAt(x, z)) ferns.list.push({ x, z, s: 0.8 + r() * 0.7, rot: r() * 6.28, tint: new Color().setHSL(0.26, 0.4, 0.55 + r() * 0.1) });
+        if (okAt(x, z)) ferns.list.push({ x, z, s: 0.8 + r() * 0.7, rot: r() * 6.28, tint: new Color().setHSL(0.24, 0.3, 0.85 + r() * 0.12) });
       }
     }
     for (let k = 0; k < 8; k++) {
       const a = r() * Math.PI * 2;
       const x = POND.x + Math.cos(a) * (POND.r + 0.7);
       const z = POND.z + Math.sin(a) * (POND.r + 0.7);
-      if (okAt(x, z)) ferns.list.push({ x, z, s: 0.7 + r() * 0.5, rot: r() * 6.28, tint: new Color().setHSL(0.26, 0.4, 0.55) });
+      if (okAt(x, z)) ferns.list.push({ x, z, s: 0.7 + r() * 0.5, rot: r() * 6.28, tint: new Color().setHSL(0.24, 0.3, 0.9) });
     }
   };
-  scatter(CENTER.x, CENTER.z, outlineR, 5600, 48);
+  scatter(CENTER.x, CENTER.z, outlineR, 4200, 60);
 
   const hidden = new Set<Placed>();
   const m = new Matrix4();

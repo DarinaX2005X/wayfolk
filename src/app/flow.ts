@@ -12,7 +12,7 @@
  * flow finishes on any device, and never depends on a model answer: if a call fails or
  * takes too long, a prepared line takes its place.
  */
-import type { HouseSpec, Reply, Resident, WorldEvent } from '../mind/types';
+import type { HouseSpec, IslandState, Reply, Resident, WorldEvent } from '../mind/types';
 import { say as caption } from '../feel/captions';
 import { sound } from '../feel/sound';
 import type { App } from './boot/world';
@@ -35,6 +35,8 @@ export type Flow = {
   pipSide(): Side | null;
   /** True while a scene of the flow is playing (other inputs wait). */
   busy(): boolean;
+  /** A friend's island, as a guest of a live visit (or from its saved copy). */
+  visit(state: IslandState): Promise<void>;
 };
 
 export const LINES = {
@@ -49,7 +51,9 @@ export const LINES = {
   tomorrow: 'Someone else will find the island tomorrow. Come back and see who it is.',
   back: 'You came back. Let me tell you what happened.',
   quiet: 'It was quiet while you were away. Everyone slept well.',
-  menu: ['Who lives here?', 'Take a postcard', 'Head home'],
+  menu: ['Who lives here?', 'Take a postcard', 'Invite a friend', 'Head home'],
+  guest: (name: string) => `This is ${name}. Your friend's folk live here. Wave, or look around.`,
+  invited: 'Show this to a friend. When they open it, they will sit here with you.',
   farewell: 'Sleep well. The island will keep your seat warm.',
   leftEarly: 'They waved and drifted on. Someone else will come.',
 } as const;
@@ -179,6 +183,9 @@ export function createFlow(
       sign: r.house?.sign ?? r.name,
       builtAt: Date.now(),
     };
+    tell('house-placed', { spec });
+    tell('build-started', { spec });
+    built.add(spec.id);
     const steps = world.buildPlan(spec);
     for (const s of steps) s.object3d.visible = false;
     await life.build(steps);
@@ -208,6 +215,7 @@ export function createFlow(
     const traveler = await within(Promise.resolve(mind.nextTraveler()), 15000, null as unknown as Resident);
     if (!traveler) return null;
     store.prepared.value = Boolean(traveler.prepared);
+    tell('traveler-arrived', { resident: traveler });
     await life.arrive(traveler, traveler.vehicle);
     // The first words come at once, without a model call.
     let intro = traveler.story.intro;
@@ -249,22 +257,82 @@ export function createFlow(
     }
   };
 
-  const loadIsland = (): void => {
-    for (const h of mind.state?.houses ?? []) {
+  const loadIsland = (state: IslandState = mind.state): void => {
+    for (const h of state?.houses ?? []) {
       try {
         world.addHouse(h);
       } catch (error) {
         console.error('[wf] a saved house could not be placed', error);
       }
     }
-    for (const r of mind.state?.residents ?? []) {
-      const h = mind.state.houses.find((x) => x.id === r.houseId);
+    for (const r of state?.residents ?? []) {
+      const h = state.houses.find((x) => x.id === r.houseId);
       life.spawn(r, h ? { x: h.pos.x + Math.sin(h.rotY) * 2, z: h.pos.z + Math.cos(h.rotY) * 2 } : undefined);
     }
   };
 
+  // ---- live visits: the host tells the room what happens; a guest sees it happen.
+  const live = mods.live;
+  const hosting = (): boolean => live.role === 'host';
+  const tell = (kind: string, data: unknown): void => {
+    if (!hosting()) return;
+    try {
+      live.send(kind, data);
+    } catch (error) {
+      console.warn('[wf] live event not sent', error);
+    }
+  };
+  const built = new Set<string>();
+  const guestBuild = async (spec: HouseSpec): Promise<void> => {
+    if (built.has(spec.id)) return;
+    built.add(spec.id);
+    tell('house-placed', { spec });
+    tell('build-started', { spec });
+    built.add(spec.id);
+    const steps = world.buildPlan(spec);
+    for (const s of steps) s.object3d.visible = false;
+    await life.build(steps);
+    for (const s of steps) {
+      s.object3d.visible = true;
+      s.object3d.position.copy(s.target.pos);
+      s.object3d.quaternion.copy(s.target.quat);
+      s.object3d.scale.copy(s.target.scale);
+    }
+    world.finishHouse?.(spec.id);
+  };
+  const guestOnly = <T,>(fn: (data: T) => void) => (data: T) => {
+    if (live.role === 'guest') fn(data);
+  };
+  live.on('build-started', guestOnly<{ spec: HouseSpec }>((d) => void guestBuild(d.spec)));
+  live.on('house-placed', guestOnly<{ spec: HouseSpec }>((d) => void guestBuild(d.spec)));
+  live.on('traveler-arrived', guestOnly<{ resident: Resident }>((d) => void life.arrive(d.resident, d.resident.vehicle)));
+  live.on('say', guestOnly<{ text: string; residentId?: string }>((d) => {
+    if (d.residentId) void life.say(d.residentId, d.text);
+    else caption({ source: 'Friend', text: d.text });
+  }));
+  live.on('state', ((_s: unknown, _r: unknown, message: string | null) => {
+    if (message) void pipSay(message);
+  }) as never);
+
   const flow: Flow = {
     pipSide: () => pipOn,
+    async visit(state) {
+      playing = true;
+      try {
+        loadIsland(state);
+        for (const h of state.houses) built.add(h.id);
+        store.phase.value = 'clouds';
+        world.setTime(app.clock.wall());
+        const spots = world.spots();
+        await entry.enter(spots[1] ?? spots[0] ?? world.seat);
+        store.phase.value = 'greet';
+        life.pip.hover();
+        await pipSay(LINES.guest(state.name || "a friend's island"));
+        goFree();
+      } finally {
+        playing = false;
+      }
+    },
     busy: () => playing,
     async run() {
       playing = true;
@@ -329,6 +397,16 @@ export function createFlow(
         const pick = await replies.show([...LINES.menu], { side: pipOn ?? undefined });
         if (pick === LINES.menu[1]) await postcard.take();
         else if (pick === LINES.menu[2]) {
+          try {
+            const out = await Promise.resolve(mods.live.host(mind.state.id));
+            postcard.showCard('Come sit on my island', out.link);
+            app.store.invite.value = out.link;
+            await pipSay(LINES.invited);
+          } catch (error) {
+            console.warn('[wf] no invite link', error);
+            await pipSay(mods.live.message ?? 'The invite did not work just now. Try again in a moment.');
+          }
+        } else if (pick === LINES.menu[3]) {
           store.phase.value = 'farewell';
           await pipSay(LINES.farewell);
           await entry.leave();

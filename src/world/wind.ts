@@ -116,3 +116,43 @@ function createWind(): Wind {
 
 /** The island's wind (one per page). */
 export const wind: Wind = createWind();
+
+/**
+ * A quiet wind sound that swells with each gust passing the listener: brown-ish noise through
+ * a band-pass filter. The app owns the AudioContext; call update(x, z) with the listener's
+ * ground position (a few times a second is enough) and stop() to end it.
+ */
+export function createWindSound(ctx: AudioContext, destination: AudioNode, volume = 0.08): { update(x: number, z: number): void; stop(): void } {
+  const seconds = 4;
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * seconds, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < data.length; i++) {
+    last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+    data[i] = last * 3.5;
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  src.loop = true;
+  const band = ctx.createBiquadFilter();
+  band.type = 'bandpass';
+  band.frequency.value = 420;
+  band.Q.value = 0.6;
+  const gain = ctx.createGain();
+  gain.gain.value = 0;
+  src.connect(band).connect(gain).connect(destination);
+  src.start();
+  return {
+    update(x, z) {
+      const g = wind.gust(x, z);
+      const t = ctx.currentTime;
+      gain.gain.setTargetAtTime(volume * (0.25 + 0.75 * g) * Math.min(1.5, wind.strength), t, 0.6);
+      band.frequency.setTargetAtTime(320 + 380 * g, t, 0.8);
+    },
+    stop() {
+      src.stop();
+      src.disconnect();
+      gain.disconnect();
+    },
+  };
+}

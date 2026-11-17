@@ -1,0 +1,14 @@
+{
+  "name": "deployment: the landing opens, the island boots, the desk view works",
+  "steps": [
+    { "goto": "/" },
+    { "label": "the line that says what this is", "expectText": "Travelers drift in, and some of them stay" },
+    { "wait": 10 },
+    { "shot": "prod-landing.png" },
+    { "goto": "/?debug=1&desk=1" },
+    { "label": "inside at the desk", "eval": "store.look.value", "equals": "island", "within": 40 },
+    { "label": "all four modules are real", "eval": "Object.values(modules.report).filter((v) => v === 'real').length", "equals": 4, "within": 5 },
+    { "wait": 6 },
+    { "shot": "prod-desk.png" }
+  ]
+}

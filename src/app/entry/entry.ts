@@ -13,12 +13,13 @@ import { Box3, Group, PointLight, Vector3, type Mesh, type Object3D } from '@iws
 import { sound } from '../../feel/sound';
 import type { App } from '../boot/world';
 import { registerDebug } from '../debug';
-import type { WorldPort } from '../ports';
+import type { Anchor, WorldPort } from '../ports';
 import type { Rig } from '../rig';
 import { createCloudFx, makeTableGlow } from './clouds';
 
 export type Entry = {
-  enter(): Promise<void>;
+  /** `at`: where to sit (a guest sits at a spot of the host's island, not at the seat). */
+  enter(at?: Anchor): Promise<void>;
   leave(): Promise<void>;
   back(): Promise<void>;
   /** Whether the room shows through (AR with passthrough). */
@@ -79,13 +80,15 @@ export function createEntry(app: App, world: WorldPort, rig: Rig, extras: () => 
     app.world.scene.background = null;
   };
 
+  let seatAt: Anchor | null = null;
   const seatPerson = (): void => {
-    rig.placeAt(world.seat);
+    rig.placeAt(seatAt ?? world.seat);
   };
 
   const entry: Entry = {
     passthrough,
-    async enter() {
+    async enter(at) {
+      seatAt = at ?? null;
       const room = passthrough();
       app.store.look.value = 'entering';
       sound.play('bloom');

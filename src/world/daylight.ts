@@ -46,13 +46,13 @@ const MORNING: SkyKey = {
   stars: 0, glow: 0, water: '#6fb1d0',
 };
 const DAY: SkyKey = {
-  mid: '#9cc8ea', zenith: '#4f97de', horizon: '#cfe6f2', fog: '#d4e6ef', sun: '#fff4e2', sunI: 2.7,
-  hemiSky: '#c6ddf2', hemiGround: '#9d906b', hemiI: 1.35, cloudLit: '#ffffff', cloudShade: '#c2cedd', cloudUnder: '#e6edf2',
+  mid: '#9cc8ea', zenith: '#4f97de', horizon: '#cfe6f2', fog: '#d4e6ef', sun: '#fff4e2', sunI: 3.0,
+  hemiSky: '#c6ddf2', hemiGround: '#8f8362', hemiI: 1.1, cloudLit: '#ffffff', cloudShade: '#c2cedd', cloudUnder: '#e6edf2',
   stars: 0, glow: 0, water: '#5fb0d6',
 };
 const GOLDEN: SkyKey = {
-  mid: '#f6dfb2', zenith: '#5a8ec6', horizon: '#ffd49c', fog: '#f3d1aa', sun: '#ffc27a', sunI: 2.6,
-  hemiSky: '#e7cfb0', hemiGround: '#a37b5a', hemiI: 1.3, cloudLit: '#ffe2bb', cloudShade: '#c7a59b', cloudUnder: '#ffc39a',
+  mid: '#f6dfb2', zenith: '#5a8ec6', horizon: '#ffd49c', fog: '#f3d1aa', sun: '#ffc27a', sunI: 3.1,
+  hemiSky: '#d9c9b3', hemiGround: '#8a6a52', hemiI: 1.0, cloudLit: '#ffe2bb', cloudShade: '#c7a59b', cloudUnder: '#ffc39a',
   stars: 0, glow: 0.15, water: '#7fb4c8',
 };
 const SUNSET: SkyKey = {
@@ -61,8 +61,8 @@ const SUNSET: SkyKey = {
   stars: 0.05, glow: 0.6, water: '#c08a7a',
 };
 const EVENING: SkyKey = {
-  mid: '#2a5468', zenith: '#13304f', horizon: '#41707f', fog: '#30566a', sun: '#a9c3da', sunI: 0.75,
-  hemiSky: '#567a96', hemiGround: '#2a3440', hemiI: 1.15, cloudLit: '#7495aa', cloudShade: '#2d4354', cloudUnder: '#4f6f86',
+  mid: '#2a5468', zenith: '#13304f', horizon: '#4a7a88', fog: '#35606f', sun: '#b3cbe0', sunI: 1.0,
+  hemiSky: '#6688a3', hemiGround: '#2f3b45', hemiI: 1.5, cloudLit: '#7495aa', cloudShade: '#2d4354', cloudUnder: '#4f6f86',
   stars: 0.55, glow: 1, water: '#3c6680',
 };
 
@@ -84,6 +84,7 @@ export interface SkyState {
   /** Unit vector of the main light: the sun by day, the moon by night. */
   lightDir: Vector3;
   zenith: Color;
+  mid: Color;
   horizon: Color;
   fog: Color;
   sun: Color;
