@@ -60,6 +60,7 @@ export const LINES = {
   tomorrow: 'Someone else will find the island tomorrow. Come back and see who it is.',
   back: 'You came back. Let me tell you what happened.',
   quiet: 'It was quiet while you were away. Everyone slept well.',
+  newcomer: 'And look, someone new is drifting this way.',
   menu: ['Tell us a story', 'Play us a song', 'Send a lantern', 'More'],
   more: ['Paint the island', 'Visit an island', 'Take a postcard', 'More'],
   last: ['Invite a friend', 'Head home', 'Who lives here?', 'Back'],
@@ -335,6 +336,33 @@ export function createFlow(
     return { traveler, choices, near };
   };
 
+  /** A traveler drifts in, talks, and (if asked) stays: the house goes up. True when built. */
+  const welcome = async (): Promise<boolean> => {
+    const came = await arrival();
+    const traveler = came?.traveler;
+    let builtNow = false;
+    if (traveler) {
+      const stays = await talk(traveler, came.choices, true, came.near);
+      if (stays) {
+        await build(traveler);
+        builtNow = true;
+        store.phase.value = 'goodnight';
+        await pipSay(LINES.built);
+      } else {
+        void within(mind.dismiss?.(traveler.id), 4000, undefined);
+        await pipSay(LINES.leftEarly);
+      }
+    }
+    store.phase.value = 'goodnight';
+    await pipSay(LINES.tomorrow);
+    try {
+      await mind.save();
+    } catch (error) {
+      console.error('[wf] the island could not be saved', error);
+    }
+    return builtNow;
+  };
+
   // Scenarios drive the evening themselves; a page under automation gets no surprises.
   const automated = (): boolean => typeof navigator !== 'undefined' && navigator.webdriver === true && !/[?&]sky=1/.test(location.search);
   // ---- the evening offer: once the island has a neighbour, Pip offers a story or a song
@@ -588,6 +616,8 @@ export function createFlow(
         store.phase.value = 'greet';
         life.pip.hover();
         if (later) {
+          // The next traveler is fetched while Pip tells the news, so they come at once.
+          const coming = within(Promise.resolve(mind.nextTraveler()), 15000, null as unknown as Resident);
           const side = await palm(5000);
           void side;
           store.phase.value = 'news';
@@ -601,35 +631,19 @@ export function createFlow(
           void within(mind.seen?.(events.slice(0, 3)), 4000, undefined);
           // Notes from guests: one is read aloud on the way in.
           await within(parts.readNote?.() ?? false, 30000, false);
-          goFree();
+          // As Pip promised: someone new drifts in on every visit.
+          await coming;
+          store.speaker.value = 'pip';
+          await pipSay(LINES.newcomer);
+          const builtNow = await welcome();
+          goFree({ built: builtNow });
           return;
         }
         await pipSay(desk() ? LINES.helloDesk : LINES.hello);
         store.phase.value = 'palm';
         await palm(9000);
         await pipSay(desk() ? LINES.landedDesk : LINES.landed);
-        const came = await arrival();
-        const traveler = came?.traveler;
-        let builtNow = false;
-        if (traveler) {
-          const stays = await talk(traveler, came.choices, true, came.near);
-          if (stays) {
-            await build(traveler);
-            builtNow = true;
-            store.phase.value = 'goodnight';
-            await pipSay(LINES.built);
-          } else {
-            void within(mind.dismiss?.(traveler.id), 4000, undefined);
-            await pipSay(LINES.leftEarly);
-          }
-        }
-        store.phase.value = 'goodnight';
-        await pipSay(LINES.tomorrow);
-        try {
-          await mind.save();
-        } catch (error) {
-          console.error('[wf] the island could not be saved', error);
-        }
+        const builtNow = await welcome();
         goFree({ built: builtNow });
       } finally {
         playing = false;

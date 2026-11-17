@@ -10,6 +10,11 @@
  *
  * The person sits at the origin facing −z (world.seat). The world ticks itself from the
  * render loop; call world.update() yourself only when rendering without the sky dome.
+ *
+ * Budget: each render the camera sets a view cone (cull.ts). Grass, flowers and cloud puffs
+ * outside it are not drawn, far grass is thinner, and from the seat the plants behind houses
+ * are left out. Houses, trees, bushes and rocks far from the viewer use simpler versions
+ * (lod.ts), and only the four nearest houses show their small details.
  */
 import {
   Color,
@@ -162,7 +167,7 @@ export interface World {
   groundY(x: number, z: number): number;
   /** Rain and clear skies: rain streaks, rings on the pond, darker light, a rainbow after. */
   weather: { set(kind: WeatherKind): void; readonly kind: WeatherKind };
-  /** Sends a big soft cloud whale gliding past the island (about 75 s); resolves when gone. */
+  /** A soft cloud whale and her calf swim an arc round the front of the island (about 75 s); resolves when gone. */
   skyWhale(): Promise<void>;
   /**
    * A shooting star at night that lands glowing within reach of the seat. Resolves when it
@@ -178,6 +183,7 @@ export interface World {
   readonly fire: Vector3;
   /** Per-frame tick (runs on its own from the sky's render callback). */
   update(timeMs?: number): void;
+  /** Triangles drawn for the last view (far versions, grass and clouds in view), houses, props. */
   stats(): { triangles: number; houses: number; props: number; parts: Record<string, number> };
   dispose(): void;
 }

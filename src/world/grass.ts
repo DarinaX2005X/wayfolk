@@ -656,13 +656,15 @@ export function createMeadow(parent: Object3D, land: Land): Meadow {
     version++;
   };
 
-  const levels = new Float32Array(1);
-  let lv = levels;
-  let lastKey = '';
+  // share of each chunk drawn (0 = out of view); repacked only when it changes
+  let lv = new Float32Array(1);
+  let lastVersion = -1;
+  let lastSeat = false;
+  let packs = 0;
   const cull = (cone: ViewCone): void => {
     if (lv.length < chunks.length) lv = new Float32Array(chunks.length);
     const atSeat = !cone.active || Math.hypot(cone.eye.x - SEAT_EYE.x, cone.eye.z - SEAT_EYE.z) < 0.9;
-    let key = `${version}|${atSeat ? 1 : 0}|`;
+    let changed = version !== lastVersion || atSeat !== lastSeat;
     for (let i = 0; i < chunks.length; i++) {
       const c = chunks[i];
       let k = 0;
@@ -674,11 +676,13 @@ export function createMeadow(parent: Object3D, land: Land): Meadow {
             break;
           }
       }
+      if (lv[i] !== k) changed = true;
       lv[i] = k;
-      key += k === 1 ? 'a' : k === 0 ? '-' : k > 0.7 ? 'b' : k > 0.55 ? 'c' : 'd';
     }
-    if (key === lastKey) return;
-    lastKey = key;
+    if (!changed) return;
+    lastVersion = version;
+    lastSeat = atSeat;
+    const key = String(++packs);
     for (const kd of kinds) {
       if (!kd.packer) continue;
       let n = 0;

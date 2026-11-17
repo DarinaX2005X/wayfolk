@@ -1,0 +1,17 @@
+World triangles per part, 12 houses, 1280x800 at 72 deg vertical FOV (node tests/world/budget.mjs).
+Before (17.11, stage 02 code): nothing was culled, so every view drew the same.
+
+part                                 before (any view)   seat: houses  seat: pier  seat: left  seat: cloud sea  seat: down  glide: pier  glide: sand spit
+grass & flowers                      72.5k               25.1k         19.8k       21.0k       12.6k            24.6k       23.2k        28.2k
+houses                               38.0k               25.4k         25.4k       25.4k       25.4k            25.4k       21.0k        26.6k
+static (cliffs, porch, pier, trees)  30.4k               27.5k         27.5k       27.5k       27.5k            27.5k       27.1k        27.4k
+clouds                               29.1k               13.6k         13.1k       14.6k       12.4k            14.6k       16.7k        12.9k
+horizon islands                      25.3k               10.2k         10.2k       10.2k       10.2k            10.2k       10.2k        10.2k
+house details                        16.6k (34-42k away from the seat)  16.6k  16.6k  16.6k  16.6k  16.6k  3.5k  19.2k
+bushes & rocks                       13.5k               10.3k         10.3k       10.3k       10.3k            10.3k       8.8k         10.6k
+ground                               6.6k                6.6k          6.6k        6.6k        6.6k             6.6k        6.6k         6.6k
+other (sky, paths, water, life)      3.6k                3.6k          3.6k        3.6k        3.6k             3.6k        3.6k         3.6k
+renderer total                       235.6k              139.0k        133.1k      135.8k      125.2k           139.5k      120.7k       145.3k
+draw calls                           39                  39            39          39          37               39          39           39
+
+The sky whale and calf add 7.7k (5.5k + 2.2k) and one or two draw calls while they pass.
