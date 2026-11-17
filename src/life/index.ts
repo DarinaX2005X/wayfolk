@@ -181,6 +181,11 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
       pipAgent.mode = 'hover';
       pipAgent.goalFn = null;
     },
+    /** Puts Pip at a point at once (stills for the cover, where he must already be there). */
+    place(p: Vector3): void {
+      pipAgent.pos.copy(p);
+      pipAgent.vel.set(0, 0, 0);
+    },
     /** Where Pip hovers from the head (metres ahead, right, below); the page keeps him further off than a headset. */
     setHover(o: { ahead: number; side: number; drop: number }): void {
       flockEnv.hover = o;

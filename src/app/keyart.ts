@@ -204,7 +204,7 @@ export function createKeyArt(app: App, mods: Modules, parts: { rig: Rig; guide: 
       // Off the island over the clouds, the island between the eye and the low sun.
       const sun = ((world as { sky?: { sunDir?: Vector3 } }).sky?.sunDir ?? new Vector3(0.6, 0.1, -0.8)).clone().setY(0).normalize();
       from = centre.clone().addScaledVector(sun, -30).add(new Vector3(0, 4.2, 0));
-      to = centre.clone().add(new Vector3(0, 2.6, 0));
+      to = centre.clone().add(new Vector3(0, 3.6, 0));
       fov = 50;
     } else {
       // A few steps down the grass from the porch, looking toward the pier and the cloud sea.
@@ -213,7 +213,8 @@ export function createKeyArt(app: App, mods: Modules, parts: { rig: Rig; guide: 
       const stand = seat.clone().addScaledVector(v, 3.2).addScaledVector(l, -0.6);
       stand.y = groundAt(stand.x, stand.z);
       from = stand.clone().add(new Vector3(0, EYE_HEIGHT, 0));
-      to = from.clone().addScaledVector(v, 10).add(new Vector3(0, -0.85, 0));
+      // Looking a touch up, so the top third of the frame is open sky for the wordmark.
+      to = from.clone().addScaledVector(v, 10).add(new Vector3(0, 0.3, 0));
       fov = 54;
     }
     cam = { from, to, fov };
@@ -233,11 +234,13 @@ export function createKeyArt(app: App, mods: Modules, parts: { rig: Rig; guide: 
     perch.position.set(0, 0.022, 0.005);
     hand.add(perch);
     void life.pip.landOn({ object: perch, palmNormal: { x: 0, y: 1, z: 0 }, tracked: () => true });
+    hand.updateMatrixWorld(true);
+    (life.pip as { place?: (p: Vector3) => void }).place?.(perch.getWorldPosition(new Vector3()).add(new Vector3(0, 0.08, 0)));
     // Neighbours on the grass, turned to the person, waving now and then.
     const view = dock.clone().sub(seat).setY(0).normalize();
     const lat = new Vector3(-view.z, 0, view.x);
     const ahead = (k: number, s: number): Vector3 => from.clone().setY(0).addScaledVector(view, k).addScaledVector(lat, s);
-    const spots: Vector3[] = which === 2 ? [ahead(1.7, -0.45), ahead(5.8, -1.5), ahead(6.8, 0.9)] : which === 1 ? [ahead(4.4, -1.1), ahead(5.6, 0.7), ahead(40, 40)] : [ahead(60, 60), ahead(61, 60), ahead(62, 60)];
+    const spots: Vector3[] = which === 2 ? [ahead(2.7, -0.5), ahead(6.2, -1.6), ahead(7.2, 0.2)] : which === 1 ? [ahead(3.6, -1.3), ahead(4.8, -0.15), ahead(40, 40)] : [ahead(60, 60), ahead(61, 60), ahead(62, 60)];
     folk.forEach((r, i) => {
       const p = spots[i];
       life.spawn(r, { x: p.x, z: p.z });
@@ -245,7 +248,8 @@ export function createKeyArt(app: App, mods: Modules, parts: { rig: Rig; guide: 
     // A balloon traveler drifting in over the cloud sea, in the middle band of the view.
     const balloon = createVehicle('balloon', '#e9813f', '#f3e3c3');
     if (which !== 3) {
-      balloon.mesh.position.copy(dock).addScaledVector(out, 14).addScaledVector(side, 4).add(new Vector3(0, 1.8, 0));
+      // Over the cloud sea at the right of the view, a little above the horizon.
+      balloon.mesh.position.copy(from).addScaledVector(fwd, 26).addScaledVector(right, 16.3).addScaledVector(up, 0.5);
     } else {
       balloon.mesh.position.copy(centre).addScaledVector(side, 13).add(new Vector3(0, 3.6, 0)).addScaledVector(out, 6);
     }
@@ -254,7 +258,7 @@ export function createKeyArt(app: App, mods: Modules, parts: { rig: Rig; guide: 
     const t0 = performance.now();
     app.everyFrame(() => balloon.animate((performance.now() - t0) / 1000, 1));
     // Pip flies in from wherever he was; from off the island that takes a while.
-    await wait(which === 3 ? 7000 : 2800);
+    await wait(2800);
     const handAt = hand.getWorldPosition(new Vector3());
     folk.forEach((r, i) => {
       if (which === 2 && i === 0) {
