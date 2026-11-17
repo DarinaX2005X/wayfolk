@@ -28,7 +28,7 @@ import { blob, join, paint, rng } from './geo';
 import { CENTER } from './land';
 import { U } from './materials';
 
-export const SEA_Y = -12;
+export const SEA_Y = -19;
 export const FOG_DENSITY = 0.0026;
 
 function noiseTexture(size = 128): DataTexture {
@@ -159,11 +159,16 @@ export interface Clouds {
 }
 
 function puffGeometry(seed: number): BufferGeometry {
-  const parts = [
-    paint(blob(1, 1, seed, 0.12, 0.62), '#ffffff', { shade: 0, wobble: 0 }, true),
-    paint(blob(0.72, 1, seed + 1, 0.12, 0.7).translate(0.95, -0.08, 0.15), '#ffffff', { shade: 0, wobble: 0 }, true),
-    paint(blob(0.66, 1, seed + 2, 0.12, 0.7).translate(-0.9, -0.12, -0.1), '#ffffff', { shade: 0, wobble: 0 }, true),
+  // a cumulus: a big dome on a flattened base with smaller heads round it
+  const heads: [number, number, number, number][] = [
+    [0, 0.05, 0, 1], [0.95, -0.12, 0.2, 0.72], [-0.9, -0.15, -0.1, 0.68], [0.35, 0.35, -0.45, 0.6], [-0.3, 0.25, 0.5, 0.55], [0.1, -0.25, 0.75, 0.6],
   ];
+  const parts = heads.map(([x, y, z, r], i) => {
+    const g = blob(r, 1, seed + i, 0.08, 0.85);
+    const pos = g.getAttribute('position');
+    for (let k = 0; k < pos.count; k++) if (pos.getY(k) < -r * 0.35) pos.setY(k, -r * 0.35 + (pos.getY(k) + r * 0.35) * 0.25);
+    return paint(g.translate(x, y, z), '#ffffff', { shade: 0, wobble: 0 }, true);
+  });
   return join(parts);
 }
 
@@ -200,12 +205,12 @@ export function createClouds(parent: Object3D): Clouds {
   const r = rng(2024);
   type Ring = { n: number; r0: number; r1: number; y0: number; y1: number; s0: number; s1: number; sq: number; speed: number };
   const rings: Ring[] = [
-    { n: 34, r0: 15, r1: 46, y0: -15, y1: -8.5, s0: 4, s1: 8, sq: 0.6, speed: 0.0022 },
-    { n: 46, r0: 55, r1: 190, y0: -14, y1: -6, s0: 10, s1: 22, sq: 0.55, speed: 0.0011 },
-    { n: 22, r0: 240, r1: 460, y0: -8, y1: 16, s0: 26, s1: 55, sq: 0.75, speed: 0.0004 },
+    { n: 26, r0: 17, r1: 48, y0: -22, y1: -13, s0: 4, s1: 8, sq: 0.8, speed: 0.0022 },
+    { n: 36, r0: 55, r1: 190, y0: -21, y1: -12, s0: 10, s1: 22, sq: 0.75, speed: 0.0011 },
+    { n: 18, r0: 240, r1: 460, y0: -14, y1: 14, s0: 26, s1: 55, sq: 0.9, speed: 0.0004 },
   ];
   // mist where the waterfall meets the clouds
-  const extra: [number, number, number, number][] = [[-15, -11, -13.5, 4.5], [-13, -12.5, -16, 3.5], [-17, -10, -10, 3.2]];
+  const extra: [number, number, number, number][] = [[-16.5, -16, -15.5, 4.5], [-14.5, -18, -18.5, 3.8], [-18.5, -15, -12, 3.2]];
   const total = rings.reduce((a, b) => a + b.n, 0) + extra.length;
   const puffs = new InstancedMesh(geo, puffMat, total);
   puffs.name = 'world:cloud-puffs';

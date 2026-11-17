@@ -203,8 +203,14 @@ function buildResident(res: Pick<Resident, 'species' | 'colors' | 'trade'>): Res
   const mouthCol = '#5c2b30';
   switch (plan.snout) {
     case 'pointy': {
-      r.part('head', softCone(0.064 * H, 0.1 * H, 14, 0.35), col.light, { pos: [0, 0.074 * H, 0.105 * H], rot: [Math.PI / 2, 0, 0], scale: [1, 1, 0.78], top: col.main, shade: 0.05 });
-      r.part('head', sphere(0.019 * H, 12, 10), col.dark, { pos: [0, 0.083 * H, 0.2 * H], shade: 0, fur: 0, gloss: 0.8 });
+      const long = plan.model === 'fox' ? 1.3 : 1;
+      r.part('head', softCone(0.066 * H, 0.1 * H * long, 18, 0.3), col.light, { pos: [0, 0.074 * H, 0.105 * H], rot: [Math.PI / 2, 0, 0], scale: [1, 1, 0.74], top: col.main, shade: 0.05 });
+      r.part('head', sphere(0.019 * H, 12, 10), col.dark, { pos: [0, 0.08 * H, (0.1 + 0.1 * long) * H], shade: 0, fur: 0, gloss: 0.8 });
+      if (plan.model === 'fox') {
+        // White cheek ruffs make the fox read as a fox from the front.
+        r.part('head', ellipsoid(0.06 * H, 0.05 * H, 0.05 * H, 16, 12), col.light, { pos: [0.088 * H, 0.06 * H, 0.085 * H], rot: [0, 0.6, -0.4], shade: 0.05 });
+        r.part('head', ellipsoid(0.06 * H, 0.05 * H, 0.05 * H, 16, 12), col.light, { pos: [-0.088 * H, 0.06 * H, 0.085 * H], rot: [0, -0.6, 0.4], shade: 0.05 });
+      }
       break;
     }
     case 'button': {
@@ -402,7 +408,7 @@ function addGear(r: Rig, g: Gear, col: { main: string; accent: string; light: st
     case 'apron':
     case 'paint-apron': {
       // Light cloth for a baker or tea-maker, tinted with the accent.
-      const apronCol = g === 'apron' ? new Color(acc).lerp(new Color('#fff6e8'), 0.55).getStyle() : '#f2ead8';
+      const apronCol = g === 'apron' ? new Color(acc).lerp(new Color('#fff8ee'), plan.model === 'fox' || col.accent === acc ? 0.82 : 0.55).getStyle() : '#f2ead8';
       part('apron', ellipsoid(0.088 * B, 0.1, 0.02, 22, 14), apronCol, { pos: [0, -0.095, 0.005 * B], rot: [0.2, 0, 0], shade: 0.06 });
       part('apron', ellipsoid(0.03, 0.022, 0.008, 12, 8), g === 'apron' ? '#fff3e2' : '#e0d3b8', { pos: [0.025, -0.13, 0.027 * B], rot: [0.2, 0, 0], shade: 0 });
       part('torso', torus(0.112 * B, 0.006, 4, 22), g === 'apron' ? acc : '#e0d3b8', { pos: [0, 0.07, 0.0], rot: [Math.PI / 2, 0, 0], scale: [1, 0.93, 1], shade: 0 });

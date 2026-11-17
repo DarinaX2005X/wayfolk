@@ -12,7 +12,7 @@
  * flow finishes on any device, and never depends on a model answer: if a call fails or
  * takes too long, a prepared line takes its place.
  */
-import type { HouseSpec, Reply, Resident } from '../mind/types';
+import type { HouseSpec, Reply, Resident, WorldEvent } from '../mind/types';
 import { say as caption } from '../feel/captions';
 import { sound } from '../feel/sound';
 import type { App } from './boot/world';
@@ -97,7 +97,7 @@ export function createFlow(
         const h = hands.get(s);
         if (h.tracked && h.palmUp) {
           pipOn = s;
-          life.pip.landOn(h.anchor);
+          void life.pip.landOn(hands.perch(s));
           sound.play('bloom', { at: h.palm });
           return s;
         }
@@ -109,16 +109,10 @@ export function createFlow(
 
   const residentName = (id: string): string => mind.state?.residents?.find((r) => r.id === id)?.name ?? mind.state?.pending?.name ?? '';
 
-  const talk = async (r: Resident): Promise<boolean> => {
+  const talk = async (r: Resident, first?: string[]): Promise<boolean> => {
     store.phase.value = 'talk';
     store.talkingTo.value = r.id;
-    let choices: string[] = [...LINES.welcomeChoices];
-    try {
-      const first = mind.greet?.(r.id);
-      if (first?.choices?.length) choices = first.choices.slice(0, 3);
-    } catch {
-      // The prepared first choices stay.
-    }
+    let choices: string[] = first?.length ? first.slice(0, 3) : [...LINES.welcomeChoices];
     let turns = 0;
     voice.armed = true;
     try {
@@ -151,7 +145,9 @@ export function createFlow(
           ? { text: "I'd like that very much. Show me where.", choices: [], intent: 'stay' }
           : { text: 'It is lovely up here. The clouds look like bread rising.', choices: [LINES.stayNudge, 'Tell me more', 'Safe travels'], intent: 'chat' };
         life.emote(r.id, 'talk');
-        const reply = await within(mind.talk(r.id, input), 9000, fallback);
+        const reply = await within(mind.talk(r.id, input), 12000, { ...fallback, prepared: true });
+        if (reply.heard) caption({ source: 'You', text: reply.heard });
+        store.prepared.value = Boolean(r.prepared || reply.prepared);
         await within(life.say(r.id, reply.text, { name: r.name, voice: r.voice }), 2500 + reply.text.length * 70, undefined);
         if (reply.intent === 'stay') return true;
         if (reply.intent === 'leave') return false;
@@ -171,7 +167,7 @@ export function createFlow(
     await pipSay(desk() ? LINES.placeDesk : LINES.place);
     const spot = await placement.choose();
     store.phase.value = 'build';
-    const colors = HOUSE_COLORS[r.trade] ?? { ...HOUSE_COLORS.default, roof: r.colors.accent };
+    const colors = r.house?.colors ?? HOUSE_COLORS[r.trade] ?? { ...HOUSE_COLORS.default, roof: r.colors.accent };
     const spec: HouseSpec = {
       id: `h-${r.id}`,
       residentId: r.id,
@@ -179,8 +175,8 @@ export function createFlow(
       pos: { x: spot.x, z: spot.z },
       rotY: spot.rotY,
       colors,
-      props: [],
-      sign: r.name,
+      props: r.house?.props ?? [],
+      sign: r.house?.sign ?? r.name,
       builtAt: Date.now(),
     };
     const steps = world.buildPlan(spec);
@@ -192,7 +188,8 @@ export function createFlow(
       s.object3d.quaternion.copy(s.target.quat);
       s.object3d.scale.copy(s.target.scale);
     }
-    world.lightHouse?.(spec.id, true);
+    if (world.finishHouse) world.finishHouse(spec.id);
+    else world.lightHouse?.(spec.id, true);
     sound.play('bloom');
     try {
       await mind.settle(r, spec);
@@ -206,17 +203,41 @@ export function createFlow(
     life.emote(r.id, 'happy');
   };
 
-  const arrival = async (): Promise<Resident | null> => {
+  const arrival = async (): Promise<{ traveler: Resident; choices?: string[] } | null> => {
     store.phase.value = 'arrive';
-    const traveler = await within(Promise.resolve(mind.nextTraveler()), 6000, null as unknown as Resident);
+    const traveler = await within(Promise.resolve(mind.nextTraveler()), 15000, null as unknown as Resident);
     if (!traveler) return null;
+    store.prepared.value = Boolean(traveler.prepared);
     await life.arrive(traveler, traveler.vehicle);
-    await within(life.say(traveler.id, traveler.story.intro, { name: traveler.name, voice: traveler.voice }), 3000 + traveler.story.intro.length * 70, undefined);
-    return traveler;
+    // The first words come at once, without a model call.
+    let intro = traveler.story.intro;
+    let choices: string[] | undefined;
+    try {
+      const g = mind.greet?.(traveler.id);
+      if (g?.text) intro = g.text;
+      choices = g?.choices;
+    } catch {
+      // The intro of the card stays.
+    }
+    await within(life.say(traveler.id, intro, { name: traveler.name, voice: traveler.voice }), 3000 + intro.length * 70, undefined);
+    return { traveler, choices };
   };
 
+  let ticking = false;
   const goFree = (): void => {
     store.phase.value = 'free';
+    store.prepared.value = false;
+    // News during the visit: trips that came back, mail, guests.
+    if (!ticking && mind.tick) {
+      ticking = true;
+      app.clock.timers.set(function next() {
+        void within(mind.tick!(Date.now()), 8000, [] as WorldEvent[]).then(async (events) => {
+          if (store.phase.peek() === 'free' && !playing) for (const e of events.slice(0, 2)) await pipSay(e.text);
+          if (events.length) void within(mind.seen?.(events), 4000, undefined);
+          app.clock.timers.set(next, 60_000);
+        });
+      }, 60_000);
+    }
     glide.enable(true);
     gifts.setUp();
     gifts.enable(true);
@@ -276,9 +297,10 @@ export function createFlow(
         store.phase.value = 'palm';
         await palm(9000);
         await pipSay(LINES.landed);
-        const traveler = await arrival();
+        const came = await arrival();
+        const traveler = came?.traveler;
         if (traveler) {
-          const stays = await talk(traveler);
+          const stays = await talk(traveler, came.choices);
           if (stays) {
             await build(traveler);
             store.phase.value = 'goodnight';
@@ -334,7 +356,7 @@ export function createFlow(
     palmDown = false;
     if (pipOn !== up) {
       pipOn = up;
-      life.pip.landOn(hands.get(up).anchor);
+      void life.pip.landOn(hands.perch(up));
     }
     void flow.pipMenu();
   });

@@ -21,6 +21,8 @@ export interface FlockEnv {
   time: number;
   night: number;
   perches: Vector3[];
+  /** Wind velocity at a point, m/s (the island's shared wind). */
+  wind?: (pos: Vector3, out: Vector3) => Vector3;
 }
 
 let seed = 9;
@@ -56,6 +58,14 @@ export class BirdAgent {
   private landSquash = 0;
   private glide = 0;
   private personal = rnd() * 100;
+  private prevYaw = 0;
+  private bank = 0;
+  private fluff = 0;
+  private eyeX = 0;
+  private eyeGoal = 0;
+  private eyeAt = 0;
+  private reach = 0;
+  private readonly windV = new Vector3();
   circleCenter = new Vector3();
   circleRadius = 2.5;
   /** Mouth envelope while speaking (0..1), set by speech. */
@@ -63,8 +73,8 @@ export class BirdAgent {
   carrying = false;
   onLanded: (() => void) | null = null;
 
-  constructor(readonly lead: boolean, colorIndex: number, scale: number) {
-    this.model = createBirdModel(lead ? PIP_COLORS : FLOCK_COLORS[colorIndex % FLOCK_COLORS.length], scale, lead);
+  constructor(readonly lead: boolean, colorIndex: number, scale: number, detail = 1) {
+    this.model = createBirdModel(lead ? PIP_COLORS : FLOCK_COLORS[colorIndex % FLOCK_COLORS.length], scale, lead, detail);
     this.model.mesh.matrixAutoUpdate = true;
   }
 
@@ -74,6 +84,8 @@ export class BirdAgent {
 
   update(dt: number, env: FlockEnv, flock: BirdAgent[]): void {
     const t = env.time;
+    if (env.wind) env.wind(this.pos, this.windV);
+    else this.windV.set(0, 0, 0);
     let flying = true;
     let landingPoint: Vector3 | null = null;
     let omega = 0;
@@ -101,6 +113,7 @@ export class BirdAgent {
         // Approach from above, then settle down onto the point.
         tA.copy(landingPoint).addScaledVector(this.goalUp, d > 0.3 ? 0.22 : 0);
         this.seek(tA, d > 0.3 ? 2.6 : 7.5, dt, 3.5);
+        this.reach += ((d < 0.35 ? 1 : 0) - this.reach) * (1 - Math.exp(-dt * 10));
         if (d < 0.02 && this.vel.length() < 0.5) {
           this.landed = true;
           this.landSquash = 1;
@@ -112,9 +125,11 @@ export class BirdAgent {
         // Soft follow: a stiff spring, never a snap.
         this.seek(landingPoint, 16, dt, 6);
         flying = false;
+        this.reach += (0 - this.reach) * (1 - Math.exp(-dt * 8));
       }
     } else if (omega === 0) {
       this.landed = false;
+      this.reach += (0 - this.reach) * (1 - Math.exp(-dt * 6));
       switch (this.mode) {
         case 'flock':
           this.boids(dt, env, flock);
@@ -134,7 +149,7 @@ export class BirdAgent {
           const sx = -fz / fl;
           const sz = fx / fl;
           const w = Math.sin(t * 0.9 + this.personal) * 0.08;
-          tA.set(env.head.x + (fx / fl) * 0.6 + sx * (0.16 + w), env.head.y - 0.12 + Math.sin(t * 1.8) * 0.04, env.head.z + (fz / fl) * 0.6 + sz * (0.16 + w));
+          tA.set(env.head.x + (fx / fl) * 0.7 + sx * (0.34 + w), env.head.y - 0.2 + Math.sin(t * 1.8) * 0.04, env.head.z + (fz / fl) * 0.7 + sz * (0.34 + w));
           this.seek(tA, 3.2, dt, 3);
           this.look = env.head;
           break;
@@ -205,6 +220,8 @@ export class BirdAgent {
     tQv.copy(this.pos).sub(env.head);
     const hd = tQv.length();
     if (hd < 1.6) acc.addScaledVector(tQv.normalize(), (1.6 - hd) * 12);
+    // Ride the wind a little: drift with it and lean into gusts.
+    acc.addScaledVector(this.windV, 0.18);
     // A little noise so the flock never looks scripted.
     acc.x += Math.sin(t * 1.7 + this.personal) * 0.8;
     acc.y += Math.sin(t * 1.3 + this.personal * 1.7) * 0.5;
@@ -247,8 +264,16 @@ export class BirdAgent {
       tA.y *= flying && s > 0.25 ? 0.6 : 0.2;
       if (tA.lengthSq() < 1e-6) return;
       tA.normalize();
+      const yawNow = Math.atan2(tA.x, tA.z);
+      let dYaw = yawNow - this.prevYaw;
+      dYaw = Math.atan2(Math.sin(dYaw), Math.cos(dYaw));
+      this.prevYaw = yawNow;
+      const bankGoal = Math.max(-0.7, Math.min(0.7, (-dYaw / Math.max(dt, 1e-3)) * 0.22));
+      this.bank += (bankGoal - this.bank) * (1 - Math.exp(-dt * 4));
       tM.lookAt(tB.set(0, 0, 0), tA.negate(), UP);
       tQ.setFromRotationMatrix(tM);
+      tQ2.setFromAxisAngle(AXIS_Z, this.bank);
+      tQ.multiply(tQ2);
     } else {
       // Landed: up from the surface, face the person (or what it looks at).
       tA.copy(this.look ?? env.head).sub(this.pos);
@@ -326,7 +351,26 @@ export class BirdAgent {
     p.preen += ((preenOn ? this.preen * (0.7 + Math.sin(t * 14) * 0.15) : 0) - p.preen) * (1 - Math.exp(-dt * 8));
     p.squash = squash;
     p.tail = Math.sin(t * (flying ? 3 : 1.5) + this.personal) * (flying ? 0.3 : 0.15) + (this.mouth > 0 ? Math.sin(t * 12) * 0.2 : 0);
-    p.bodyPitch = flying ? Math.max(-0.4, Math.min(0.5, -this.vel.y * 0.15)) : 0;
+    p.bodyPitch = flying ? Math.max(-0.4, Math.min(0.5, -this.vel.y * 0.15)) - this.reach * 0.55 : 0;
+    p.reach = this.reach;
+    if (this.reach > 0.5) p.effort = 1;
+    // Wind in the bird's own frame; a gust fluffs a sitting bird up.
+    tQ.copy(this.quat).invert();
+    tA.copy(this.windV).applyQuaternion(tQ);
+    p.windX = tA.x;
+    p.windZ = tA.z;
+    const gust = Math.hypot(this.windV.x, this.windV.z);
+    const fluffGoal = !flying ? Math.max(0, Math.min(1, (gust - 4.5) / 3)) + (env.night > 0.6 ? 0.5 : 0) : 0;
+    this.fluff += (Math.min(1, fluffGoal) - this.fluff) * (1 - Math.exp(-dt * (fluffGoal > this.fluff ? 6 : 1.5)));
+    p.fluff = this.fluff;
+    if (this.fluff > 0.4 && !flying) p.blink = Math.max(p.blink, 0.45);
+    // Quick glances.
+    if (t > this.eyeAt) {
+      this.eyeGoal = rnd() < 0.5 ? 0 : (rnd() - 0.5) * 2;
+      this.eyeAt = t + 0.5 + rnd() * 2;
+    }
+    this.eyeX += (this.eyeGoal - this.eyeX) * (1 - Math.exp(-dt * 30));
+    p.eyeX = this.eyeX;
     this.model.apply(p);
     // Hop offset must be applied after the pose so the mesh position is right.
     this.model.mesh.position.copy(this.pos);
@@ -335,6 +379,8 @@ export class BirdAgent {
 }
 
 const tQv = new Vector3();
+const tQ2 = new Quaternion();
+const AXIS_Z = new Vector3(0, 0, 1);
 
 /** Read a hand: palm centre and palm normal in world space; false when not tracked. */
 export function readHand(h: HandLike, outPos: Vector3, outUp: Vector3): boolean {

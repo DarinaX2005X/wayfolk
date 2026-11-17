@@ -255,16 +255,8 @@ export function lifeMaterial(): MeshStandardMaterial {
     shader.uniforms.uRim = rimUniform;
     shader.uniforms.uFill = fillUniform;
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>
-attribute float glow;
-attribute vec2 surf;
-varying float vGlow;
-varying vec2 vSurf;
-varying vec3 vLocal;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>
-vGlow = glow;
-vSurf = surf;
-vLocal = position;');
+      .replace('#include <common>', '#include <common>\nattribute float glow;\nattribute vec2 surf;\nvarying float vGlow;\nvarying vec2 vSurf;\nvarying vec3 vLocal;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlow = glow;\nvSurf = surf;\nvLocal = position;');
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
@@ -281,8 +273,7 @@ vLocal = position;');
           '  return mix(mix(mix(lifeHash(i), lifeHash(i + vec3(1,0,0)), f.x), mix(lifeHash(i + vec3(0,1,0)), lifeHash(i + vec3(1,1,0)), f.x), f.y),',
           '             mix(mix(lifeHash(i + vec3(0,0,1)), lifeHash(i + vec3(1,0,1)), f.x), mix(lifeHash(i + vec3(0,1,1)), lifeHash(i + vec3(1,1,1)), f.x), f.y), f.z);',
           '}',
-        ].join('
-'),
+        ].join('\n'),
       )
       .replace(
         '#include <color_fragment>',
@@ -292,11 +283,9 @@ vLocal = position;');
           'float lifeBlot = lifeNoise(vLocal * 38.0);',
           'float lifeStrand = lifeNoise(vec3(vLocal.x * 260.0, vLocal.y * 55.0, vLocal.z * 260.0));',
           'diffuseColor.rgb *= 1.0 + vSurf.x * ((lifeBlot - 0.5) * 0.1 + (lifeStrand - 0.5) * 0.1);',
-        ].join('
-'),
+        ].join('\n'),
       )
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>
-roughnessFactor = mix(roughnessFactor, 0.18, vSurf.y);')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.18, vSurf.y);')
       .replace(
         '#include <opaque_fragment>',
         [
@@ -308,8 +297,7 @@ roughnessFactor = mix(roughnessFactor, 0.18, vSurf.y);')
           'outgoingLight += uFill * diffuseColor.rgb;',
           'outgoingLight = mix(outgoingLight, diffuseColor.rgb * 1.25, vGlow);',
           '#include <opaque_fragment>',
-        ].join('
-'),
+        ].join('\n'),
       );
   };
   m.customProgramCacheKey = () => 'life-clay-2';

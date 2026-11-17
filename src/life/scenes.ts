@@ -41,6 +41,8 @@ export interface ArrivalEnv {
   out: Vector3;
   /** Where the traveler walks to after stepping off. */
   landing: Vector3;
+  /** Where the vehicle waits beside the landing, when the pier says so. */
+  hang?: Vector3;
   head: () => Vector3;
   greeters: BirdAgent[];
   /** Cloud-sea level, below the island. */
@@ -79,7 +81,8 @@ export class Arrival implements Scene {
     const side = tA.set(-out.z, 0, out.x);
     const deckY = env.dock.y;
     const seatY = this.vehicle.seat.y;
-    this.end.copy(env.dock).addScaledVector(out, kind === 'cloud-whale' ? 1.6 : 0.9);
+    if (env.hang) this.end.set(env.hang.x, 0, env.hang.z).addScaledVector(out, kind === 'cloud-whale' ? 0.8 : 0);
+    else this.end.copy(env.dock).addScaledVector(out, kind === 'cloud-whale' ? 1.6 : 0.9);
     this.end.y = deckY - seatY + (this.vehicle.seatPose === 'sit' ? 0.05 : 0.02);
     if (kind === 'umbrella') {
       this.start.copy(this.end).addScaledVector(out, 10).addScaledVector(side, -5);
@@ -230,6 +233,7 @@ interface PieceState {
   /** Target world position and the offset from the piece origin to its top centre. */
   world: Vector3;
   topOffset: Vector3;
+  bottom: number;
   radius: number;
   source: Vector3;
   landed: boolean;
@@ -287,23 +291,26 @@ export class Build implements Scene {
       const center = box.getCenter(new Vector3());
       const size = box.getSize(new Vector3());
       const topOffset = new Vector3(center.x - world.x, box.max.y - world.y, center.z - world.z);
+      const bottom = box.min.y - world.y;
       const radius = Number.isFinite(size.x) ? Math.max(0.15, size.length() / 2) : 0.4;
       this.site.add(world);
       n++;
-      this.pieces.push({ step, parent, pos, quat, scale, world, topOffset, radius, source: new Vector3(), landed: false, appeared: false });
+      this.pieces.push({ step, parent, pos, quat, scale, world, topOffset, bottom: Number.isFinite(bottom) ? bottom : 0, radius, source: new Vector3(), landed: false, appeared: false });
       o.visible = false;
     }
     if (n) this.site.divideScalar(n);
-    // The cloud edge beyond the house, as seen from the island centre.
-    const dir = tA.copy(this.site).sub(env.center).setY(0);
-    if (dir.lengthSq() < 1) dir.copy(env.center).sub(env.seat).setY(0);
-    if (dir.lengthSq() < 1e-6) dir.set(0, 0, -1);
+    // The cloud edge the pieces come from: past the house as seen from the seat, turned
+    // a little aside so the house never hides them, at the rim where the clouds meet it.
+    const dir = tA.copy(this.site).sub(env.seat).setY(0);
+    if (dir.lengthSq() < 1e-4) dir.set(0, 0, -1);
     dir.normalize();
+    const turnA = 0.55 * (this.site.x - env.center.x >= 0 ? 1 : -1);
+    dir.set(dir.x * Math.cos(turnA) - dir.z * Math.sin(turnA), 0, dir.x * Math.sin(turnA) + dir.z * Math.cos(turnA));
     const side = tB.set(-dir.z, 0, dir.x);
-    const edge = env.center.clone().addScaledVector(dir, env.radius + 2.5);
+    const edge = env.center.clone().addScaledVector(dir, env.radius + 1.2);
     this.pieces.forEach((p, i) => {
       p.source.copy(edge).addScaledVector(side, ((i * 0.618) % 1 - 0.5) * 3.2);
-      p.source.y = env.cloudY + 0.6;
+      p.source.y = env.center.y + 0.4;
     });
     const sizes = this.pieces.map((p) => p.radius);
     this.schedule = planBuild(sizes, env.birds.length);
@@ -329,9 +336,10 @@ export class Build implements Scene {
     if (t < rise0) return -1;
     if (t < it.pick) {
       const u = smooth((t - rise0) / 0.9);
+      // Rising out of the clouds below the rim.
       out.copy(p.source);
-      out.y = p.source.y - 1.2 + u * 1.2;
-      return 0.4 + 0.6 * u;
+      out.y = this.env.cloudY + (p.source.y - this.env.cloudY) * u;
+      return 0.5 + 0.5 * u;
     }
     const drop = it.land - 0.22;
     if (t < drop) {
@@ -376,7 +384,7 @@ export class Build implements Scene {
       } else {
         if (!p.appeared) {
           p.appeared = true;
-          env.fx.cloud(p.source.clone(), Math.min(1.6, p.radius * 1.4));
+          env.fx.cloud(p.source.clone().setY(env.cloudY + 0.4), Math.min(1.6, p.radius * 1.4));
         }
         o.visible = true;
         // Into parent space.
@@ -400,7 +408,7 @@ export class Build implements Scene {
         }
         if (!p.landed && t >= it.land) {
           p.landed = true;
-          env.fx.dust(p.world.clone().setY(p.world.y + Math.min(0.05, p.topOffset.y * 0.1)), Math.min(1.4, p.radius * 0.8));
+          env.fx.dust(p.world.clone().setY(p.world.y + p.bottom + 0.04), Math.min(1.4, p.radius * 0.8));
           env.audio.knock(p.world, Math.min(3, p.radius * 1.6));
         }
       }

@@ -28,6 +28,7 @@ void main() {
 
 const fragment = /* glsl */ `
 uniform vec3 uZenith;
+uniform vec3 uMid;
 uniform vec3 uHorizon;
 uniform vec3 uFog;
 uniform vec3 uSun;
@@ -48,7 +49,7 @@ void main() {
   vec3 d = normalize(vDir);
   float el = d.y;
   float up = clamp(el, 0.0, 1.0);
-  vec3 c = mix(uHorizon, uZenith, pow(up, 0.5));
+  vec3 c = up < 0.12 ? mix(uHorizon, uMid, smoothstep(0.0, 0.12, up)) : mix(uMid, uZenith, pow(smoothstep(0.12, 1.0, up), 0.55));
   // below the horizon the sky meets the haze over the cloud sea
   c = mix(c, uFog, smoothstep(0.02, -0.12, el));
 
@@ -102,6 +103,7 @@ export function createSky(root: Object3D): SkyRig {
   const material = new ShaderMaterial({
     uniforms: {
       uZenith: { value: new Color() },
+      uMid: { value: new Color() },
       uHorizon: { value: new Color() },
       uFog: { value: new Color() },
       uSun: { value: new Color() },
@@ -141,6 +143,7 @@ export function createSky(root: Object3D): SkyRig {
     hemi,
     apply(s) {
       (u.uZenith.value as Color).copy(s.zenith);
+      (u.uMid.value as Color).copy(s.mid);
       (u.uHorizon.value as Color).copy(s.horizon);
       (u.uFog.value as Color).copy(s.fog);
       (u.uSun.value as Color).copy(s.sun);

@@ -102,6 +102,8 @@ export type Store = {
   talkingTo: Signal<string | null>;
   /** True while the microphone records a clip. */
   listening: Signal<boolean>;
+  /** The traveler or the line now on offer came from the prepared set, not a live model. */
+  prepared: Signal<boolean>;
   /** The last postcard link, once made. */
   postcard: Signal<{ url: string; image: string } | null>;
 };
@@ -119,6 +121,7 @@ export const store: Store = {
   talkingTo: signal<string | null>(null),
   listening: signal(false),
   postcard: signal<{ url: string; image: string } | null>(null),
+  prepared: signal(false),
 };
 
 bindPersist(store.settings, KEYS.settings, sanitizeSettings);

@@ -272,7 +272,7 @@ export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatc
   ground.matrixAutoUpdate = false;
   root.add(ground);
 
-  batch.add('cliff:main', cliffGeometry(land, mainShape, 17));
+  batch.add('cliff:main', cliffGeometry(land, mainShape, 24));
 
   // ---- water: pond, stream, waterfall ----
   const pondY = Land.mainHeight(POND.x + POND.r + 0.2, POND.z) - 0.14;
@@ -376,8 +376,8 @@ export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatc
   const benchItem = CATALOG.bench;
   batch.add('porch:bench', place(kitGeometry('bench', benchItem.scale), [SEAT.x, deckY, SEAT.z + 0.32], [0, 0, 0]));
   batch.add('porch:rug', place(kitGeometry('rug', 0.5), [SEAT.x, deckY + 0.005, SEAT.z - 0.55], [0, 0, 0]));
-  batch.add('porch:lamp', place(kitGeometry('post-lantern', 0.62), [-1.55, deckY, -0.95], [0, Math.PI / 2, 0]));
-  lights.push([-1.55, -0.95, 2.2]);
+  batch.add('porch:lamp', place(kitGeometry('post-lantern', 0.62), [-1.6, deckY, 0.55], [0, Math.PI / 2, 0]));
+  lights.push([-1.6, 0.2, 2.2]);
   const side: [string, number, number, number, number][] = [
     ['tea-table', 1.25, -0.55, -0.4, 0.75],
     ['flower-pot', -1.45, 0.95, 0, 1],
@@ -457,7 +457,7 @@ export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatc
     },
     addIslet(i) {
       const sh = isletShape(i);
-      batch.add(`cliff:${i.id}`, cliffGeometry(land, sh, 8));
+      batch.add(`cliff:${i.id}`, cliffGeometry(land, sh, 11));
       parts.refreshGround();
       bridge(land, batch, i);
       // a few trees on the far side of the islet
@@ -546,7 +546,7 @@ function scatterDecor(
     return true;
   };
   const lotClear = (x: number, z: number, rad: number): boolean => {
-    for (const l of LOTS.slice(0, 12)) if (Math.hypot(x - l.x, z - l.z) < 2.9 + rad) return false;
+    for (const l of LOTS.slice(0, 14)) if (Math.hypot(x - l.x, z - l.z) < 3.0 + rad) return false;
     // keep the line of sight from the seat to the pier open
     if (segDist(x, z, { x: 0.8, z: -1.5 }, PIER.base) < 1.8 + rad) return false;
     return true;
@@ -580,7 +580,7 @@ function scatterDecor(
     if (clearable) decor.push({ key, x, z, r: rad });
     shadows.push([x, z, rad * 1.35, 0.6]);
   };
-  for (const [id, x, z, k] of anchors) if (free(x, z, 0.8)) addTree(id, x, z, k * (0.9 + r() * 0.2), false);
+  for (const [id, x, z, k] of anchors) if (free(x, z, 0.8) && lotClear(x, z, 0.6)) addTree(id, x, z, k * (0.9 + r() * 0.2), false);
   // scatter round the rim and over the hill, leaving the meadow in front open
   const kinds = ['tree-round-a', 'tree-round-b', 'pine-yellow-medium', 'pine-orange-small', 'trees-a-small', 'trees-b-small', 'pine-orange-medium'];
   for (let tries = 0; tries < 900 && n < 44; tries++) {

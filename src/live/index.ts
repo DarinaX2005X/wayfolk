@@ -219,6 +219,7 @@ export function createLive(app: LiveApp, opts: LiveOptions = {}): Live {
   let talking = false;
   let lastSent: Presence | null = null;
   let lastSentAt = 0;
+  let lastReadAt = 0;
   let seq = 0;
   let ctx: AudioContext | null = null;
   const audio = opts.audio ?? (() => {
@@ -278,7 +279,7 @@ export function createLive(app: LiveApp, opts: LiveOptions = {}): Live {
       for (const id of [...views.keys()]) dropView(id);
       if (talking) cancelTalk();
     }
-    emit('state', state, reason, liveMessage(state, reason, client.role));
+    emit('state', state, reason, liveMessage(state, reason, client.role ?? client.intent));
   });
   client.on('welcome', (_room, me) => {
     // A guest waits for the host's snapshot; a host resyncs everyone after a reconnect.
@@ -314,7 +315,9 @@ export function createLive(app: LiveApp, opts: LiveOptions = {}): Live {
     if (data && typeof data === 'object') emit('snapshot', data as IslandState, from);
   });
   client.on('event', (kind, data, from) => {
-    if (!synced) return;
+    // Events already in the snapshot the guest is waiting for are skipped; a peer cannot
+    // pose as one of the signals.
+    if (!synced || RESERVED.has(kind)) return;
     emit(kind, data, from);
   });
   client.on('voice', (note, peer) => {
@@ -336,7 +339,8 @@ export function createLive(app: LiveApp, opts: LiveOptions = {}): Live {
 
   function sendPresence(now: number, force: boolean): void {
     if (!reader || client.state !== 'live' || client.peers.size === 0) return;
-    if (!force && now - lastSentAt < 1000 / PRESENCE_HZ - 4) return;
+    if (!force && now - lastReadAt < 1000 / PRESENCE_HZ - 4) return;
+    lastReadAt = now;
     scratch.talking = talking;
     reader.read(scratch, now);
     if (!force && lastSent && now - lastSentAt < KEEPALIVE_MS && !poseMoved(scratch, lastSent)) return;
@@ -411,7 +415,7 @@ export function createLive(app: LiveApp, opts: LiveOptions = {}): Live {
       return client.reason;
     },
     get message() {
-      return liveMessage(client.state, client.reason, client.role);
+      return liveMessage(client.state, client.reason, client.role ?? client.intent);
     },
     get role() {
       return client.role;

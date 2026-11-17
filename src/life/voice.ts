@@ -151,6 +151,15 @@ export function syllablePlan(text: string, p: VoiceProfile): { syllables: Syllab
     t += d + r.pauseAfter * (sec / p.syllableSec);
     if (r.end !== '') sentenceStart = i + 1;
   }
+  if (t > MAX_SECONDS) {
+    // Very long lines speak faster rather than run on.
+    const k = MAX_SECONDS / t;
+    for (const syl of syllables) {
+      syl.t *= k;
+      syl.d *= k;
+    }
+    t = MAX_SECONDS;
+  }
   return { syllables, duration: t };
 }
 

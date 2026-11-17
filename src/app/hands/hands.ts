@@ -65,6 +65,8 @@ export type Hands = {
   onPinch(fn: PinchFn): () => void;
   /** The hand that holds Pip, or the one that last pinched. */
   primary(): HandState | null;
+  /** The palm as a perch for Pip (+Y of the anchor is out of the palm). */
+  perch(side: Side): { object: Object3D; palmNormal: { x: number; y: number; z: number }; tracked: () => boolean };
   /** Lose a hand on purpose for `seconds` (scenario hook). */
   lose(side: Side, seconds: number): void;
   update(frame: XRFrame | null, now: number, dt: number): void;
@@ -126,6 +128,10 @@ export function createHands(world: World, now: () => number): Hands {
   };
   let historyAt = 0;
   let lastPinched: Side | null = null;
+  const perches = {
+    left: { object: state.left.anchor, palmNormal: { x: 0, y: 1, z: 0 }, tracked: () => state.left.tracked },
+    right: { object: state.right.anchor, palmNormal: { x: 0, y: 1, z: 0 }, tracked: () => state.right.tracked },
+  };
 
   // Hand select events count as a pinch too (the emulator and some runtimes give them
   // before the joints close).
@@ -172,6 +178,7 @@ export function createHands(world: World, now: () => number): Hands {
     left: state.left,
     right: state.right,
     get: (side) => state[side],
+    perch: (side) => perches[side],
     onPinch(fn) {
       listeners.add(fn);
       return () => {

@@ -179,11 +179,11 @@ export function createStandinLife(app: AppHandle, world: WorldPort): LifePort {
     pip: {
       object: pipObj,
       landOn(hand) {
-        pipTarget = hand;
+        pipTarget = ((hand as { object?: Object3D }).object ?? hand) as Object3D;
         pipMode = 'hand';
       },
       follow(hand) {
-        pipTarget = hand;
+        pipTarget = ((hand as { object?: Object3D }).object ?? hand) as Object3D;
         pipMode = 'hand';
       },
       hover() {

@@ -11,11 +11,9 @@
 import type { P2 } from '../mind/types';
 
 export const SEAT: P2 = { x: 0, z: 0 };
-export const CENTER: P2 = { x: -0.5, z: -10.5 };
-export const POND = { x: -7.4, z: -12.2, r: 1.9 };
-/** Where the stream leaves the pond and where it falls off the edge. */
-export const STREAM: [P2, P2] = [{ x: -9.1, z: -12.7 }, { x: -12.2, z: -13.2 }];
-export const HILL = { x: -6.5, z: -20.8, h: 2.3, s: 3.8 };
+export const CENTER: P2 = { x: -0.5, z: -12 };
+export const POND = { x: -8.3, z: -13.6, r: 1.9 };
+export const HILL = { x: -6.0, z: -21.8, h: 2.2, s: 3.9 };
 
 const TAU = Math.PI * 2;
 const angDiff = (a: number, b: number): number => {
@@ -31,12 +29,12 @@ const smooth = (t: number): number => {
 const angleOf = (x: number, z: number): number => Math.atan2(z - CENTER.z, x - CENTER.x);
 
 function baseR(t: number): number {
-  return 12.0 + 1.0 * Math.sin(2 * t + 0.6) + 0.6 * Math.sin(3 * t + 2.1) + 0.35 * Math.sin(5 * t + 0.3) + 0.18 * Math.sin(9 * t + 1.1);
+  return 13.4 + 1.0 * Math.sin(2 * t + 0.6) + 0.6 * Math.sin(3 * t + 2.1) + 0.35 * Math.sin(5 * t + 0.3) + 0.18 * Math.sin(9 * t + 1.1);
 }
 const THETA_SEAT = angleOf(SEAT.x, SEAT.z);
 const THETA_SPIT = angleOf(-15.5, -4.6);
 const THETA_PIER = angleOf(11.6, -13.4);
-const THETA_FALL = angleOf(STREAM[1].x, STREAM[1].z);
+const THETA_FALL = angleOf(POND.x - 1, POND.z - 0.6);
 const SEAT_R = Math.hypot(SEAT.x - CENTER.x, SEAT.z - CENTER.z) + 1.7;
 const BUMPS: [number, number, number][] = [
   // angle, width, amount
@@ -60,6 +58,15 @@ export function outlinePoint(t: number, inset = 0): P2 {
   const r = outlineR(t) - inset;
   return { x: CENTER.x + Math.cos(t) * r, z: CENTER.z + Math.sin(t) * r };
 }
+
+/** Where the stream leaves the pond and where it falls off the edge. */
+export const STREAM: [P2, P2] = (() => {
+  const end = outlinePoint(THETA_FALL, 0.35);
+  const dx = end.x - POND.x;
+  const dz = end.z - POND.z;
+  const l = Math.hypot(dx, dz);
+  return [{ x: POND.x + (dx / l) * (POND.r - 0.2), z: POND.z + (dz / l) * (POND.r - 0.2) }, end];
+})();
 
 /** The pier: from the island edge on the right, out over the clouds. */
 export const PIER = (() => {
@@ -173,7 +180,7 @@ export class Land {
     h -= 0.25 * smooth(1 - sd / 0.9);
     // sand spit slopes down to the clouds
     const t = angleOf(x, z);
-    const spit = Math.exp(-(angDiff(t, THETA_SPIT) / 0.22) ** 2);
+    const spit = Math.exp(-((angDiff(t, THETA_SPIT) / 0.22) ** 2));
     const s = Math.hypot(x - CENTER.x, z - CENTER.z) / outlineR(t);
     h = h * (1 - spit * smooth((s - 0.55) / 0.4)) - 0.28 * spit * smooth((s - 0.7) / 0.3);
     // soft lip at the edge
@@ -240,7 +247,7 @@ export class Land {
   /** Why a house of radius r cannot stand at p, or null if it can. */
   blocked(x: number, z: number, r = 2.2, ignore?: string): string | null {
     const ds = Math.hypot(x - SEAT.x, z - SEAT.z);
-    if (ds < 4.2) return 'too close to the seat';
+    if (ds < 5.6) return 'too close to the seat';
     if (ds > 34) return 'too far';
     if (z > -1.5) return 'behind the seat';
     if (!this.inside(x, z, r + 0.5)) return 'off the edge';
@@ -292,23 +299,27 @@ export function segDist(x: number, z: number, a: P2, b: P2): number {
   return Math.hypot(x - (a.x + vx * t), z - (a.z + vz * t));
 }
 
-/** Good lots in order of preference: near and in view first, then further, then islets. */
-export const LOTS: P2[] = [
-  { x: -3.6, z: -6.6 },
-  { x: 4.2, z: -7.4 },
-  { x: -0.6, z: -12.6 },
-  { x: 6.2, z: -13.2 },
-  { x: -8.6, z: -6.4 },
-  { x: 1.6, z: -18.6 },
-  { x: -4.6, z: -17.2 },
-  { x: 7.0, z: -19.0 },
-  { x: -10.2, z: -17.6 },
-  { x: -2.4, z: -22.8 },
-  { x: 3.6, z: -23.2 },
-  { x: 9.6, z: -8.4 },
-  { x: -21.5, z: -14.5 },
-  { x: -2.5, z: -32.0 },
-  { x: 17.0, z: -25.0 },
-  { x: -20.0, z: -11.0 },
-  { x: 0.5, z: -30.0 },
-];
+/**
+ * Good lots for houses, in order of preference: near the seat and in front first, fanning
+ * out, then the islets. Picked once from the empty land, at least 6.2 m apart.
+ */
+export const LOTS: P2[] = (() => {
+  const land = new Land();
+  const cand: { x: number; z: number; score: number }[] = [];
+  for (let x = -16; x <= 16; x += 0.5)
+    for (let z = -28; z <= -3; z += 0.5) {
+      if (land.blocked(x, z, 2.4)) continue;
+      const d = Math.hypot(x - SEAT.x, z - SEAT.z);
+      const ang = Math.abs(Math.atan2(x - SEAT.x, -(z - SEAT.z)));
+      cand.push({ x, z, score: d + ang * 6 });
+    }
+  cand.sort((a, b) => a.score - b.score);
+  const out: P2[] = [];
+  for (const c of cand) {
+    if (out.some((o) => Math.hypot(o.x - c.x, o.z - c.z) < 6.2)) continue;
+    out.push({ x: c.x, z: c.z });
+    if (out.length >= 14) break;
+  }
+  for (const i of ISLETS) out.push({ x: i.cx, z: i.cz });
+  return out;
+})();

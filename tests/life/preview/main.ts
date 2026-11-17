@@ -44,6 +44,16 @@ function run(life: Life, seconds: number, at?: (t: number) => void): void {
 }
 
 async function main(): Promise<void> {
+  if (shot.startsWith('real-')) {
+    const { realShot } = await import('./real');
+    const { scene: rs, life } = await realShot(shot, renderer, camera);
+    window.__life = life;
+    await document.fonts.ready;
+    renderer.render(rs, camera);
+    window.__lifeInfo = { ...life.stats(), calls: renderer.info.render.calls, tris: renderer.info.render.triangles };
+    window.__lifeDone = true;
+    return;
+  }
   if (shot === 'birds' || shot === 'lineup') {
     staticShots();
   } else {
@@ -88,7 +98,9 @@ async function shotWith(life: Life): Promise<void> {
       void life.say(res.id, 'I came on the evening wind. Do you have room for a baker?', { mood: 'curious' });
       run(life, 1.25);
       camera.position.copy(stand.seatEye);
-      camera.lookAt(new Vector3(at.x * 0.85, 0.75, at.z));
+      camera.fov = 34;
+      camera.updateProjectionMatrix();
+      camera.lookAt(new Vector3(at.x, 0.62, at.z));
       break;
     }
     case 'arrive':
@@ -101,16 +113,26 @@ async function shotWith(life: Life): Promise<void> {
       void life.arrive(res, kind);
       run(life, shot === 'arrive-dock' ? 10.8 : Number(params.get('t') ?? 5.6));
       camera.position.copy(stand.seatEye);
-      camera.lookAt(new Vector3(-12, 0.8, -6.5));
+      camera.fov = shot === 'arrive-dock' ? 30 : 44;
+      camera.updateProjectionMatrix();
+      camera.lookAt(shot === 'arrive-dock' ? new Vector3(-13.2, 1.0, -6.0) : new Vector3(-13, 2.0, -7.5));
       break;
     }
-    case 'build': {
+    case 'build':
+    case 'build-close': {
       const steps = stand.buildPlan({ x: 1.5, z: -1.5 }, 0.35);
+      // Pip sits on a hand held low and out of this view.
+      const { group, palm } = createHand();
+      group.position.copy(stand.seatEye).add(new Vector3(0.45, -0.6, 0.1));
+      scene.add(group);
+      void life.pip.landOn(palm);
       run(life, 0.5);
       void life.build(steps);
       run(life, Number(params.get('t') ?? 9.0));
       camera.position.copy(stand.seatEye);
-      camera.lookAt(new Vector3(1.6, 1.4, -1.5));
+      camera.fov = shot === 'build-close' ? 30 : 46;
+      camera.updateProjectionMatrix();
+      camera.lookAt(shot === 'build-close' ? new Vector3(2.6, 2.4, -2.2) : new Vector3(1.0, 1.8, -1.5));
       break;
     }
     case 'flock': {

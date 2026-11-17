@@ -165,7 +165,7 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
       measureIsland();
       anchorPoint(mods.world.pier, perch.position);
       perch.position.y += 0.9;
-      mods.life.pip.landOn(perch);
+      void mods.life.pip.landOn({ object: perch, palmNormal: { x: 0, y: 1, z: 0 }, tracked: () => true });
     }
     const a = 2.6 + (now / 1000) * 0.02;
     const cam = world.camera;

@@ -110,7 +110,7 @@ export function createPlacement(app: App, hands: Hands, world: WorldPort, replie
         valid = false;
         return;
       }
-      const g = world.groundAt?.(hit.x, hit.z);
+      const g = world.groundY?.(hit.x, hit.z) ?? world.groundAt?.(hit.x, hit.z);
       if (g === undefined || !Number.isFinite(g) || Math.abs(g - y) < 0.05) break;
       if (g < y - 5) break;
       y = g;
@@ -124,7 +124,7 @@ export function createPlacement(app: App, hands: Hands, world: WorldPort, replie
     valid = v.ok;
     const sx = v.snapped?.x ?? hit.x;
     const sz = v.snapped?.z ?? hit.z;
-    const sy = v.snapped?.y ?? world.groundAt?.(sx, sz) ?? y;
+    const sy = v.snapped?.y ?? world.groundY?.(sx, sz) ?? world.groundAt?.(sx, sz) ?? y;
     current = { x: sx, z: sz, rotY: v.rotY + extraTurn };
     ghost.visible = true;
     const a = ghost.userData.seen ? 0.35 : 1;
@@ -200,6 +200,8 @@ export function createPlacement(app: App, hands: Hands, world: WorldPort, replie
       return resolve !== null;
     },
     suggest() {
+      const offered = world.suggestSpot?.();
+      if (offered?.ok) return { x: offered.snapped.x, z: offered.snapped.z, rotY: offered.rotY };
       // Walk out from the seat along its view until validSpot says yes.
       anchorPoint(world.seat, seatP);
       const cam = app.world.camera;

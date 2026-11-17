@@ -61,8 +61,21 @@ export async function createModules(app: AppHandle): Promise<Modules> {
 
   const world = await attempt<WorldPort>('world', worldMods, 'createWorld', [app], () => createStandinWorld(app));
   if (!world.root.parent) app.root.add(world.root);
-  const life = await attempt<LifePort>('life', lifeMods, 'createLife', [app, world], () => createStandinLife(app, world));
-  const mind = await attempt<MindPort>('mind', mindMods, 'createMind', [], () => createStandinMind());
+  // Life reads the island through a few optional calls; the world names some differently.
+  const w = world as WorldPort & Record<string, unknown>;
+  const lifeWorld = {
+    root: world.root,
+    ready: world.ready,
+    pier: world.pier,
+    seat: world.seat,
+    spots: () => world.spots(),
+    heightAt: (x: number, z: number) => world.groundY?.(x, z) ?? world.groundAt?.(x, z) ?? 0,
+    perches: typeof w.perches === 'function' ? () => (w.perches as () => unknown[])() : undefined,
+    benches: typeof w.benches === 'function' ? () => (w.benches as () => unknown[])() : undefined,
+    radius: typeof w.radius === 'number' ? w.radius : undefined,
+  };
+  const life = await attempt<LifePort>('life', lifeMods, 'createLife', [app, lifeWorld], () => createStandinLife(app, world));
+  const mind = await attempt<MindPort>('mind', mindMods, 'createMind', [{ demo: true }], () => createStandinMind());
   const live = await attempt<LivePort>('live', liveMods, 'createLive', [app], () => createStandinLive());
   registerDebug('modules', { world, life, mind, live, report });
   return { world, life, mind, live, report };

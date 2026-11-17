@@ -193,7 +193,7 @@ export class Fx {
       v.set(Math.cos(a), 0, Math.sin(a));
       const pos = at.clone().addScaledVector(v, radius * 0.7);
       pos.y += 0.05;
-      this.puffs.spawn({ pos, vel: v.clone().multiplyScalar(1.2 + Math.random() * 1.4).setY(0.25 + Math.random() * 0.4), life: 0.9 + Math.random() * 0.5, size0: 0.12 + radius * 0.08, size1: 0.35 + radius * 0.25, color, alpha: 0.75, drag: 3.2, rise: 0.25 });
+      this.puffs.spawn({ pos, vel: v.clone().multiplyScalar(1.2 + Math.random() * 1.4).setY(0.25 + Math.random() * 0.4), life: 0.8 + Math.random() * 0.5, size0: 0.1 + radius * 0.06, size1: 0.3 + radius * 0.18, color, alpha: 0.55, drag: 3.4, rise: 0.3 });
     }
   }
 

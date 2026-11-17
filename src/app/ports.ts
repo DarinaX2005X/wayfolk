@@ -30,7 +30,7 @@ export type AppHandle = {
 export type BuildStep = { object3d: Object3D; target: { pos: Vector3; quat: Quaternion; scale: Vector3 } };
 
 /** A pose on the island: an Object3D, or a plain point with an optional facing. */
-export type Anchor = Object3D | { x: number; y?: number; z: number; rotY?: number };
+export type Anchor = Object3D | { x: number; y?: number; z: number; rotY?: number } | { pos: { x: number; y?: number; z: number }; rotY?: number };
 
 export type WorldPort = {
   root: Object3D;
@@ -47,6 +47,13 @@ export type WorldPort = {
   spots(): Anchor[];
   /** Ground height at a point, when the world offers it. */
   groundAt?(x: number, z: number): number;
+  groundY?(x: number, z: number): number;
+  /** A good free spot for the next house, when offered. */
+  suggestSpot?(): { ok: boolean; snapped: { x: number; y?: number; z: number }; rotY: number };
+  /** The finish of a build: window light, chimney smoke, sign. */
+  finishHouse?(id: string): void;
+  /** World clock step, when the world is not ticked by the render loop. */
+  update?(timeMs?: number): void;
   /** Lights the windows of one house (the finish of a build), when offered. */
   lightHouse?(id: string, on?: boolean): void;
 };
@@ -54,9 +61,12 @@ export type WorldPort = {
 /** A hand as life sees it: an Object3D that follows the palm, plus which side. */
 export type HandRef = Object3D & { userData: { side?: 'left' | 'right'; tracked?: boolean } };
 
+/** Where Pip may sit: an Object3D, or one with the axis that points out of the palm. */
+export type Perch = HandRef | Object3D | { object: Object3D; palmNormal?: { x: number; y: number; z: number }; tracked?: () => boolean };
+
 export type PipPort = {
-  landOn(hand: HandRef | Object3D): void;
-  follow(hand: HandRef | Object3D): void;
+  landOn(hand: Perch): unknown;
+  follow(hand: Perch): void;
   hover(): void;
   say(text: string, opts?: unknown): Promise<void> | void;
   object?: Object3D;
@@ -135,6 +145,8 @@ export function anchorPoint(a: Anchor, out: Vector3): Vector3 {
     o.updateWorldMatrix(true, false);
     return o.getWorldPosition(out);
   }
+  const withPos = a as { pos?: { x: number; y?: number; z: number } };
+  if (withPos.pos) return out.set(withPos.pos.x, withPos.pos.y ?? 0, withPos.pos.z);
   const p = a as { x: number; y?: number; z: number };
   return out.set(p.x, p.y ?? 0, p.z);
 }

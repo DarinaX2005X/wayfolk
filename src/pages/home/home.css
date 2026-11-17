@@ -486,3 +486,17 @@
     animation: none;
   }
 }
+
+/* An honest note when the traveler or their line comes from the prepared set. */
+.home-prepared {
+  padding: 4px 12px;
+  border-radius: 10px;
+  background: rgba(243, 230, 207, 0.9);
+  color: #6e5442;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.home-prepared[hidden] {
+  display: none;
+}

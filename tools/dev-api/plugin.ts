@@ -21,47 +21,12 @@
  * The others (429, 503, 401, 404, bad-output, daily-cap, storage-busy) are answers of a
  * route and are made by the routes themselves (package 01.5), which see the header.
  */
-import { readFile, readdir } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import path from 'node:path';
 import { loadEnv, type Plugin } from 'vite';
-import type { AnswerSet } from '../../src/agents/types';
-
-type FixtureSource = (example: string, scope: 'full' | 'late') => Promise<AnswerSet | null>;
-
 /** What the plugin needs from api/_routes.ts. */
 export type RoutesModule = {
   handle(request: Request): Promise<Response>;
-  setFixtureSource?(source: FixtureSource): void;
 };
-
-const isAnswerSet = (value: unknown): value is AnswerSet => {
-  const v = value as Partial<AnswerSet> | null;
-  return typeof v === 'object' && v !== null && typeof v.example === 'string' && (v.scope === 'full' || v.scope === 'late') && Array.isArray(v.calls);
-};
-
-/**
- * Answer sets from JSON files in `dirs`, read when asked. A recording of the real model
- * wins over a scripted set of the same example and scope, as in content/answers/index.ts.
- * Files that are not answer sets (expected numbers, notes) are skipped.
- */
-export function diskFixtures(dirs: string[]): FixtureSource {
-  return async (example, scope) => {
-    const found: AnswerSet[] = [];
-    for (const dir of dirs) {
-      const names = await readdir(dir).catch(() => [] as string[]);
-      for (const name of names.filter((n) => n.endsWith('.json'))) {
-        try {
-          const value: unknown = JSON.parse(await readFile(path.join(dir, name), 'utf8'));
-          if (isAnswerSet(value) && value.example === example && value.scope === scope) found.push(value);
-        } catch {
-          // not a readable answer set
-        }
-      }
-    }
-    return found.find((set) => set.answers === 'recorded') ?? found[0] ?? null;
-  };
-}
 
 export type DevApi = {
   middleware(req: IncomingMessage, res: ServerResponse, next: () => void): void;
@@ -160,7 +125,7 @@ export function createDevApi(options: { load(): Promise<RoutesModule>; slowMs?: 
  */
 export function devApi(): Plugin {
   return {
-    name: 'groundwork:dev-api',
+    name: 'wayfolk:dev-api',
     apply: 'serve',
     configureServer(server) {
       const env = loadEnv(server.config.mode, server.config.root, '');
@@ -168,18 +133,11 @@ export function devApi(): Plugin {
         if (!name.startsWith('VITE_') && process.env[name] === undefined) process.env[name] = value;
       }
       process.env.STORAGE_DRIVER ??= 'memory';
-      process.env.LLM_PROVIDER ??= 'fixtures';
+      process.env.LLM_PROVIDER ??= 'off';
       // Routes honour x-test-fail only where this is set: here, never on a deployment.
       process.env.API_TEST_FAIL = '1';
-      const root = server.config.root;
-      const dirs = [path.join(root, 'content', 'answers'), ...(process.env.LLM_FIXTURE_DIRS ?? '').split(',').filter(Boolean).map((d) => path.resolve(root, d.trim()))];
-      const fixtures = diskFixtures(dirs);
       const api = createDevApi({
-        load: async () => {
-          const routes = (await server.ssrLoadModule('/api/_routes.ts')) as RoutesModule;
-          routes.setFixtureSource?.(fixtures);
-          return routes;
-        },
+        load: async () => (await server.ssrLoadModule('/api/_routes.ts')) as RoutesModule,
       });
       server.middlewares.use(api.middleware);
     },

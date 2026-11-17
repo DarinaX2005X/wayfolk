@@ -98,7 +98,12 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   const captions = el('div', 'home-captions');
   captions.setAttribute('aria-live', 'polite');
   const choices = el('div', 'home-choices');
-  strip.append(captions, choices);
+  const prepared = el('p', 'home-prepared', 'prepared traveler');
+  prepared.hidden = true;
+  strip.append(captions, choices, prepared);
+  effect(() => {
+    prepared.hidden = !(store.prepared.value && store.choices.value.length > 0);
+  });
 
   const card = el('aside', 'home-card');
   card.hidden = true;

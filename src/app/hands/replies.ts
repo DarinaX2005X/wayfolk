@@ -104,9 +104,16 @@ export function createReplies(app: App, hands: Hands): Replies {
     }
   });
 
+  // A small honest note under the bubbles when the traveler or the line is prepared.
+  const note = makeBubble('prepared traveler', { width: 0.075, size: 34, tail: 'none', paper: '#f3e6cf', rim: '#d9bf98', ink: '#7a5a40' });
+  note.name = 'replies:prepared';
+  note.visible = false;
+  group.add(note);
+
   app.everyFrame((dt, now) => {
     // At the desk the page shows the same choices as buttons.
     group.visible = app.store.mode.peek() !== 'desk';
+    note.visible = bubbles.length > 0 && app.store.prepared.peek();
     if (!bubbles.length) return;
     const cam = app.world.camera;
     cam.updateWorldMatrix(true, false);
@@ -138,6 +145,10 @@ export function createReplies(app: App, hands: Hands): Replies {
       // Grow in.
       const k = Math.min(1, (now - shownAt) / 250 - i * 0.15);
       if (b.scale.x < 1 && k > 0) b.scale.setScalar(Math.max(0.01, k));
+    }
+    if (note.visible) {
+      note.position.copy(want).y -= 0.045;
+      note.lookAt(head);
     }
     // Touch with a fingertip of either hand (not in the first 400 ms, to avoid a stray touch).
     if (now - shownAt < 400 || !resolve) return;

@@ -4,12 +4,12 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/llm.ts": { "maxDuration": 60 }
+    "api/llm.ts": { "maxDuration": 60 },
+    "api/islands.ts": { "maxDuration": 30 }
   },
   "rewrites": [
-    { "source": "/api/code/:path*", "destination": "/api/code" },
-    { "source": "/api/worlds/:path*", "destination": "/api/worlds" },
-    { "source": "/((?!api/)(?!.*\.[^/]+$).*)", "destination": "/index.html" }
+    { "source": "/api/islands/:path*", "destination": "/api/islands" },
+    { "source": "/((?!api/)(?!.*\\.[^/]+$).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
@@ -17,7 +17,7 @@
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     },
     {
-      "source": "/assets/(.*)",
+      "source": "/assets/([^/]+)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     }
   ]

@@ -95,6 +95,8 @@ export class LiveClient {
   state: LiveState = 'off';
   reason: LiveReason | null = null;
   role: 'host' | 'guest' | null = null;
+  /** What the person set out to do, before the relay confirmed a role. */
+  intent: 'host' | 'guest' | null = null;
   code: string | null = null;
   room: RoomInfo | null = null;
   me: LivePeer | null = null;
@@ -169,6 +171,7 @@ export class LiveClient {
   /** Opens (or reopens) a room for the island; resolves with its code once inside. */
   async host(island: string, name?: string): Promise<{ code: string }> {
     if (name) this.name = name;
+    this.intent = 'host';
     this.stop();
     const saved = this.read<{ code: string; key: string; at: number }>(HOST_KEY + island);
     if (saved && this.now() - saved.at < HOST_MEMORY_MS) {
@@ -207,6 +210,7 @@ export class LiveClient {
   /** Joins a room by its code; resolves once inside, rejects with a LiveReason. */
   async join(code: string, name?: string): Promise<void> {
     if (name) this.name = name;
+    this.intent = 'guest';
     const c = normalizeCode(code);
     if (!c) {
       this.setState('off', 'bad-code');
@@ -338,9 +342,22 @@ export class LiveClient {
       this.detach(ws);
       this.closed(ev.code);
     };
-    ws.onerror = () => {
-      /* a close follows */
+    // Browsers follow an error with a close; some runtimes (Node's WebSocket) do not, and
+    // a handshake can also hang on a bad network. Either way the socket counts as dropped.
+    const giveUp = () => {
+      if (this.ws !== ws) return;
+      this.detach(ws);
+      try {
+        ws.close();
+      } catch {
+        /* never opened */
+      }
+      this.closed(1006);
     };
+    ws.onerror = () => setTimeout(giveUp, 100);
+    setTimeout(() => {
+      if (ws.readyState === 0) giveUp();
+    }, 10_000);
     if (!this.timer) this.timer = setInterval(() => this.tick(), 1000);
   }
 

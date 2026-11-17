@@ -13,6 +13,7 @@ import { Arrival, Build, type Scene } from './scenes';
 import { Speech, type Speaker } from './speech';
 import type { BuildStep, Emote, HandLike, Life, LifeApp, LifeWorld, PointLike, SayOptions, SoundHandle, SoundKind } from './types';
 import { PIP_VOICE, voiceProfile } from './voice';
+import { wind } from '../world/wind';
 
 export type * from './types';
 export { SPECIES_PLAN, TRADE_GEAR, planFor } from './species';
@@ -60,9 +61,25 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
   const speech = new Speech(audio, root);
   void loadBubbleFonts();
 
+  // The real world (src/world) answers groundY(x, z) in its root space; stand-ins may give heightAt.
+  const W = world as LifeWorld & {
+    groundY?: (x: number, z: number) => number;
+    house?: (id: string) => { door: Vector3; top: Vector3; window: Vector3 } | undefined;
+    seat?: { perch?: Vector3; meet?: Vector3 };
+    pier?: { dock?: Vector3; step?: Vector3; rotY?: number; walk?: Vector3[] };
+  };
+  const heightAt = (x: number, z: number): number | undefined => (world.heightAt ? world.heightAt(x, z) : W.groundY ? W.groundY(x, z) : undefined);
+  const toWorld = (v: Vector3): Vector3 => world.root.localToWorld(v);
   const ground = (x: number, z: number, fallback = 0): number => {
-    const h = world.heightAt?.(x, z);
+    const h = heightAt(x, z);
     return Number.isFinite(h) ? (h as number) : fallback;
+  };
+  // Walking ground: follows the island, but never drops a resident off a pier or bridge
+  // the height field does not know about.
+  const walkGround = (x: number, z: number, prev: number): number => {
+    const h = heightAt(x, z);
+    if (!Number.isFinite(h)) return prev;
+    return prev - (h as number) > 0.5 ? prev : (h as number);
   };
   const center = new Vector3();
   const head = new Vector3(0, 1.2, 2);
@@ -78,10 +95,11 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
   const pipAgent = new BirdAgent(true, 0, 1.0);
   pipAgent.mode = 'hover';
   const flock: BirdAgent[] = [];
-  for (let i = 0; i < FLOCK_SIZE; i++) flock.push(new BirdAgent(false, i, 1.25));
+  for (let i = 0; i < FLOCK_SIZE; i++) flock.push(new BirdAgent(false, i, 2.0, 0.75));
   const allBirds = [pipAgent, ...flock];
   for (const b of allBirds) root.add(b.object);
   const perches: Vector3[] = [];
+  const houseIds = new Set<string>();
   const refreshPerches = (): void => {
     perches.length = 0;
     const list = world.perches?.() ?? [];
@@ -89,8 +107,19 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
       const v = readPoint(p, new Vector3(), ground);
       if (v) perches.push(v);
     }
+    // The real world: Pip's lamp post by the seat and the tops of the houses.
+    if (W.seat?.perch) perches.push(toWorld(W.seat.perch.clone()));
+    for (const id of houseIds) {
+      const h = W.house?.(id);
+      if (h?.top) perches.push(toWorld(h.top.clone()).add(new Vector3(0, 0.05, 0)));
+    }
   };
-  const flockEnv: FlockEnv = { head, headFwd, center, radius: world.radius ?? 12, time: 0, night: 0, perches };
+  // The island's shared wind (src/world/wind.ts). The world advances its clock; if nothing
+  // does (a preview without the world), life keeps it moving.
+  let windSeen = -1;
+  let windStill = 0;
+  const windAt = (pos: Vector3, out: Vector3): Vector3 => wind.sample(pos, undefined, out);
+  const flockEnv: FlockEnv = { head, headFwd, center, radius: world.radius ?? 12, time: 0, night: 0, perches, wind: windAt };
 
   // Start the flock spread over the island.
   const startFlock = (): void => {
@@ -177,6 +206,11 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
   const doorOf = (spec: HouseSpec | P2 | undefined): Vector3 | null => {
     if (!spec) return null;
     const s = spec as HouseSpec;
+    if (s.id) {
+      houseIds.add(s.id);
+      const h = W.house?.(s.id);
+      if (h?.door) return toWorld(h.door.clone());
+    }
     if (s.pos && Number.isFinite(s.pos.x)) {
       const rot = s.rotY ?? 0;
       const x = s.pos.x + Math.sin(rot) * 1.9;
@@ -243,6 +277,11 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
   });
 
   function pierOut(out: Vector3): Vector3 {
+    if (Number.isFinite(W.pier?.rotY) && W.pier?.dock) {
+      // rotY 0 faces -z; the pier anchor faces outward along the pier.
+      const r = W.pier.rotY as number;
+      return out.set(-Math.sin(r), 0, -Math.cos(r)).transformDirection(world.root.matrixWorld).setY(0).normalize();
+    }
     const dock = readPoint(world.pier, tA, ground);
     if (!dock) return out.set(0, 0, -1);
     out.copy(dock).sub(center).setY(0);
@@ -252,7 +291,8 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
 
   const cloudY = (): number => {
     const c = (world as { cloudY?: number }).cloudY;
-    return Number.isFinite(c) ? (c as number) : center.y - 3;
+    // Pieces and travelers rise from a few metres under the rim, not from the far cloud floor.
+    return Number.isFinite(c) ? Math.max(c as number, center.y - 4) : center.y - 3;
   };
 
   const manual = (id: string, seconds = 30): void => {
@@ -268,11 +308,15 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
     updateHead();
     if (camera) audio.listen(camera);
     flockEnv.time = clock;
+    if (wind.time === windSeen) windStill++;
+    else windStill = 0;
+    if (windStill > 3) wind.update(clock);
+    windSeen = wind.time;
     world.root.getWorldPosition(center);
     for (const b of allBirds) b.update(dt, flockEnv, flock);
     for (const s of [...scenes]) if (!s.update(dt)) scenes.splice(scenes.indexOf(s), 1);
     daily.update(dt);
-    for (const a of agents.values()) a.update(dt, clock, head, ground);
+    for (const a of agents.values()) a.update(dt, clock, head, walkGround, windAt);
     speech.update(dt, head, (id) => (id === 'pip' ? pipSpeaker : speakers.get(id)));
     fx.update(dt);
   };
@@ -304,6 +348,10 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
     ready,
     build(steps: BuildStep[]): Promise<void> {
       if (!steps.length) return Promise.resolve();
+      for (const st of steps) {
+        const id = (st as { houseId?: string }).houseId;
+        if (id) houseIds.add(id);
+      }
       const b = new Build(
         { root, worldRoot: world.root, audio, fx, birds: flock, center, radius: world.radius ?? 12, cloudY: cloudY(), seat: readPoint(world.seat, new Vector3(), ground) ?? head.clone() },
         steps,
@@ -314,12 +362,24 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
     arrive(resident: Resident, vehicle?: Vehicle): Promise<void> {
       const a = ensureAgent(resident);
       manual(resident.id, 40);
-      const dock = readPoint(world.pier, new Vector3(), ground) ?? center.clone().add(new Vector3(0, 0, -6));
       const out = pierOut(new Vector3());
-      const landing = dock.clone().addScaledVector(out, -1.0);
-      landing.y = ground(landing.x, landing.z, dock.y);
+      let dock: Vector3;
+      let landing: Vector3;
+      let hang: Vector3 | undefined;
+      if (W.pier?.step && W.pier.dock) {
+        // The real pier: the traveler steps onto `step`; the vehicle hangs beside it at `dock`.
+        dock = toWorld(W.pier.step.clone());
+        hang = toWorld(W.pier.dock.clone());
+        const meet = W.seat?.meet ? toWorld(W.seat.meet.clone()) : center.clone();
+        landing = dock.clone().add(meet.sub(dock).setY(0).normalize().multiplyScalar(1.0));
+        landing.y = dock.y;
+      } else {
+        dock = readPoint(world.pier, new Vector3(), ground) ?? center.clone().add(new Vector3(0, 0, -6));
+        landing = dock.clone().addScaledVector(out, -1.0);
+        landing.y = ground(landing.x, landing.z, dock.y);
+      }
       const arrival = new Arrival(
-        { root, audio, fx, dock, out, landing, head: () => head, greeters: flock.slice(0, 3), cloudY: cloudY() },
+        { root, audio, fx, dock, out, landing, hang, head: () => head, greeters: flock.slice(0, 3), cloudY: cloudY() },
         a,
         vehicle ?? resident.vehicle ?? 'balloon',
       );
@@ -344,7 +404,7 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
       if (!a) return;
       speech.silence(id);
       a.group.removeFromParent();
-      a.model.mesh.geometry.dispose();
+      a.dispose();
       agents.delete(id);
       speakers.delete(id);
       homes.delete(id);
@@ -413,7 +473,7 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
       for (const a of agents.values()) {
         if (a.hidden) continue;
         drawCalls++;
-        triangles += a.model.rig.triangles;
+        triangles += a.triangles();
       }
       for (const s of scenes) if (s instanceof Arrival) drawCalls++;
       root.traverse((o) => {

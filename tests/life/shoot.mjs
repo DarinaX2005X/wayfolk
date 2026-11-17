@@ -48,10 +48,10 @@ if (serve) {
   console.log(`life preview at ${base}`);
 } else {
   fs.mkdirSync(OUT, { recursive: true });
-  const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
   page.on('console', (m) => {
-    if (m.type() === 'error' || m.type() === 'warning') console.log(`[page ${m.type()}] ${m.text()}`);
+    if ((m.type() === 'error' || m.type() === 'warning') && !/GPU stall|AudioContext/.test(m.text())) console.log(`[page ${m.type()}] ${m.text()}`);
   });
   page.on('pageerror', (e) => console.log(`[page error] ${e.message}`));
   let failed = 0;

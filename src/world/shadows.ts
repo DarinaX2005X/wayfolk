@@ -27,8 +27,9 @@ function radial(size = 64): DataTexture {
       const d = Math.min(1, Math.sqrt(dx * dx + dy * dy) * 2);
       const a = Math.pow(1 - d, 1.6) * (d < 1 ? 1 : 0);
       const i = (y * size + x) * 4;
-      data[i] = data[i + 1] = data[i + 2] = 255;
-      data[i + 3] = Math.round(a * 255);
+      // alphaMap reads the green channel
+      data[i] = data[i + 1] = data[i + 2] = Math.round(a * 255);
+      data[i + 3] = 255;
     }
   const t = new DataTexture(data, size, size, RGBAFormat);
   t.magFilter = LinearFilter;
