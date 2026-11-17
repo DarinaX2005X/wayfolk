@@ -41,7 +41,7 @@ export const LANTERN_LINES = {
 
 const MEET_S = 8;
 const STAR_DIST = 80;
-const STAR_SCALE = 15;
+const STAR_SCALE = 19;
 
 let haloTex: CanvasTexture | null = null;
 function halo(): CanvasTexture | null {
@@ -160,10 +160,10 @@ class Constellation {
       const tex = new CanvasTexture(c);
       tex.colorSpace = SRGBColorSpace;
       const labelMat = new MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false, blending: AdditiveBlending, toneMapped: false, fog: false });
-      const label = new Mesh(new PlaneGeometry(STAR_SCALE * 1.1, STAR_SCALE * 0.172), labelMat);
-      label.position.set(0, -STAR_SCALE * 0.52, 0);
+      const label = new Mesh(new PlaneGeometry(STAR_SCALE * 1.5, STAR_SCALE * 0.234), labelMat);
+      label.position.set(0, -STAR_SCALE * 0.5, 0);
       this.group.add(label);
-      this.mats.push({ setOpacity: (o) => (labelMat.opacity = o * 0.75) });
+      this.mats.push({ setOpacity: (o) => (labelMat.opacity = Math.min(1, o * 0.95)) });
     }
     this.group.name = `together:stars:${rec.id}`;
     void this.count;
@@ -173,8 +173,8 @@ class Constellation {
   place(): void {
     const d = new Vector3(...this.rec.dir).normalize();
     this.group.position.copy(d).multiplyScalar(STAR_DIST);
+    // +z toward the eye: the label reads left to right, the figure is not mirrored
     this.group.lookAt(0, 0, 0);
-    this.group.rotateY(Math.PI);
   }
 
   update(dt: number, opacity: number, time: number): void {

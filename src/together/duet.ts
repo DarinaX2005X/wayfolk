@@ -27,9 +27,11 @@ import {
   ShaderMaterial,
   Vector3,
   type Object3D,
+  type Ray,
 } from '@iwsdk/core';
 import type { IslandState } from '../mind/types';
-import { M, MAT, blob, build, cbox, cyl, place } from '../world/geo';
+import { M, blob, build, cyl, place } from '../world/geo';
+import { chimeCane } from '../world/props';
 import { mainMaterial } from '../world/materials';
 import type { Ctx } from './context';
 import { Energy, chimeHz, duetPulse, playingTogether } from './plan';
@@ -41,10 +43,9 @@ export const DUET_LINES = {
 } as const;
 
 const TUBES = 5;
-const LENGTHS = [0.44, 0.39, 0.35, 0.31, 0.27];
-const TUBE_R = 0.017;
+const LENGTHS = [0.4, 0.36, 0.32, 0.28, 0.25];
+const TUBE_R = 0.02;
 const STRING = 0.07;
-const DISC_Y = 1.3;
 const G = 9.8;
 
 type Part = 'low' | 'high';
@@ -81,31 +82,29 @@ class ChimeSet {
     this.group.position.copy(pos);
     this.group.rotation.y = facing;
     this.group.name = `together:chimes:${part}`;
-    // A shepherd's crook of driftwood, a wooden disc, a sail in the player's colour.
+    // A bamboo cane in a planter bending over toward the player, the chime at its tip,
+    // a ribbon in the player's colour tied below the leaves.
+    const cane = chimeCane(1.62, 0.46);
+    const [hx, hy, hz] = cane.hang;
     this.frame = new Mesh(
       build([
-        [place(cbox(0.07, 1.62, 0.07, 0.02), [0, 0, 0]), MAT.woodDark, { mat: M.bark }],
-        [place(cbox(0.42, 0.06, 0.06, 0.02), [0.19, 1.57, 0]), MAT.woodDark, { mat: M.bark }],
-        [place(cbox(0.05, 0.12, 0.05, 0.015), [0.38, 1.47, 0]), MAT.woodDark, { mat: M.bark }],
-        [place(cyl(0.13, 0.13, 0.035, 14), [0.38, DISC_Y + 0.12, 0]), MAT.woodLight, { mat: M.plank }],
-        [place(cyl(0.004, 0.004, 0.14, 3), [0.38, DISC_Y + 0.14, 0]), MAT.rope],
-        [place(blob(0.06, 1, part === 'low' ? 3 : 4, 0.08, 0.35), [0.38, 0.62, 0], [0, 0, 0], [1.2, 1, 0.25]), sail, { smooth: true, shade: 0.15, mat: M.cloth }],
-        [place(cyl(0.003, 0.003, 0.52, 3), [0.38, 0.92, 0]), MAT.rope],
-        [place(blob(0.16, 1, 9, 0.2, 0.4), [0, 0.02, 0]), MAT.stoneDark, { smooth: true, mat: M.rock }],
+        ...cane.parts,
+        [place(blob(0.05, 1, part === 'low' ? 3 : 4, 0.06, 0.3), [0.05, 0.98, 0.03], [0, 0, -0.5], [0.7, 2.4, 0.4]), sail, { smooth: true, shade: 0.12, mat: M.cloth, flutter: 'down' }],
+        [place(cyl(0.024, 0.024, 0.03, 8), [0.02, 1.04, 0]), sail, { mat: M.cloth }],
       ]),
       mainMaterial(),
     );
     this.group.add(this.frame);
     const geo = new CylinderGeometry(TUBE_R, TUBE_R, 1, 10, 1);
     this.base = new Color(metal);
-    const mat = new MeshStandardMaterial({ color: 0xffffff, metalness: 0.55, roughness: 0.32 });
+    const mat = new MeshStandardMaterial({ color: 0xffffff, metalness: 0.45, roughness: 0.3, emissive: new Color(metal).multiplyScalar(0.18) });
     this.mesh = new InstancedMesh(geo, mat, TUBES);
     this.mesh.name = `together:tubes:${part}`;
     this.mesh.userData.together = { kind: 'chime', part };
     this.mesh.frustumCulled = false;
     for (let i = 0; i < TUBES; i++) {
       const a = (i / TUBES) * Math.PI * 2;
-      const pivot = new Vector3(0.38 + Math.cos(a) * 0.095, DISC_Y + 0.1, Math.sin(a) * 0.095);
+      const pivot = new Vector3(hx + Math.cos(a) * 0.068, hy - 0.04, hz + Math.sin(a) * 0.068);
       this.tubes.push({ pivot, len: LENGTHS[i], ax: 0, az: 0, vx: 0, vz: 0, flash: 0, lastHit: -1e9 });
       this.mesh.setColorAt(i, this.base);
     }
@@ -140,7 +139,7 @@ class ChimeSet {
     p.y = 0;
     if (p.lengthSq() < 1e-6) p.set(1, 0, 0);
     p.normalize();
-    const k = 2.2 + v * 2.4;
+    const k = 1.1 + v * 1.2;
     t.vx += p.z * k;
     t.vz += -p.x * k;
   }
@@ -152,8 +151,8 @@ class ChimeSet {
       const damp = Math.exp(-dt * 1.1);
       t.vx = (t.vx - w2 * Math.sin(t.ax) * dt) * damp;
       t.vz = (t.vz - w2 * Math.sin(t.az) * dt) * damp;
-      t.ax = Math.max(-0.7, Math.min(0.7, t.ax + t.vx * dt));
-      t.az = Math.max(-0.7, Math.min(0.7, t.az + t.vz * dt));
+      t.ax = Math.max(-0.45, Math.min(0.45, t.ax + t.vx * dt));
+      t.az = Math.max(-0.45, Math.min(0.45, t.az + t.vz * dt));
       t.flash = Math.max(0, t.flash - dt * 1.6);
     }
     this.apply();
@@ -210,7 +209,7 @@ export class Motes {
         transparent: true,
         depthWrite: false,
         blending: AdditiveBlending,
-        vertexShader: 'attribute vec3 color; attribute float life; varying vec3 vC; varying float vL; void main(){ vC = color; vL = life; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_PointSize = (14.0 + 10.0 * life) * (1.0 / -mv.z) * 6.0; gl_Position = projectionMatrix * mv; }',
+        vertexShader: 'attribute vec3 color; attribute float life; varying vec3 vC; varying float vL; void main(){ vC = color; vL = life; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_PointSize = (0.03 + 0.03 * life) * 700.0 / max(0.2, -mv.z); gl_Position = projectionMatrix * mv; }',
         fragmentShader: 'varying vec3 vC; varying float vL; void main(){ float d = length(gl_PointCoord - 0.5) * 2.0; float a = smoothstep(1.0, 0.0, d); gl_FragColor = vec4(vC * a * a * vL, 1.0); }',
       }),
     );
@@ -260,6 +259,7 @@ export class Duet {
   private pop = 0;
   private readonly a = new Vector3();
   private readonly b = new Vector3();
+  private readonly mid = new Vector3();
 
   constructor(private readonly ctx: Ctx) {
     const F = ctx.world.fire?.clone() ?? new Vector3(-2.5, 0, -3.7);
@@ -275,10 +275,11 @@ export class Duet {
       const f = new Vector3(-Math.sin(spot.rotY), 0, -Math.cos(spot.rotY));
       const right = new Vector3(-f.z, 0, f.x);
       // A little ahead and to the right, the tubes at the height of a seated person's hands.
-      const p = spot.pos.clone().addScaledVector(f, 0.5).addScaledVector(right, 0.05);
-      p.y = ctx.ground(p.x, p.z) - 0.22;
-      // The crook's arm reaches toward the person: local +x points back at them.
-      return { pos: p.addScaledVector(right, 0.38), facing: spot.rotY + Math.PI / 2 };
+      // The planter stands ahead and to the right; the cane arcs back over toward the hands.
+      const p = spot.pos.clone().addScaledVector(f, 0.62).addScaledVector(right, 0.42);
+      p.y = ctx.ground(p.x, p.z);
+      const toPerson = spot.pos.clone().addScaledVector(f, 0.38).sub(p).setY(0).normalize();
+      return { pos: p, facing: Math.atan2(-toPerson.z, toPerson.x) };
     };
     const hs = standAt(this.spots.host);
     const gs = standAt(this.spots.guest);
@@ -344,6 +345,23 @@ export class Duet {
         this.sets[part].ends(i, this.a, this.b);
         const d = segDist(p, this.a, this.b);
         if (d < reach && (!best || d < best.d)) best = { part, i, d };
+      }
+    }
+    return best;
+  }
+
+  /** The tube of `part` nearest a ray (a click in a page forgives a few centimetres). */
+  tubeNearRay(ray: Ray, part: Part, reach: number): number | null {
+    let best: number | null = null;
+    let bd = reach;
+    for (let i = 0; i < TUBES; i++) {
+      this.sets[part].ends(i, this.a, this.b);
+      for (let k = 0; k <= 4; k++) {
+        const d = ray.distanceToPoint(this.mid.copy(this.a).lerp(this.b, k / 4));
+        if (d < bd) {
+          bd = d;
+          best = i;
+        }
       }
     }
     return best;

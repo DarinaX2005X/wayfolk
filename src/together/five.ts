@@ -14,6 +14,7 @@ import {
   MeshLambertMaterial,
   PerspectiveCamera,
   Quaternion,
+  SRGBColorSpace,
   Vector3,
   WebGLRenderTarget,
   type Object3D,
@@ -201,14 +202,15 @@ export class Five {
     this.workers.all.forEach((w, k) => {
       w.busy = true;
       w.bird.mode = 'carry';
-      w.bird.pos.copy(at).add(new Vector3(Math.cos(k) * 0.4, -0.2, Math.sin(k) * 0.4));
+      const a0 = (k / this.workers.all.length) * Math.PI * 2;
+      w.bird.pos.copy(at).add(new Vector3(Math.cos(a0) * 0.5, 0.05, Math.sin(a0) * 0.5));
       w.bird.vel.set(0, 0, 0);
       const start = this.ctx.now();
       w.bird.goalFn = (out) => {
         const t = (this.ctx.now() - start) / 1000;
-        const a = t * 5.2 + (k / this.workers.all.length) * Math.PI * 2;
-        const r = 0.35 + t * 0.55;
-        out.set(at.x + Math.cos(a) * r, at.y + t * 0.9, at.z + Math.sin(a) * r);
+        const a = t * 4.2 + (k / this.workers.all.length) * Math.PI * 2;
+        const r = 0.45 + t * 0.7;
+        out.set(at.x + Math.cos(a) * r, at.y + 0.1 + t * 0.75, at.z + Math.sin(a) * r);
         return true;
       };
     });
@@ -217,7 +219,8 @@ export class Five {
       this.ctx.life?.flockCircle?.(null);
     }, 2800);
     setTimeout(() => this.ctx.say(FIVE_LINES.after[Math.floor(Math.random() * FIVE_LINES.after.length)]), 1600);
-    setTimeout(() => this.postcard(at), 350);
+    // the picture when the birds have risen round them, both still beaming
+    setTimeout(() => this.postcard(at), 1300);
     return true;
   }
 
@@ -253,11 +256,11 @@ export class Five {
     const toMiddle = new Vector3(-0.5, 0, -12).sub(mid).setY(0);
     if (side.dot(toMiddle) > 0) side.negate();
     const cam = new PerspectiveCamera(48, W / H, 0.05, 1600);
-    const eye = mid.clone().addScaledVector(side, 2.3).add(new Vector3(0, 0.15, 0));
+    const eye = mid.clone().addScaledVector(side, 2.7).add(new Vector3(0, 0.05, 0));
     cam.position.copy(this.ctx.root.localToWorld(eye.clone()));
-    cam.lookAt(this.ctx.root.localToWorld(mid.clone().add(new Vector3(0, -0.12, 0))));
+    cam.lookAt(this.ctx.root.localToWorld(mid.clone().add(new Vector3(0, 0.12, 0))));
     cam.updateMatrixWorld(true);
-    const target = new WebGLRenderTarget(W, H);
+    const target = new WebGLRenderTarget(W, H, { colorSpace: SRGBColorSpace });
     const xrOn = r.xr.enabled;
     const prev = r.getRenderTarget();
     let url: string | null = null;

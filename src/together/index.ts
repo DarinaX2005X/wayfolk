@@ -79,6 +79,8 @@ export interface TogetherApp {
   storage?: StorageLike;
   /** Whether the person is in the headset now; default renderer.xr.isPresenting. */
   immersive?(): boolean;
+  /** Offers choices as reply bubbles and resolves with the one picked (src/app replies.show fits). */
+  choose?(options: string[]): Promise<string | null | undefined>;
 }
 
 /** The parts of src/live used here (createLive's Live fits). */
@@ -95,6 +97,14 @@ export interface LiveLike {
 export type TogetherAction = 'bridge' | 'duet' | 'lanterns' | 'five';
 
 export interface Together {
+  /** The app's menu hook (src/app/flow.ts Together): a friend is here and something can be done. */
+  available(): boolean;
+  /** The one entry in Pip's menu while a friend is here. */
+  readonly label: string;
+  /** Picked from Pip's menu: offers what the two can do (app.choose) and does it. */
+  open(): Promise<void>;
+  /** A guest has just arrived on the friend's island (called once by the app). */
+  joined(): Promise<void>;
   /** Everything of this module, a child of world.root. */
   readonly root: Group;
   /** The friend here live (the host for a guest, the first guest for a host). */
@@ -112,6 +122,8 @@ export interface Together {
   hold(on: boolean): Promise<void>;
   /** Opens or closes the chimes by the fire (toggles without an argument). */
   duet(on?: boolean): Promise<void>;
+  /** Strikes tube i (0..4, low to high) of my chimes (keys 1 to 5 do it in a page). */
+  chime(i: number): void;
   /** Lets my lantern go. */
   lantern(): void;
   /** A page's high five: raise my hand, or meet the friend's. */
@@ -330,7 +342,7 @@ export function createTogether(mods: TogetherModules): Together {
     run = null;
     dockTold = false;
     workers.setHomes(n.A.clone(), n.B.clone());
-    setTimeout(() => ctx.say(BRIDGE_LINES.drifted(island.owner)), drift ? 4000 : 0);
+    setTimeout(() => ctx.say(role() === 'guest' ? BRIDGE_LINES.followed : BRIDGE_LINES.drifted(island.owner)), drift ? 4000 : 0);
     return n;
   };
 
@@ -400,10 +412,10 @@ export function createTogether(mods: TogetherModules): Together {
   // ---------------------------------------------------------------- live events
 
   const offs: (() => void)[] = [];
-  const on = <K extends TgKind>(kind: K, fn: (d: TgPayloads[K]) => void): void => {
-    const off = live?.on(kind, ((data: unknown) => {
+  const on = <K extends TgKind>(kind: K, fn: (d: TgPayloads[K], from: { id: string } | undefined) => void): void => {
+    const off = live?.on(kind, ((data: unknown, from?: { id: string }) => {
       const d = cleanPayload(kind, data);
-      if (d) fn(d);
+      if (d) fn(d, from);
     }) as never);
     if (typeof off === 'function') offs.push(off);
   };
@@ -412,7 +424,15 @@ export function createTogether(mods: TogetherModules): Together {
     if (typeof off === 'function') offs.push(off);
   };
 
-  on(TG.hello, onHello);
+  // The first hello heard from someone is answered with ours (they may have missed it).
+  const heard = new Set<string>();
+  on(TG.hello, (d, from) => {
+    if (from && !heard.has(from.id)) {
+      heard.add(from.id);
+      helloTo.delete(from.id);
+    }
+    onHello(d);
+  });
   on(TG.dock, (d) => {
     if (role() !== 'guest' || !worldReady) return;
     dock(d.island, d.slot, true);
@@ -467,6 +487,7 @@ export function createTogether(mods: TogetherModules): Together {
   }) as never);
   signal('leave', ((p: { id: string }) => {
     helloTo.delete(p.id);
+    heard.delete(p.id);
     const b = building;
     if (b && !b.complete) {
       ctx.say(`${b.info.owner}'s island drifted home. You can finish the bridge next time.`);
@@ -520,6 +541,8 @@ export function createTogether(mods: TogetherModules): Together {
         if (t.side === sideOf(role())) return { kind: 'coil', point: h.point };
         continue;
       }
+      // the rope itself: anyone may take hold of it, at their own end
+      if (t.kind === 'rope') return { kind: 'coil', point: h.point };
       if (t.kind === 'chime') {
         const c = duet.fromHit(o, h.instanceId);
         if (c) return { kind: 'chime', part: c.part, i: c.i, point: h.point };
@@ -546,7 +569,13 @@ export function createTogether(mods: TogetherModules): Together {
       }
       return false;
     }
-    const hit = hitAlong(ray);
+    let hit = hitAlong(ray);
+    if (!hit && duet.open) {
+      // thin tubes: a click a few centimetres off still rings the nearest one of mine
+      const local = ray.clone().applyMatrix4(world.root.matrixWorld.clone().invert());
+      const i = duet.tubeNearRay(local, duet.mine(), 0.07);
+      if (i !== null) hit = { kind: 'chime', part: duet.mine(), i, point: local.origin };
+    }
     if (!hit) return false;
     if (hit.kind === 'coil') {
       pointerHold = true;
@@ -575,6 +604,15 @@ export function createTogether(mods: TogetherModules): Together {
     }
   };
   app.canvas?.addEventListener('pointerdown', onDown, { capture: true });
+  // In a page, keys 1 to 5 play my chimes while they are out.
+  const onKey = (e: KeyboardEvent): void => {
+    if (!duet.open || ctx.immersive() || e.repeat) return;
+    const t = e.target as HTMLElement | null;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    const i = '12345'.indexOf(e.key);
+    if (i >= 0) strikeMine(duet.mine(), i, 0.8, null);
+  };
+  if (typeof window !== 'undefined') window.addEventListener('keydown', onKey);
   if (typeof window !== 'undefined') window.addEventListener('pointerup', onUp);
 
   // XR hands: fingertips ring the chimes, a pinch takes the rope, palms meet for a high five.
@@ -680,7 +718,11 @@ export function createTogether(mods: TogetherModules): Together {
     ctx.send(TG.duet, { on: next });
     if (next) {
       ctx.say(DUET_LINES.open);
-      await ctx.glide(duet.spots[role() === 'guest' ? 'guest' : 'host']);
+      const spot = duet.spots[role() === 'guest' ? 'guest' : 'host'];
+      // In the headset the chimes are within reach; in a page a step back keeps them in view.
+      const back = ctx.immersive() ? 0 : 0.95;
+      const pos = spot.pos.clone().add(new Vector3(Math.sin(spot.rotY) * back, 0, Math.cos(spot.rotY) * back));
+      await ctx.glide({ pos, rotY: spot.rotY });
     }
   };
 
@@ -754,6 +796,28 @@ export function createTogether(mods: TogetherModules): Together {
     });
 
   const together: Together = {
+    available() {
+      return worldReady && friend() !== null;
+    },
+    get label() {
+      return `Do something with ${friend()?.name ?? 'your friend'}`;
+    },
+    async open() {
+      const list = together.actions();
+      if (!list.length) return;
+      if (!app.choose) {
+        await together.act(list[0].id);
+        return;
+      }
+      const pick = await app.choose([...list.map((a) => a.label), 'Not now']);
+      const a = list.find((x) => x.label === pick);
+      if (a) await together.act(a.id);
+    },
+    async joined() {
+      await greet();
+      const b = building;
+      if (b && !b.complete) ctx.say(b.docked ? BRIDGE_LINES.hold : BRIDGE_LINES.followed);
+    },
     root,
     get friend() {
       return friend();
@@ -777,7 +841,7 @@ export function createTogether(mods: TogetherModules): Together {
       const docked = neighbours.some((n) => n.info.id === friendIsland?.id);
       if (role() === 'host' && friendIsland && !docked && freeSlot(record)) out.push({ id: 'bridge', label: `Bring ${f.name}'s island over` });
       out.push({ id: 'duet', label: duet.open ? 'Put the chimes away' : 'Play the chimes together' });
-      out.push({ id: 'lanterns', label: 'Let a lantern go' });
+      out.push({ id: 'lanterns', label: 'Let lanterns go together' });
       if (!ctx.immersive()) out.push({ id: 'five', label: `High five ${f.name}` });
       return out;
     },
@@ -795,6 +859,10 @@ export function createTogether(mods: TogetherModules): Together {
     },
     hold,
     duet: openDuet,
+    chime(i) {
+      if (!duet.open || i < 0 || i > 4) return;
+      strikeMine(duet.mine(), Math.floor(i), 0.8, null);
+    },
     lantern: releaseLantern,
     highFive,
     visiting(state) {
@@ -807,7 +875,10 @@ export function createTogether(mods: TogetherModules): Together {
       offFrame?.();
       for (const o of offs) o();
       app.canvas?.removeEventListener('pointerdown', onDown, { capture: true });
-      if (typeof window !== 'undefined') window.removeEventListener('pointerup', onUp);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('keydown', onKey);
+      }
       for (const n of neighbours) n.dispose();
       duet.dispose();
       five.dispose();

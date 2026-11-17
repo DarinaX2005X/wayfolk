@@ -320,7 +320,8 @@ export function neighbourIsland(look: NeighbourLook): NeighbourShape {
     }
   }
   // grass tufts: a few blades each, swaying with the island wind (leaf surface)
-  for (let k = 0; k < 140; k++) {
+  const blades = ['#8cc152', '#7cb24b', '#a3c95a', '#6aa443'].map((h) => new Color(h));
+  for (let k = 0; k < 260; k++) {
     const a = r() * TAU;
     const d = Math.sqrt(r()) * R * 0.97;
     const x = Math.cos(a) * d;
@@ -331,8 +332,8 @@ export function neighbourIsland(look: NeighbourLook): NeighbourShape {
     const tuft: BufferGeometry[] = [];
     const n = 4 + Math.floor(r() * 3);
     for (let b = 0; b < n; b++) {
-      const h = 0.16 + r() * 0.2;
-      const w = 0.025;
+      const h = 0.12 + r() * 0.16;
+      const w = 0.022;
       const ang = r() * TAU;
       const lean = (r() - 0.5) * 0.4;
       const blade = new BufferGeometry();
@@ -342,11 +343,12 @@ export function neighbourIsland(look: NeighbourLook): NeighbourShape {
       blade.translate((r() - 0.5) * 0.12, 0, (r() - 0.5) * 0.12);
       tuft.push(blade);
     }
-    const g = GRASS[Math.floor(r() * 4)];
-    parts.push(join(tuft.map((t) => paint(t, g, { mat: M.leaf, shade: 0.45, wobble: 0.05 }))).translate(x, y, z));
+    const g = blades[Math.floor(r() * 4)];
+    parts.push(join(tuft.map((t) => paint(t, g, { mat: M.leaf, shade: 0.3, wobble: 0.06 }))).translate(x, y, z));
   }
   // ---- at the bridge head: a lamp post on one side, a signpost on the other
-  const lamp = catalogGeometry('post-lantern', 1) ?? catalogGeometry('stone-lamp', 1);
+  // a stone lamp (a lantern hung off a post's arm reads badly from afar)
+  const lamp = catalogGeometry('stone-lamp', 1) ?? catalogGeometry('lantern', 1);
   if (lamp) parts.push(place(lamp, [head.x + 0.35, height(head.x + 0.35, head.z + 1.05), head.z + 1.05], [0, Math.PI / 2, 0]));
   const sign = catalogGeometry('signpost', 1);
   if (sign) parts.push(place(sign, [head.x + 0.45, height(head.x + 0.45, head.z - 1.15), head.z - 1.15], [0, -Math.PI / 2 + 0.3, 0]));

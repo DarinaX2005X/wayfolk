@@ -16,6 +16,9 @@ import { AdditiveBlending, BufferGeometry, Group, Mesh, MeshBasicMaterial, RingG
 import type { Resident } from '../mind/types';
 import { bridgePlank, bridgePost, mainMaterial, neighbourIsland, ropeCoil, ropeTube, type NeighbourShape } from '../world/index';
 import { join, place } from '../world/geo';
+import { CATALOG } from '../world/catalog';
+import { kitGeometry } from '../world/kit';
+import { buildProp } from '../world/props';
 import type { Ctx } from './context';
 import { BridgeRun, SLOTS, bridgePoint, plankCount, plankSide, ropeTension, type Slot } from './plan';
 import type { BridgeRecord, NeighbourIsland, SlotId } from './records';
@@ -23,6 +26,7 @@ import type { Worker, Workers } from './birds';
 
 export const BRIDGE_LINES = {
   drifted: (owner: string) => `Look over there. ${owner}'s island has drifted over to be near us.`,
+  followed: 'Look. Your own island followed you all the way here.',
   hold: 'Each of you, hold an end of the rope. The birds only lay planks while both ends are held.',
   waitFriend: (friend: string) => `Keep holding. ${friend} needs to take the other end.`,
   waitYou: (friend: string) => `${friend} is holding the far end. Take yours.`,
@@ -36,6 +40,12 @@ const CARRY = 1.45;
 const SETTLE = 0.25;
 const FLIGHT = RISE + CARRY + SETTLE;
 const SAG = 0.18;
+
+function catalogGeometry(id: string): BufferGeometry | null {
+  const item = CATALOG[id];
+  if (!item) return null;
+  return 'kit' in item.source ? kitGeometry(item.source.kit, item.scale) : buildProp(item.source.proc, 5);
+}
 
 const ease = (t: number): number => {
   const x = Math.max(0, Math.min(1, t));
@@ -131,6 +141,13 @@ export class Neighbour {
     const postParts: BufferGeometry[] = [];
     for (const [p, y] of [[this.A, ya], [this.B, ya]] as const)
       for (const k of [-1, 1]) postParts.push(place(postGeo.clone(), [p.x + this.n.x * k * 0.72, y, p.z + this.n.z * k * 0.72]));
+    // A stone lamp at our end too, so both heads of the bridge are lit at night.
+    const lamp = catalogGeometry('stone-lamp');
+    if (lamp) {
+      const lx = this.A.x - this.u.x * 0.35 - this.n.x * 1.25;
+      const lz = this.A.z - this.u.z * 0.35 - this.n.z * 1.25;
+      postParts.push(place(lamp, [lx, ctx.ground(lx, lz), lz], [0, Math.atan2(this.u.x, this.u.z), 0]));
+    }
     this.posts = new Mesh(join(postParts), mainMaterial());
     this.posts.name = 'together:posts';
     this.bridge.add(this.posts);
@@ -396,6 +413,7 @@ export class Neighbour {
     if (!this.rope) {
       this.rope = new Mesh(g, mainMaterial());
       this.rope.name = 'together:rope';
+      this.rope.userData.together = { kind: 'rope', neighbour: this.info.id };
       this.bridge.add(this.rope);
     } else {
       this.rope.geometry.dispose();
@@ -547,7 +565,8 @@ export class Neighbour {
 
   /** The objects a person can hold: the coils. */
   targets(): Object3D[] {
-    return this.complete || !this.docked ? [] : [this.coils.near, this.coils.far];
+    if (this.complete || !this.docked) return [];
+    return this.rope ? [this.coils.near, this.coils.far, this.rope] : [this.coils.near, this.coils.far];
   }
 }
 

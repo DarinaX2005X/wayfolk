@@ -34,8 +34,10 @@ export interface Ambience {
   stop(): void;
 }
 
-const TREES: [number, number][] = [[-6.3, -22.2], [4.5, -24.5], [-12.6, -19.5], [11.5, -16.8], [-3.2, 0.9], [9.6, -21.0], [-10.4, -3.0]];
-const CHIME: [number, number] = [1.62, 0.25];
+// Birdsong comes from trees well away from the porch (10 m and more), never by the ear.
+const TREES: [number, number][] = [[-6.3, -22.2], [4.5, -24.5], [-12.6, -19.5], [11.5, -16.8], [9.6, -21.0], [-12.0, -9.6]];
+// The porch chimes hang from the porch tree's bough (island.ts CHIMES_AT).
+const CHIME: [number, number] = [-2.05, 0.55];
 
 function noiseBuffer(ctx: AudioContext, seconds: number, brown: boolean): AudioBuffer {
   const b = ctx.createBuffer(1, Math.floor(ctx.sampleRate * seconds), ctx.sampleRate);
@@ -144,7 +146,7 @@ export function createAmbience(ctx: AudioContext, dest: AudioNode): Ambience {
   // a short chirping phrase from a tree
   const bird = (x: number, z: number): void => {
     const s = spot(x, z, 7);
-    s.level(0.05);
+    s.level(0.035);
     const t0 = ctx.currentTime + 0.05;
     const notes = 2 + Math.floor(Math.random() * 4);
     const base = 2600 + Math.random() * 1800;
@@ -166,10 +168,10 @@ export function createAmbience(ctx: AudioContext, dest: AudioNode): Ambience {
 
   // porch chimes: soft pentatonic bells
   const chime = spot(CHIME[0], CHIME[1], 2.5);
-  chime.level(0.05);
+  chime.level(0.022);
   const PENTA = [0, 2, 4, 7, 9, 12, 14];
   const ring = (): void => {
-    const n = 1 + Math.floor(Math.random() * 3);
+    const n = 1 + Math.floor(Math.random() * 2);
     for (let i = 0; i < n; i++) {
       const t = ctx.currentTime + i * (0.18 + Math.random() * 0.25);
       const f = 880 * Math.pow(2, PENTA[Math.floor(Math.random() * PENTA.length)] / 12);
@@ -204,8 +206,8 @@ export function createAmbience(ctx: AudioContext, dest: AudioNode): Ambience {
     src.start(t, Math.random() * 2, 0.1);
   };
 
-  let nextBird = ctx.currentTime + 2;
-  let nextChime = ctx.currentTime + 5;
+  let nextBird = ctx.currentTime + 4;
+  let nextChime = ctx.currentTime + 12;
   let nextCrackle = ctx.currentTime;
   const tick = (): void => {
     if (stopped) return;
@@ -217,11 +219,11 @@ export function createAmbience(ctx: AudioContext, dest: AudioNode): Ambience {
         const [x, z] = TREES[Math.floor(Math.random() * TREES.length)];
         bird(x, z);
       }
-      nextBird = now + 1.2 + Math.random() * 4 / Math.max(0.3, day);
+      nextBird = now + 6 + (Math.random() * 12) / Math.max(0.3, day);
     }
     if (now > nextChime) {
       ring();
-      nextChime = now + 5 + Math.random() * 10;
+      nextChime = now + 25 + Math.random() * 35;
     }
     for (const c of crickets) {
       if (now < c.next) continue;

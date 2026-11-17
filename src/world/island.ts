@@ -19,7 +19,10 @@ import { M, MAT, blob, build, cbox, cyl, join, paint, place, rng, surfaceAlpha, 
 import { kitGeometry } from './kit';
 import { CENTER, HILL, ISLETS, LOTS, Land, PIER, POND, SEAT, STREAM, isletR, outlineR, segDist, type Islet } from './land';
 import { mainMaterial, U } from './materials';
-import { buildProp, mossyRock } from './props';
+import { branchChime, buildProp, mossyRock } from './props';
+
+/** Where the porch chimes hang (from the porch tree's bough), for their sound. */
+export const CHIMES_AT = { x: -2.05, z: 0.55 };
 import type { Batch } from './batch';
 
 const TAU = Math.PI * 2;
@@ -432,7 +435,6 @@ export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatc
     ['tea-table', 1.35, -0.45, -0.4, 0.75],
     ['flower-pot', -1.45, 0.95, 0, 1],
     ['flower-pot', 1.55, 1.05, 0.5, 0.9],
-    ['wind-chime', 1.62, 0.25, 0.6, 0.8],
     ['mailbox', 2.45, -1.1, -0.9, 1],
   ];
   for (const [id, x, z, rot, s] of side) {
@@ -443,6 +445,9 @@ export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatc
   }
   batch.add('porch:books', place(kitGeometry('books', 0.5), [1.15, deckY + 0.3, -0.2], [0, 0.4, 0]));
   batch.add('porch:tree', place(kitGeometry('tree-round-b', 3.6), [-3.2, land.height(-3.2, 0.9), 0.9], [0, 0.6, 0]));
+  // the porch chimes hang from a low bough of that tree, toward the bench
+  const treeY = land.height(-3.2, 0.9);
+  batch.add('porch:chimes', branchChime([-3.05, treeY + 1.55, 0.86], [CHIMES_AT.x, treeY + 1.72, CHIMES_AT.z]));
   shadows.push([-3.2, 0.9, 1.7, 0.6]);
   batch.add('porch:pumpkins', join([
     place(kitGeometry('pumpkin', 0.5), [-2.25, land.height(-2.25, -1.2), -1.2], [0, 0.4, 0]),

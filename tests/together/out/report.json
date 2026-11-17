@@ -1,0 +1,17 @@
+{
+  "bridge": {
+    "mid": 8,
+    "kept": [
+      [
+        "Thistle Knoll:east:Mira+Tom"
+      ],
+      [
+        "Juniper Rock:east:Tom+Mira"
+      ]
+    ],
+    "stats": {
+      "calls": 48,
+      "triangles": 103681
+    }
+  }
+}

@@ -87,12 +87,12 @@ try {
       const n = window.__tg.together.neighbours[0];
       return { near: [n.spots.near.pos.x, n.spots.near.pos.y, n.spots.near.pos.z, n.spots.near.rotY], far: [n.spots.far.pos.x, n.spots.far.pos.y, n.spots.far.pos.z, n.spots.far.rotY], coil: n.coils.near.position.toArray() };
     });
-    await host.evaluate(([x, y, z, yaw]) => window.__tg.eyeAt(x, y + 1.15, z, yaw, -0.12), spots.near);
+    await host.evaluate(([x, y, z, yaw]) => window.__tg.eyeAt(x, y + 1.15, z, yaw, -0.3), spots.near);
     await guest.evaluate(([x, y, z, yaw]) => window.__tg.eyeAt(x, y + 1.15, z, yaw, -0.12), spots.far);
     await host.waitForTimeout(1500);
     await shot(host, 'bridge-2-docked.png');
     // The host presses its coil with a real mouse and keeps holding; the guest holds too.
-    const pt = await host.evaluate(([x, y, z]) => window.__tg.screen(x, y + 0.6, z), spots.coil);
+    const pt = await host.evaluate(([x, y, z]) => window.__tg.screen(x, y + 0.84, z), spots.coil);
     await host.mouse.move(pt.x, pt.y);
     await host.mouse.down();
     await host.waitForTimeout(400);
@@ -138,7 +138,7 @@ try {
     await host.evaluate(() => window.__tg.lookAt(7.5, 3.4, 3.8, 18.5, -0.8, -3.2, 55));
     await shot(host, 'bridge-4-done.png');
     await guest.evaluate(() => window.__tg.fast(2));
-    await guest.evaluate(() => window.__tg.lookAt(26.5, 2.6, 4.5, 14, 0, -6, 60));
+    await guest.evaluate(([x, y, z, yaw]) => window.__tg.eyeAt(x, y + 1.15, z, yaw, -0.16), spots.far);
     await shot(guest, 'bridge-5-guest-view.png');
     // Later: folk walk over (fast-forward the walking clock).
     await host.evaluate(() => window.__tg.fast(26));
@@ -146,6 +146,17 @@ try {
     await shot(host, 'bridge-6-folk.png');
     report.bridge = { mid, kept, stats: await host.evaluate(() => window.__tg.stats()) };
     await ctx.close();
+  }
+
+  if (run('porch')) {
+    // The world's porch chimes now hang from a bough of the porch tree.
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    await page.goto(`${base}?role=host&captions=0`);
+    await page.waitForFunction(() => window.__ready === true, null, { timeout: 60_000 });
+    await page.evaluate(() => window.__tg.fast(1));
+    await page.evaluate(() => window.__tg.lookAt(0.2, 1.45, -1.6, -2.1, 1.25, 0.5, 55));
+    await shot(page, 'porch-chimes.png');
+    await page.close();
   }
 
   if (run('duet')) {
@@ -178,20 +189,20 @@ try {
     // Both play.
     let duoPeak = 0;
     for (let k = 0; k < 10; k++) {
-      await guest.evaluate((i) => window.__tg.together.debug.duet.strike('high', i % 5, 0.8, null) || window.__tg.together.debug.ctx.send('tg-chime', { i: i % 5, v: 0.8 }), k);
+      await guest.keyboard.press(String((k % 5) + 1));
       const s = await host.evaluate(([x, y, z]) => window.__tg.screen(x, y, z), tubes[(k * 2) % 5]);
       await host.mouse.click(s.x, s.y);
       await host.evaluate(() => window.__tg.fast(0.3));
       duoPeak = Math.max(duoPeak, await host.evaluate(() => window.__tg.together.debug.duet.pulse));
     }
     check(duoPeak > soloPeak * 2, `both together light it far more (${duoPeak.toFixed(2)} vs ${soloPeak.toFixed(2)})`);
-    await host.evaluate(() => window.__tg.fast(3));
-    for (let k = 0; k < 6; k++) {
-      await guest.evaluate((i) => window.__tg.together.debug.duet.strike('high', i % 5, 0.9, null) || window.__tg.together.debug.ctx.send('tg-chime', { i: i % 5, v: 0.9 }), k);
-      await host.evaluate((i) => window.__tg.together.debug.duet.strike('low', (i * 3) % 5, 0.9, null) || window.__tg.together.debug.ctx.send('tg-chime', { i: (i * 3) % 5, v: 0.9 }), k);
-      await host.evaluate(() => window.__tg.fast(0.25));
+    // They keep playing a while: the residents come to the fire and dance.
+    for (let k = 0; k < 36; k++) {
+      await guest.evaluate((i) => window.__tg.together.chime(i % 5), k);
+      await host.evaluate((i) => window.__tg.together.chime((i * 3) % 5), k);
+      await host.evaluate(() => window.__tg.fast(0.3));
     }
-    await host.evaluate(() => window.__tg.lookAt(0.6, 1.7, 0.8, -2.6, 0.7, -4.2, 58));
+    await host.evaluate(() => window.__tg.lookAt(0.9, 1.75, -0.6, -2.7, 0.75, -4.4, 60));
     await shot(host, 'duet-1-both.png');
     const spot = await guest.evaluate(() => {
       const s = window.__tg.together.debug.duet.spots.guest;

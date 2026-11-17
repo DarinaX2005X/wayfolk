@@ -15,6 +15,96 @@ function flowerHead(x: number, y: number, z: number, petal: Hex, size = 0.07): P
   ];
 }
 
+/**
+ * A wind chime that cannot read as a post with something hanging off an arm: a bamboo cane
+ * growing out of a planter, bending over like a reed in a long soft arc, with a few leaves
+ * along it and the chime hanging from its tip. `hang` is the tip (the ring's centre).
+ */
+export function chimeCane(height = 1.55, reach = 0.42): { parts: Part[]; hang: [number, number, number] } {
+  const parts: Part[] = [
+    [lathe([[0.0, 0], [0.13, 0], [0.16, 0.2], [0.19, 0.22], [0.19, 0.27], [0.0, 0.27]], 12), MAT.terracotta, { mat: M.brick }],
+    [place(cyl(0.16, 0.16, 0.02, 12), [0, 0.25, 0]), MAT.soil, { shade: 0 }],
+    [place(blob(0.13, 1, 4, 0.2, 0.6), [0.02, 0.3, -0.03]), MAT.leafDark, { smooth: true, mat: M.leaf }],
+  ];
+  // the cane: segments along a curve that rises straight and then arcs over toward +x
+  const pts: [number, number, number][] = [];
+  const n = 12;
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const bend = Math.pow(Math.max(0, (t - 0.45) / 0.55), 1.6);
+    pts.push([reach * bend, 0.26 + (height - 0.26) * (t - 0.18 * bend * bend), 0]);
+  }
+  for (let i = 0; i < n; i++) {
+    const a = pts[i];
+    const b = pts[i + 1];
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const len = Math.hypot(dx, dy);
+    const r = 0.022 - i * 0.0011;
+    parts.push([place(cyl(r * 0.92, r, len + 0.004, 6), [a[0], a[1], a[2]], [0, 0, -Math.atan2(dx, dy)]), i % 3 === 2 ? '#a9a259' : '#c2b56a', { mat: M.bark, shade: 0.1 }]);
+    if (i % 3 === 2) parts.push([place(cyl(r * 1.25, r * 1.25, 0.018, 6), [b[0], b[1] - 0.01, b[2]], [0, 0, -Math.atan2(dx, dy)]), '#8f8746', { mat: M.bark }]);
+  }
+  // long narrow leaves off the joints
+  for (const [i, side] of [[4, 1], [6, -1], [8, 1], [10, -1]] as [number, number][]) {
+    const p = pts[i];
+    parts.push([place(blob(0.05, 1, 20 + i, 0.08, 0.25), [p[0] + 0.07, p[1] + 0.02, p[2] + side * 0.05], [0.3 * side, 0.4 * side, -0.6], [2.2, 1, 0.8]), MAT.leaf, { smooth: true, mat: M.leaf, flutter: 'all' }]);
+  }
+  const tip = pts[n];
+  const hang: [number, number, number] = [tip[0], tip[1] - 0.16, tip[2]];
+  parts.push([place(cyl(0.004, 0.004, 0.16, 3), [tip[0], tip[1] - 0.16, tip[2]]), MAT.rope]);
+  parts.push([place(cyl(0.085, 0.085, 0.03, 12), [hang[0], hang[1] - 0.03, hang[2]]), MAT.woodLight, { mat: M.plank }]);
+  return { parts, hang };
+}
+
+/** Five resting chime tubes and their strings under a ring at `hang`. */
+export function chimeTubes(hang: [number, number, number], metal: Hex = '#b7d0d6'): Part[] {
+  const parts: Part[] = [];
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    const len = 0.26 - i * 0.025;
+    const x = hang[0] + Math.cos(a) * 0.06;
+    const z = hang[2] + Math.sin(a) * 0.06;
+    parts.push([place(cyl(0.003, 0.003, 0.06, 3), [x, hang[1] - 0.09, z]), MAT.rope]);
+    parts.push([place(cyl(0.013, 0.013, len, 8), [x, hang[1] - 0.09 - len, z]), metal, { shade: 0.1, mat: M.metal }]);
+  }
+  // the wind catcher: a small wooden leaf on a thread
+  parts.push([place(cyl(0.002, 0.002, 0.34, 3), [hang[0], hang[1] - 0.37, hang[2]]), MAT.rope]);
+  parts.push([place(blob(0.04, 1, 3, 0.05, 0.3), [hang[0], hang[1] - 0.42, hang[2]], [Math.PI / 2, 0, 0], [1, 1.5, 1]), MAT.woodLight, { smooth: true, mat: M.plank }]);
+  return parts;
+}
+
+/** A chime hanging from a tree's low branch: the bough from the trunk, the cord, the tubes. */
+export function branchChime(trunk: [number, number, number], hang: [number, number, number]): BufferGeometry {
+  const dx = hang[0] - trunk[0];
+  const dz = hang[2] - trunk[2];
+  const len = Math.hypot(dx, dz);
+  const yaw = Math.atan2(dx, dz);
+  const lift = 0.22;
+  const parts: Part[] = [];
+  // a bough leaving the trunk and rising a little, thinning toward the tip
+  const n = 5;
+  for (let i = 0; i < n; i++) {
+    const t0 = i / n;
+    const t1 = (i + 1) / n;
+    const y0 = trunk[1] + lift * Math.sin(t0 * Math.PI * 0.5);
+    const y1 = trunk[1] + lift * Math.sin(t1 * Math.PI * 0.5);
+    const seg = Math.hypot((t1 - t0) * len, y1 - y0);
+    const pitch = Math.atan2(y1 - y0, (t1 - t0) * len);
+    const g = cyl(0.055 - i * 0.008, 0.06 - i * 0.008, seg + 0.01, 7);
+    g.rotateX(Math.PI / 2 - pitch);
+    g.rotateY(yaw);
+    g.translate(trunk[0] + dx * t0, y0, trunk[2] + dz * t0);
+    parts.push([g, MAT.woodDark, { mat: M.bark }]);
+  }
+  parts.push([place(blob(0.16, 1, 31, 0.2, 0.7), [trunk[0] + dx * 0.75, trunk[1] + lift + 0.08, trunk[2] + dz * 0.75]), MAT.leaf, { smooth: true, mat: M.leaf }]);
+  const top = trunk[1] + lift;
+  const cord = top - hang[1];
+  parts.push([place(cyl(0.004, 0.004, cord, 3), [hang[0], hang[1], hang[2]]), MAT.rope]);
+  parts.push([place(cyl(0.085, 0.085, 0.03, 12), [hang[0], hang[1] - 0.03, hang[2]]), MAT.woodLight, { mat: M.plank }]);
+  parts.push(...chimeTubes(hang));
+  return build(parts);
+}
+
 const BUILDERS: Record<string, (seed: number) => Part[]> = {
   'star-lamp': () => [
     [cyl(0.035, 0.05, 1.1, 6), MAT.woodDark],
@@ -120,16 +210,7 @@ const BUILDERS: Record<string, (seed: number) => Part[]> = {
     parts.push([place(cbox(0.08, 0.06, 0.06, 0.015), [0, 0, -0.12]), '#e8a98f']);
     return parts;
   },
-  'wind-chime': () => [
-    [place(cbox(0.06, 1.8, 0.06, 0.015), [0, 0, -0.25]), MAT.woodDark],
-    [place(cbox(0.06, 0.06, 0.5, 0.015), [0, 1.74, 0]), MAT.woodDark],
-    [place(cyl(0.12, 0.12, 0.03, 10), [0, 1.48, 0.15]), MAT.wood],
-    [place(cyl(0.004, 0.004, 0.26, 3), [0, 1.5, 0.15]), MAT.rope],
-    ...[0, 1, 2, 3, 4].map((i): Part => {
-      const a = (i / 5) * Math.PI * 2;
-      return [place(cyl(0.015, 0.015, 0.22 + (i % 3) * 0.07, 6), [Math.cos(a) * 0.08, 1.2 - (i % 3) * 0.06, 0.15 + Math.sin(a) * 0.08]), '#b7d0d6', { shade: 0.1 }];
-    }),
-  ],
+  'wind-chime': () => [...chimeCane().parts, ...chimeTubes(chimeCane().hang)],
   mailbox: () => [
     [cbox(0.08, 1.0, 0.08, 0.02), MAT.woodDark],
     [place(cbox(0.3, 0.22, 0.42, 0.03), [0, 0.98, 0]), MAT.red],

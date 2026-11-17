@@ -63,7 +63,7 @@ function slotAt(id: SlotId, angle: number, gap: number, turn: number): Slot {
 
 /** East: off the right edge, between the porch and the pier. West: past the sand spit. */
 export const SLOTS: Record<SlotId, Slot> = {
-  east: slotAt('east', 0.42, 6.0, 0.05),
+  east: slotAt('east', 0.3, 6.0, 0.08),
   west: slotAt('west', 2.68, 6.0, -0.12),
 };
 
@@ -155,7 +155,7 @@ export const SCALE = [0, 2, 4, 7, 9];
 export const ROOT_HZ = 293.66; // D4
 
 export function chimeHz(part: 'low' | 'high', i: number): number {
-  const steps = part === 'low' ? [-5, 0, 2, 4, 7] : [7, 9, 12, 14, 16];
+  const steps = part === 'low' ? [-5, 0, 2, 4, 7] : [9, 12, 14, 16, 19];
   return ROOT_HZ * Math.pow(2, steps[Math.max(0, Math.min(steps.length - 1, i))] / 12);
 }
 
