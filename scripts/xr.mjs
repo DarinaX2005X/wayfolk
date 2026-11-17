@@ -33,7 +33,7 @@ const DEVICES = { metaQuest3: 'Meta Quest 3', metaVRGlasses: 'Meta VR Glasses' }
 const MODES = ['hand', 'hand-ray', 'controller', 'gaze', 'mouse'];
 const STEP_KINDS = ['run', 'pull', 'mouse', 'lose', 'head', 'expect', 'eval', 'visibility', 'clock', 'reload', 'shot', 'wait'];
 
-const HELP = `Hand scenarios for Groundwork
+const HELP = `Hand scenarios for Wayfolk
 
   npm run xr -- <scenario.json> [more.json ...]   run the given scenarios
   npm run xr:all                                  run every scenario under tests/xr/

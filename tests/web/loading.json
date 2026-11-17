@@ -1,0 +1,13 @@
+{
+  "name": "the loading moment, then the clouds part over the live island",
+  "steps": [
+    { "goto": "/" },
+    { "wait": 0.8 },
+    { "shot": "loading-1.png" },
+    { "label": "the island is ready", "eval": "document.querySelector('.home')?.dataset.loaded === 'yes'", "equals": true, "within": 40 },
+    { "wait": 0.9 },
+    { "shot": "loading-2-parting.png" },
+    { "wait": 3 },
+    { "shot": "loading-3-island.png" }
+  ]
+}

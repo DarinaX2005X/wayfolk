@@ -54,30 +54,55 @@ export const BALLOON = `
   <path d="M84 230 H116 M84 238 H116" stroke="#7a4f2e" stroke-width="2.5"/>
 </svg>`;
 
-export const PAINTED_SKY = `
-<svg class="painted" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+/** One bank of soft sunset clouds: overlapping lobes with a warm underside. */
+function bank(seed: number, y: number, scale: number): string {
+  let out = '';
+  for (let i = 0; i < 9; i += 1) {
+    const x = ((i * 197 + seed * 61) % 1700) - 50;
+    const w = (150 + ((i * 53 + seed * 17) % 120)) * scale;
+    const h = w * 0.42;
+    const cy = y + ((i * 29 + seed * 7) % 40);
+    out += `<g transform="translate(${x} ${cy})">
+      <ellipse cx="0" cy="${h * 0.35}" rx="${w}" ry="${h * 0.55}" fill="#f2b38a"/>
+      <ellipse cx="${-w * 0.35}" cy="0" rx="${w * 0.55}" ry="${h * 0.75}" fill="#ffe6cc"/>
+      <ellipse cx="${w * 0.25}" cy="${-h * 0.25}" rx="${w * 0.6}" ry="${h * 0.95}" fill="#fff2e2"/>
+      <ellipse cx="${w * 0.7}" cy="${h * 0.1}" rx="${w * 0.42}" ry="${h * 0.6}" fill="#ffe9d4"/>
+    </g>`;
+  }
+  return out;
+}
+
+/** The sunset behind the loading moment: sky and the low sun, no objects. */
+export const LOADING_SKY = `
+<svg class="ls-sky" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
   <defs>
-    <linearGradient id="ps-sky" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="ls-g" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#3d5f86"/>
-      <stop offset="0.45" stop-color="#b98a8e"/>
-      <stop offset="0.7" stop-color="#f2a66b"/>
+      <stop offset="0.42" stop-color="#b98a8e"/>
+      <stop offset="0.68" stop-color="#f2a66b"/>
       <stop offset="1" stop-color="#ffd9b0"/>
     </linearGradient>
-    <radialGradient id="ps-sun" cx="0.28" cy="0.66" r="0.35">
-      <stop offset="0" stop-color="#fff2cf" stop-opacity="0.95"/>
-      <stop offset="1" stop-color="#fff2cf" stop-opacity="0"/>
+    <radialGradient id="ls-sun" cx="0.62" cy="0.66" r="0.4">
+      <stop offset="0" stop-color="#fff3cf" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#fff3cf" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="1600" height="900" fill="url(#ps-sky)"/>
-  <rect width="1600" height="900" fill="url(#ps-sun)"/>
-  <g fill="#ffe9d2" opacity="0.95">
-    <ellipse cx="200" cy="760" rx="320" ry="90"/><ellipse cx="560" cy="790" rx="360" ry="100"/>
-    <ellipse cx="980" cy="770" rx="380" ry="95"/><ellipse cx="1400" cy="760" rx="330" ry="90"/>
-  </g>
-  <g fill="#f6c4a0"><rect y="800" width="1600" height="100"/></g>
-  <g transform="translate(860 600)">
-    <path d="M-170 0 C -150 -30 150 -30 170 0 L 90 110 L -60 120 Z" fill="#9a6b47"/>
-    <ellipse cx="0" cy="0" rx="172" ry="34" fill="#7fb24a"/>
-    <path d="M-90 -10 l20 -90 l20 90z M40 -14 l24 -110 l24 110z" fill="#4f8f3c"/>
-  </g>
+  <rect width="1600" height="900" fill="url(#ls-g)"/>
+  <rect width="1600" height="900" fill="url(#ls-sun)"/>
+</svg>`;
+
+/** Two banks of clouds that part to the sides when the island is ready. */
+export const CLOUDS_LEFT = `<svg class="ls-bank" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${bank(1, 640, 1.1)}${bank(4, 760, 1.5)}</svg>`;
+export const CLOUDS_RIGHT = `<svg class="ls-bank" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${bank(2, 560, 0.9)}${bank(7, 700, 1.3)}</svg>`;
+
+/** Pip in flight, wings up and down by CSS. */
+export const PIP_FLYING = `
+<svg class="ls-pip" viewBox="-40 -40 80 70" aria-hidden="true">
+  <g class="ls-wing"><path d="M2 -2 q14 -26 30 -20 q-8 16 -26 26z" fill="#e9724c" stroke="#5a2a17" stroke-width="3" stroke-linejoin="round"/></g>
+  <ellipse cx="0" cy="4" rx="20" ry="17" fill="#ff8a3d" stroke="#5a2a17" stroke-width="3.5"/>
+  <ellipse cx="-4" cy="10" rx="11" ry="8" fill="#ffd9a0"/>
+  <circle cx="-8" cy="-2" r="3.8" fill="#2b1a12"/>
+  <circle cx="-9.2" cy="-3.3" r="1.3" fill="#fff"/>
+  <path d="M-19 1 l-12 4 l12 4z" fill="#f4b740" stroke="#5a2a17" stroke-width="2.5" stroke-linejoin="round"/>
+  <g class="ls-wing"><path d="M4 0 q16 -24 32 -16 q-8 18 -28 22z" fill="#f08a52" stroke="#5a2a17" stroke-width="3" stroke-linejoin="round"/></g>
 </svg>`;

@@ -23,6 +23,7 @@ import { FONT } from '../kit/ui/bubble';
 import { drawQr, encodeQr } from '../kit/ui/qr';
 import type { App } from './boot/world';
 import { registerDebug, registerTest } from './debug';
+import { shareOrigin } from './origin';
 import type { Hands } from './hands/hands';
 import type { MindPort } from './ports';
 
@@ -57,7 +58,7 @@ export function isFrameGesture(g: {
 }
 
 export function islandLink(id: string): string {
-  return `${location.origin}/p/${encodeURIComponent(id)}`;
+  return `${shareOrigin()}/p/${encodeURIComponent(id)}`;
 }
 
 export function createPostcard(app: App, hands: Hands, mind: MindPort): Postcard {

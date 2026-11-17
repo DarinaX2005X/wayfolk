@@ -19,7 +19,7 @@ import { createGlide } from './hands/glide';
 import { createHands, type Hands } from './hands/hands';
 import { createPlacement } from './hands/place';
 import { createReplies, type Replies } from './hands/replies';
-import { createVoice } from './hands/voice';
+import { createVoice, type Voice } from './hands/voice';
 import { createModules, type Modules } from './modules';
 import type { IslandState } from '../mind/types';
 import { anchorPoint, type AppHandle } from './ports';
@@ -34,8 +34,11 @@ export type Wayfolk = {
   flow: Flow;
   postcard: Postcard;
   replies: Replies;
+  voice: Voice;
   /** Runs the first minute (or the later visit); safe to call once. */
   begin(): Promise<void>;
+  /** Loads the fonts and compiles every material of the scene, so the reveal does not stutter. */
+  warm(): Promise<void>;
   /** The landing's key-art view: the camera drifts around the island at a distance. */
   showcase(on: boolean): void;
   /** Invites a friend: a link and QR for a live visit. */
@@ -99,7 +102,16 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
   };
   const entry = createEntry(app, mods.world, rig, extras);
   flow = createFlow(app, mods, { entry, hands, replies, placement, glide, gifts, voice, postcard });
-  bindDesk(app, rig, replies, placement, glide);
+  bindDesk(app, rig, replies, placement, glide, [
+    { objects: () => (mods.life.pip.object ? [mods.life.pip.object] : []), pick: () => void flow?.pokePip() },
+    {
+      objects: () => residents().map((r) => r.object),
+      pick: (object) => {
+        const r = residents().find((x) => x.object === object);
+        if (r) void flow?.meet(r.id);
+      },
+    },
+  ]);
 
   // Re-seat when a session starts or ends (the head pose changes frame).
   let lastMode = app.store.mode.peek();
@@ -113,6 +125,36 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     }
   });
   app.recenter = () => rig.placeAt(mods.world.seat);
+
+  // At the desk, when a house is to be placed, the view turns gently toward a free spot.
+  const turnTo = (target: Vector3): void => {
+    const cam = world.camera;
+    const from = cam.getWorldPosition(new Vector3());
+    const dx = target.x - from.x;
+    const dz = target.z - from.z;
+    const yawWorld = Math.atan2(-dx, -dz);
+    const pitch = Math.atan2(target.y - from.y, Math.hypot(dx, dz));
+    const y0 = rig.lookYaw;
+    const p0 = rig.lookPitch;
+    let dy = yawWorld - world.player.rotation.y - y0;
+    dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    const t0 = app.clock.now();
+    const off = app.everyFrame((_dt, now) => {
+      const k = Math.min(1, (now - t0) / 900);
+      const e = k * k * (3 - 2 * k);
+      rig.look(y0 + dy * e, p0 + (pitch - p0) * e);
+      if (k >= 1) off();
+    });
+  };
+  let wasPlacing = false;
+  app.everyFrame(() => {
+    const placing = placement.active;
+    if (placing && !wasPlacing && app.store.mode.peek() === 'desk') {
+      const marker = app.roots.fx.getObjectByName('spot:suggested');
+      if (marker && marker.position.lengthSq() > 0.01) turnTo(marker.getWorldPosition(new Vector3()));
+    }
+    wasPlacing = placing;
+  });
 
   // From the table: a pinch near the small island goes back in.
   const near = new Vector3();
@@ -138,10 +180,29 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     const phase = app.store.phase.peek();
     if (phase === 'arrive' || phase === 'build' || phase === 'greet' || phase === 'goodnight') mods.life.skip?.();
   });
-  // Life's sounds start with the first gesture, like the rest.
+  // Life's sounds and the wind in the grass start with the first gesture, like the rest.
+  const windMods = import.meta.glob('../world/wind.ts') as Record<string, () => Promise<{ createWindSound?: (ctx: AudioContext, dest: AudioNode) => { update(x: number, z: number): void } }>>;
+  let wind: { update(x: number, z: number): void } | null = null;
   const resume = (): void => {
-    void (mods.life as { audio?: AudioContext | null }).audio?.resume?.();
+    const ctx = (mods.life as { audio?: AudioContext | null }).audio;
+    void ctx?.resume?.();
+    const load = Object.values(windMods)[0];
+    if (ctx && load && !wind) {
+      void load()
+        .then((m) => {
+          wind ??= m.createWindSound?.(ctx, ctx.destination) ?? null;
+        })
+        .catch(() => undefined);
+    }
   };
+  const ear = new Vector3();
+  app.clock.timers.set(function listen() {
+    if (wind) {
+      world.camera.getWorldPosition(ear);
+      wind.update(ear.x, ear.z);
+    }
+    app.clock.timers.set(listen, 250);
+  }, 250);
   window.addEventListener('pointerup', resume, { once: true });
   app.store.mode.subscribe((m) => {
     if (m !== 'desk') resume();
@@ -211,6 +272,21 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     flow,
     postcard,
     replies,
+    voice,
+    async warm() {
+      try {
+        await Promise.all([document.fonts?.load('400 32px "Atkinson Hyperlegible Next"'), document.fonts?.load('700 32px "Atkinson Hyperlegible Next"')]);
+      } catch {
+        // The fallback face keeps the lines.
+      }
+      const r = world.renderer as unknown as { compileAsync?: (s: unknown, c: unknown) => Promise<unknown>; compile: (s: unknown, c: unknown) => unknown };
+      try {
+        if (r.compileAsync) await r.compileAsync(world.scene, world.camera);
+        else r.compile(world.scene, world.camera);
+      } catch (error) {
+        console.warn('[wf] shaders were not warmed', error);
+      }
+    },
     showcase(on) {
       showing = on;
       if (!on) rig.placeAt(mods.world.seat);

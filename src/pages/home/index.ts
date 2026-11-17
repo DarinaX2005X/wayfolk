@@ -13,7 +13,7 @@ import { effect } from '@preact/signals-core';
 import { qrSvg } from '../../kit/ui/qr';
 import { store } from '../../app/store';
 import type { RouteParams } from '../router';
-import { BALLOON, PAINTED_SKY, WORDMARK } from './art';
+import { BALLOON, CLOUDS_LEFT, CLOUDS_RIGHT, LOADING_SKY, PIP_FLYING, WORDMARK } from './art';
 import './home.css';
 
 type Boot = typeof import('../../app/boot/world');
@@ -35,6 +35,11 @@ export const TEXT = {
   close: 'Close',
   invite: 'Invite a friend',
   snap: 'Take a postcard',
+  vr: 'Enter in VR',
+  hold: 'Hold to speak',
+  listening: 'Listening',
+  hintMouse: ['Drag to look around.', 'Click Pip, a neighbour or a bubble.', 'Click a glowing ring to go there.'],
+  hintTouch: ['Drag to look around.', 'Tap Pip, a neighbour or a bubble.', 'Tap a glowing ring to go there.'],
   inviteTitle: 'Come sit on my island',
   again: 'The island is ready. Press Enter again to put the headset on.',
 } as const;
@@ -65,7 +70,9 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   page.dataset.state = 'before';
   const sky = el('div', 'home-sky');
   sky.setAttribute('aria-hidden', 'true');
-  sky.innerHTML = PAINTED_SKY;
+  // The loading moment: a sunset, two banks of clouds that part when the island is ready,
+  // and Pip flying across. Nothing of the island is drawn until the real one can show.
+  sky.innerHTML = `${LOADING_SKY}<div class="ls-left">${CLOUDS_LEFT}</div><div class="ls-right">${CLOUDS_RIGHT}</div><div class="ls-fly">${PIP_FLYING}</div>`;
   const stage = el('div', 'home-stage');
 
   // The title, as key art: the wordmark with Pip on it, one line under it.
@@ -108,13 +115,49 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   const inviteTag = el('button', 'tag tag-small', TEXT.invite);
   inviteTag.type = 'button';
   inviteTag.addEventListener('click', () => void wf?.invite());
-  menu.append(snap, inviteTag);
+  // A headset in this browser: going in is one tag away.
+  const vrTag = el('button', 'tag tag-small tag-vr', TEXT.vr);
+  vrTag.type = 'button';
+  vrTag.hidden = true;
+  vrTag.addEventListener('click', () => void enterSession());
+  menu.append(snap, inviteTag, vrTag);
+
+  // Speaking at the desk: hold the button while you talk to a traveler.
+  const mic = el('button', 'tag tag-small tag-mic', TEXT.hold);
+  mic.type = 'button';
+  mic.hidden = true;
+  const micOn = (e: Event): void => {
+    e.preventDefault();
+    void wf?.voice.start();
+  };
+  const micOff = (): void => wf?.voice.stop();
+  mic.addEventListener('pointerdown', micOn);
+  mic.addEventListener('pointerup', micOff);
+  mic.addEventListener('pointerleave', micOff);
+  effect(() => {
+    const canSpeak = typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
+    mic.hidden = !(canSpeak && store.talkingTo.value && store.choices.value.length > 0 && store.mode.value === 'desk');
+    mic.textContent = store.listening.value ? TEXT.listening : TEXT.hold;
+    mic.dataset.on = store.listening.value ? 'yes' : 'no';
+  });
+
+  // How the browser mode works, once, on a paper note that goes after first use.
+  const touch = matchMedia('(pointer: coarse)').matches;
+  const hint = el('aside', 'home-hint');
+  hint.setAttribute('aria-label', 'How to play here');
+  for (const line of touch ? TEXT.hintTouch : TEXT.hintMouse) hint.append(el('p', '', line));
+  let hintTimer = 0;
+  effect(() => {
+    const show = store.mode.value === 'desk' && page.dataset.state === 'desk';
+    if (store.deskUsed.value && !hintTimer) hintTimer = window.setTimeout(() => hint.classList.add('is-gone'), 5000);
+    hint.hidden = !show && !hint.classList.contains('is-on');
+  });
   effect(() => {
     menu.hidden = store.phase.value !== 'free' || store.mode.value !== 'desk';
   });
   const prepared = el('p', 'home-prepared', 'prepared traveler');
   prepared.hidden = true;
-  strip.append(captions, choices, prepared, menu);
+  strip.append(captions, choices, mic, prepared, menu);
   effect(() => {
     prepared.hidden = !(store.prepared.value && store.choices.value.length > 0);
   });
@@ -122,7 +165,7 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   const card = el('aside', 'home-card');
   card.hidden = true;
 
-  page.append(sky, stage, plate, balloon, strip, card);
+  page.append(stage, sky, plate, balloon, strip, card, hint);
   root.replaceChildren(page);
 
   effect(() => {
@@ -189,6 +232,8 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
     const app = await boot.bootApp(stage);
     const mod: WF = await import('../../app/wayfolk');
     const started = await mod.startWayfolk(app);
+    // Fonts and shaders are ready before the clouds part, so nothing pops in.
+    await Promise.race([started.warm(), new Promise((r) => setTimeout(r, 8000))]);
     wf = started;
     if (page.dataset.state === 'before') started.showcase(true);
     return { app, wf: started };
@@ -212,6 +257,7 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
 
   void xrOffered().then((offered) => {
     enter.dataset.xr = offered ? 'yes' : 'no';
+    vrTag.hidden = !offered;
     if (!offered) {
       enter.hidden = true;
       look.classList.add('tag-main');
@@ -221,6 +267,8 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
 
   const inside = (how: 'desk' | 'session'): void => {
     page.dataset.state = how;
+    hint.hidden = how !== 'desk';
+    if (how === 'desk') hint.classList.add('is-on');
   };
   // The balloon lifts off with its tags before the clouds come.
   const liftOff = (): Promise<void> =>
@@ -237,6 +285,18 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
       void booting.then((ready) => ready?.wf.begin());
     }
   });
+
+  const enterSession = async (): Promise<void> => {
+    const ready = await booting;
+    if (!ready) return;
+    try {
+      await ready.app.session.enter('room');
+      inside('session');
+      void ready.wf.begin();
+    } catch {
+      status.textContent = TEXT.questHint;
+    }
+  };
 
   let pending = false;
   enter.addEventListener('click', async () => {

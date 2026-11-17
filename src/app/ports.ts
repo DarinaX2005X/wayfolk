@@ -69,6 +69,7 @@ export type PipPort = {
   follow(hand: Perch): void;
   hover(): void;
   say(text: string, opts?: unknown): Promise<void> | void;
+  emote?(kind: string): void;
   object?: Object3D;
 };
 
@@ -84,6 +85,8 @@ export type LifePort = {
   soundAt(pos: unknown, kind: string): unknown;
   /** The Object3D of a resident, when offered (gifts are handed to it). */
   objectOf?(id: string): Object3D | null | undefined;
+  /** Turns a resident toward a point, or toward the person. */
+  face?(id: string, p?: unknown): void;
   /** Skips what is playing now (a long build, a line). */
   skip?(): void;
 };

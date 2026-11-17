@@ -1,5 +1,5 @@
 /**
- * Design tokens of Groundwork, direction D "First light": the only place where colours,
+ * Design tokens of Wayfolk, direction D "First light": the only place where colours,
  * sky, type sizes, panel sizes, light, the seated layout, motion times, quality levels
  * and the draw budget are written down. Source: DESIGN "Семантические токены",
  * "Пространство в шлеме", "Слои и движение", "Движение и ограничения". Views never
@@ -165,7 +165,7 @@ export const CONTRAST: readonly ContrastPair[] = [
   { fg: COLOR.mossText, bg: COLOR.bone, ratio: 5.54, min: 4.5, pass: true, use: 'kept, fixed on a second look' },
   { fg: COLOR.amberText, bg: COLOR.bone, ratio: 5.22, min: 4.5, pass: true, use: 'waiting for the model, on bone' },
   { fg: COLOR.paper, bg: COLOR.slate, ratio: 15.6, min: 4.5, pass: true, use: 'sheets on the bench' },
-  { fg: COLOR.paper, bg: COLOR.coverField, ratio: 17.05, min: 4.5, pass: true, use: 'Groundwork on the cover' },
+  { fg: COLOR.paper, bg: COLOR.coverField, ratio: 17.05, min: 4.5, pass: true, use: 'Wayfolk on the cover' },
   { fg: COLOR.hc.text, bg: COLOR.hc.bg, ratio: 18.1, min: 7, pass: true, use: 'high contrast' },
   { fg: COLOR.hc.cobalt, bg: COLOR.hc.bg, ratio: 9.27, min: 4.5, pass: true, use: 'accent on dark' },
   { fg: COLOR.hc.cobalt, bg: COLOR.slate, ratio: 8.33, min: 4.5, pass: true, use: 'accent on graphite' },

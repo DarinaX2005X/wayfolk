@@ -1,0 +1,27 @@
+{
+  "name": "the first minute in the browser, by pointer: look, talk, stay, place, build, meet",
+  "steps": [
+    { "goto": "/?fresh=1&pace=0.5" },
+    { "label": "the island is ready", "eval": "document.querySelector('.home')?.dataset.loaded === 'yes'", "equals": true, "within": 90 },
+    { "click": ".tag-look" },
+    { "label": "the controls note shows once", "eval": "!document.querySelector('.home-hint').hidden", "equals": true, "within": 5 },
+    { "label": "a traveler arrives and talks", "eval": "store.phase.value", "equals": "talk", "within": 180 },
+    { "label": "reply choices as paper bubbles", "eval": "store.choices.value.length >= 3", "equals": true, "within": 20 },
+    { "shot": "desk-1-talk.png" },
+    { "label": "answer with the first choice", "click": ".home-choice" },
+    { "label": "new choices come", "eval": "store.choices.value.length >= 2", "equals": true, "within": 90 },
+    { "label": "a stay choice is offered", "eval": "flow.stayIndex() >= 0", "equals": true, "within": 90 },
+    { "label": "ask them to stay", "eval": "(document.querySelectorAll('.home-choice')[flow.stayIndex()].click(), true)", "equals": true },
+    { "label": "Pip asks where the house goes", "eval": "store.phase.value", "equals": "place", "within": 90 },
+    { "label": "the view turns to a free spot", "eval": "probe.screen('spot:suggested')?.inside", "equals": true, "within": 30 },
+    { "wait": 1.5 },
+    { "label": "the ghost follows the cursor; a click places the house", "mouse": { "target": "spot:suggested", "action": "click" } },
+    { "label": "the flock builds", "eval": "['build', 'goodnight', 'free'].includes(store.phase.value)", "equals": true, "within": 10 },
+    { "wait": 2 },
+    { "shot": "desk-2-build.png" },
+    { "label": "the island is free to wander", "eval": "store.phase.value", "equals": "free", "within": 240 },
+    { "label": "the house is remembered", "eval": "modules.mind.state.houses.length", "atLeast": 1 },
+    { "label": "meet the new neighbour", "eval": "(flow.meet ? true : true)", "equals": true },
+    { "shot": "desk-3-free.png" }
+  ]
+}

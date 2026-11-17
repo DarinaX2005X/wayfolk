@@ -6,6 +6,7 @@
  * folder is not a build error.
  */
 import { registerDebug } from './debug';
+import { shareOrigin } from './origin';
 import type { AppHandle, LifePort, LivePort, MindPort, ModuleReport, WorldPort } from './ports';
 import { createStandinLife } from './standin/life';
 import { createStandinLive } from './standin/live';
@@ -70,6 +71,7 @@ export async function createModules(app: AppHandle): Promise<Modules> {
     seat: world.seat,
     spots: () => world.spots(),
     heightAt: (x: number, z: number) => world.groundY?.(x, z) ?? world.groundAt?.(x, z) ?? 0,
+    route: typeof w.route === 'function' ? (a: unknown, b: unknown) => (w.route as (a: unknown, b: unknown) => unknown[])(a, b) : undefined,
     perches: typeof w.perches === 'function' ? () => (w.perches as () => unknown[])() : undefined,
     benches: typeof w.benches === 'function' ? () => (w.benches as () => unknown[])() : undefined,
     radius: typeof w.radius === 'number' ? w.radius : undefined,
@@ -79,6 +81,7 @@ export async function createModules(app: AppHandle): Promise<Modules> {
   // Live presence is shared in the island's frame; avatars go into the island root.
   const liveApp = { world: app.world, space: world.root, everyFrame: app.everyFrame };
   const liveOpts = {
+    linkBase: `${shareOrigin()}/island`,
     snapshot: () => mind.state ?? null,
     ground: (x: number, z: number) => world.groundY?.(x, z) ?? world.groundAt?.(x, z) ?? null,
   };

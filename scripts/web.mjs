@@ -14,10 +14,10 @@
  *
  * Steps (format in tests/xr/README.md):
  *   { "goto": "/go" }                                   a full page load
- *   { "click": "button.app-enter" } | { "click": { "text": "Enter Groundwork" } }
+ *   { "click": "button.app-enter" } | { "click": { "text": "Enter Wayfolk" } }
  *   { "type": { "into": "#code", "text": "X4KM7" } }
  *   { "upload": { "into": "input[type=file]", "file": "tests/web/files/one.pdf" } }
- *   { "expectText": "Enter Groundwork" } | { "expectText": { "in": "h1", "text": "..." } }
+ *   { "expectText": "Enter Wayfolk" } | { "expectText": { "in": "h1", "text": "..." } }
  *   { "expectNoRequest": "POST /api/llm" }              no such request since the page loaded ("METHOD url")
  *   { "eval": "store.mode.value", "equals": "desk" }    as in xr.mjs, over window.__gw
  *   { "run": { ... } } | { "mouse": { "target": "name", "action": "click" | "drag", "to": ... } }

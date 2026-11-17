@@ -157,13 +157,13 @@
     },
     {
       "label": "a stay choice is on offer",
-      "eval": "store.choices.value.findIndex((c) => /stay/i.test(c)) >= 0",
+      "eval": "flow.stayIndex() >= 0",
       "equals": true,
       "within": 25
     },
     {
       "label": "ask them to stay",
-      "eval": "(test.reply(store.choices.value.findIndex((c) => /stay/i.test(c))), true)",
+      "eval": "(test.reply(flow.stayIndex()), true)",
       "equals": true
     },
     {
@@ -240,6 +240,16 @@
       "label": "the house was remembered",
       "eval": "modules.mind.state.houses.length",
       "atLeast": 1
+    },
+    {
+      "label": "draw calls per eye inside the budget",
+      "eval": "perf.info().calls",
+      "atMost": 150
+    },
+    {
+      "label": "triangles per eye inside the budget",
+      "eval": "perf.info().triangles",
+      "atMost": 350000
     },
     {
       "label": "glide to another spot",

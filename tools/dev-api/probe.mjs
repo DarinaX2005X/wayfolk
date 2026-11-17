@@ -4,7 +4,7 @@
  * server. The unit tests show the handlers do the right thing with stand-ins; this shows
  * the deployed functions load, are routed by vercel.json and answer in the one JSON shape.
  *
- *   node tools/dev-api/probe.mjs https://groundwork.example
+ *   node tools/dev-api/probe.mjs https://wayfolk.example
  *   node tools/dev-api/probe.mjs https://localhost:8081
  *
  * The dev server has a local certificate that Node does not trust by default. Point Node
@@ -16,7 +16,7 @@
  */
 const base = (process.argv[2] ?? '').replace(/\/+$/, '');
 if (!/^https?:\/\//.test(base)) {
-  console.error('usage: node tools/dev-api/probe.mjs <site address, for example https://groundwork.example>');
+  console.error('usage: node tools/dev-api/probe.mjs <site address, for example https://wayfolk.example>');
   process.exit(2);
 }
 

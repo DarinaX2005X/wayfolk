@@ -36,7 +36,7 @@ const TYPES: Record<string, string> = {
  */
 function distServer(): Plugin {
   return {
-    name: 'groundwork:serve-dist',
+    name: 'wayfolk:serve-dist',
     apply: 'serve',
     configureServer(server) {
       if (!existsSync(path.join(DIST, 'index.html'))) {

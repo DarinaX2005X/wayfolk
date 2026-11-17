@@ -13,7 +13,7 @@ The dev server must run with browser automation: `npm run dev:headless`. Scenari
 ```json
 {
   "name": "smoke",
-  "route": "/app?testscene=1",
+  "route": "/?fresh=1",
   "pace": 0.25,
   "xr": true,
   "device": "metaQuest3",
@@ -90,7 +90,7 @@ Why not a build with `import.meta.env.DEV === false`: IWSDK drops its MCP runtim
 
 ### View factor of the draw count
 
-Test scene `/app?testscene=1` (a sphere on the arc, the bench slab, one uikit panel with two weights of text): at the desk `renderer.info.render.calls` is 5 and the walk over the scene counts 5. Inside an emulated session it reports 18 with 9 unique draws (the same 5 and four draws of the emulated hands), on `metaQuest3` and on `metaVRGlasses` alike: three.js counts every draw once per view.
+The old test scene of the template (a sphere, a slab, one panel): at the desk `renderer.info.render.calls` is 5 and the walk over the scene counts 5. Inside an emulated session it reports 18 with 9 unique draws (the same 5 and four draws of the emulated hands), on `metaQuest3` and on `metaVRGlasses` alike: three.js counts every draw once per view.
 
 **`BUDGET.viewFactor = 2`.** `window.__gw.perf.info()` divides by it while presenting and reports unique draws per eye; its zone split must agree with that number within two draws (`mismatch` is null), and the smoke scenario checks it.
 
@@ -142,7 +142,11 @@ and takes the seated frame again. From that seat `app.surfaces.find('table')` re
 
 The emulator's headset stands at 1.6 m; the seated layout is measured from the eyes, so it holds at any height, and a scenario that needs the seated eye height of DESIGN (1.15 m) sets the headset as above.
 
-## Smoke scenarios
+## Scenarios of Wayfolk
 
-- `tests/xr/smoke.json`: boot, the Void and Room inside one session, visibility, the seated frame, the view factor and the zone count against renderer.info, the frame budget, the wall date, hand-ray aim, a pull, a seated hand reach, and a frame. Passes on `metaQuest3` and `metaVRGlasses` (`--device metaVRGlasses`) and through `npm run xr:prod`.
-- `tests/web/smoke.json`: every route opens (with `--device phone` too), `/app` before entry with no request to `/api/llm`, then the test scene by pointer through the core fragment.
+- `tests/xr/first-minute.json`: the first minute by hand, seated (`body: "fixed"`), at real pace: clouds rise in the room, the island appears, Pip lands on the open right palm, a moment of lost tracking, a traveler arrives, a bubble is touched with the left index finger, a voice clip (`test.clip()`), the stay choice, the hand ray points at a free spot (`spot:suggested`) and a pinch places the house, the flock builds, the light comes on, the draw and triangle budget, a glide, a postcard, and the farewell with the island on the table. Frames go to `tests/xr/out/fm-*.png`.
+- `tests/web/smoke.json`: the landing, the desk view by pointer, an unknown address. `tests/web/prod.json` checks the deployment from outside (`--base <address>`).
+
+Test hooks (`window.__gw.test`): `reply(i)`, `clip()`, `place(x?, z?)`, `glide(i)`, `postcard()`, `give(id, kind)`, `menu()`, `leave()`, `back()`, `loseHand(side, s)`, `setVisibility(state)`. Page parameters where debug hooks are on: `fresh=1` (a new island), `later=1`, `pace=<n>`, `standin=world,life,mind,live` (use the app's thin stand-ins instead of the modules), `desk=1` (sit down at once in the browser).
+
+The dev server does not watch the module folders (`src/world`, `src/life`, `src/mind`, `src/live`, `api`, `content`, `public/assets`), so their edits do not reload the page in the middle of a scenario; restart it (`npx iwsdk dev down`, `npm run dev:headless`) to pick them up, or start it with `WF_WATCH_ALL=1`.

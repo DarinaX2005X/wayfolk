@@ -13,19 +13,116 @@
   inset: 0;
 }
 
-.home-sky svg {
+.home-sky {
+  overflow: hidden;
+  transition: opacity 1600ms ease 700ms;
+}
+
+.home-sky .ls-sky {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
+}
+
+.ls-left,
+.ls-right {
+  position: absolute;
+  inset: 0;
+  transition:
+    transform 2400ms cubic-bezier(0.6, 0, 0.3, 1),
+    opacity 1800ms ease 500ms;
+}
+
+.ls-bank {
+  position: absolute;
+  left: -5%;
+  bottom: 0;
+  width: 110%;
+  height: 100%;
+}
+
+.ls-left {
+  animation: drift-l 26s ease-in-out infinite alternate;
+}
+
+.ls-right {
+  animation: drift-r 30s ease-in-out infinite alternate;
+}
+
+@keyframes drift-l {
+  to {
+    translate: -3% 0;
+  }
+}
+
+@keyframes drift-r {
+  to {
+    translate: 3% 0;
+  }
+}
+
+.ls-fly {
+  position: absolute;
+  left: 0;
+  top: 44%;
+  width: 72px;
+  animation: pip-across 9s linear infinite;
+}
+
+.ls-pip {
+  width: 100%;
+  height: auto;
   display: block;
+  scale: -1 1;
 }
 
-.home-stage {
+.ls-wing {
+  transform-box: fill-box;
+  transform-origin: 0% 100%;
+  animation: flap 360ms ease-in-out infinite alternate;
+}
+
+@keyframes flap {
+  from {
+    transform: rotate(18deg);
+  }
+  to {
+    transform: rotate(-28deg);
+  }
+}
+
+@keyframes pip-across {
+  0% {
+    transform: translate(-10vw, 20px);
+  }
+  50% {
+    transform: translate(50vw, -30px);
+  }
+  100% {
+    transform: translate(110vw, 10px);
+  }
+}
+
+/* The island is ready: the clouds part to the sides and the sunset gives way to it. */
+.home[data-loaded='yes'] .ls-left {
+  transform: translateX(-70%) translateY(8%);
   opacity: 0;
-  transition: opacity 900ms ease;
 }
 
-.home[data-loaded='yes'] .home-stage {
-  opacity: 1;
+.home[data-loaded='yes'] .ls-right {
+  transform: translateX(70%) translateY(8%);
+  opacity: 0;
+}
+
+.home[data-loaded='yes'] .ls-fly {
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+
+.home[data-loaded='yes'] .home-sky {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .home-stage canvas {
@@ -84,15 +181,18 @@
 }
 
 .home-line {
-  margin-left: 22px;
+  justify-self: start;
+  margin-left: 26px;
   max-width: 30ch;
-  font-size: clamp(19px, 2.1vw, 25px);
+  padding: 10px 16px 11px;
+  font-size: clamp(18px, 1.9vw, 23px);
   line-height: 1.35;
   font-weight: 700;
-  color: #fff8ec;
-  text-shadow:
-    0 2px 0 rgba(90, 42, 23, 0.55),
-    0 4px 18px rgba(60, 28, 14, 0.45);
+  color: #5a2a17;
+  background: #fff4e2;
+  rotate: -1.2deg;
+  clip-path: polygon(0 4px, 6px 0, 100% 3px, calc(100% - 4px) 100%, 3px calc(100% - 2px));
+  filter: drop-shadow(0 5px 0 rgba(90, 42, 23, 0.22));
 }
 
 /* ---------------------------------------------------------------- the balloon and its tags */
@@ -252,13 +352,16 @@
 
 .tag-note {
   margin-top: 14px;
-  max-width: 220px;
+  max-width: 230px;
+  padding: 8px 12px;
   font-size: 15px;
   font-weight: 700;
   line-height: 1.35;
   text-align: center;
-  color: #fff8ec;
-  text-shadow: 0 2px 8px rgba(60, 28, 14, 0.6);
+  color: #5a2a17;
+  background: #fff4e2;
+  rotate: 1.5deg;
+  filter: drop-shadow(0 4px 0 rgba(90, 42, 23, 0.2));
 }
 
 .tag-note:empty {
@@ -273,8 +376,8 @@
   margin-left: 8px;
   vertical-align: -1px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 248, 236, 0.5);
-  border-top-color: #fff8ec;
+  border: 2px solid rgba(90, 42, 23, 0.25);
+  border-top-color: #c4532f;
   animation: home-spin 900ms linear infinite;
 }
 
@@ -440,6 +543,22 @@
 
 /* ---------------------------------------------------------------- narrow screens */
 
+@media (min-width: 641px) and (max-width: 1100px) {
+  .home-hero {
+    width: min(520px, calc(100% - 32px));
+  }
+
+  .home-balloon {
+    top: auto;
+    bottom: 24px;
+    right: 24px;
+  }
+
+  .home-balloon-art {
+    width: 96px;
+  }
+}
+
 @media (max-width: 640px) {
   .home-hero {
     top: 18px;
@@ -480,6 +599,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ls-left,
+  .ls-right,
+  .ls-fly,
+  .ls-wing,
   .home-balloon,
   .home-tags,
   .home-wordmark .wm-pip {
@@ -509,5 +632,52 @@
 
 .home-menu[hidden],
 .home-card-img[hidden] {
+  display: none;
+}
+
+/* How to play in the browser: a paper note in the corner, gone after first use. */
+.home-hint {
+  position: absolute;
+  left: max(16px, 3vw);
+  top: max(16px, 3vh);
+  display: grid;
+  gap: 4px;
+  padding: 12px 16px;
+  max-width: 280px;
+  background: #fff4e2;
+  color: #5a2a17;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  rotate: -1deg;
+  filter: drop-shadow(0 5px 0 rgba(90, 42, 23, 0.22));
+  transition:
+    opacity 900ms ease,
+    translate 900ms ease;
+}
+
+.home-hint[hidden] {
+  display: none;
+}
+
+.home-hint.is-gone {
+  opacity: 0;
+  translate: 0 -12px;
+  pointer-events: none;
+}
+
+.tag-mic {
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+}
+
+.tag-mic[data-on='yes'] {
+  --paper: #e9724c;
+  --ink: #fff8ec;
+}
+
+.tag-mic[hidden],
+.tag-vr[hidden] {
   display: none;
 }

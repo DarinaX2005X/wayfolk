@@ -72,7 +72,7 @@ export function railLines(line: string, lineChars: number = CAPTION.lineChars): 
 
 /** Normalises a source to one word without the colon: "check:" -> "Check". */
 export function sourceWord(source: string): string {
-  const w = source.trim().replace(/:$/, '').split(/\s+/)[0] || 'Groundwork';
+  const w = source.trim().replace(/:$/, '').split(/\s+/)[0] || 'Wayfolk';
   return w.charAt(0).toUpperCase() + w.slice(1);
 }
 

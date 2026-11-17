@@ -35,6 +35,10 @@ export type Flow = {
   pipSide(): Side | null;
   /** True while a scene of the flow is playing (other inputs wait). */
   busy(): boolean;
+  /** Someone touched or clicked Pip. */
+  pokePip(): Promise<void>;
+  /** Someone touched or clicked a resident: talk, or hand them a gift. */
+  meet(id: string): Promise<void>;
   /** A friend's island, as a guest of a live visit (or from its saved copy). */
   visit(state: IslandState): Promise<void>;
 };
@@ -52,6 +56,15 @@ export const LINES = {
   back: 'You came back. Let me tell you what happened.',
   quiet: 'It was quiet while you were away. Everyone slept well.',
   menu: ['Who lives here?', 'Take a postcard', 'Invite a friend', 'Head home'],
+  meet: ['Say hello', 'Give a fruit', 'Never mind'],
+  pipBusy: {
+    greet: 'Hello again. Hold on, I am still settling in.',
+    palm: 'Here I am. Someone is on their way.',
+    arrive: 'Look at the pier. Someone is coming.',
+    talk: 'Pick what to say in the bubbles.',
+    place: 'Click a free spot of grass for the house.',
+    build: 'The flock is building. Watch.',
+  } as Record<string, string>,
   guest: (name: string) => `This is ${name}. Your friend's folk live here. Wave, or look around.`,
   invited: 'Show this to a friend. When they open it, they will sit here with you.',
   farewell: 'Sleep well. The island will keep your seat warm.',
@@ -72,6 +85,7 @@ export function createFlow(
   const { entry, hands, replies, placement, glide, gifts, voice, postcard } = parts;
   const store = app.store;
   let pipOn: Side | null = null;
+  let stayIndex = -1;
   let playing = false;
 
   const pace = (): number => Math.max(0.05, store.pace.peek());
@@ -84,12 +98,19 @@ export function createFlow(
   const within = <T>(p: Promise<T> | T, ms: number, fallback: T): Promise<T> =>
     Promise.race([Promise.resolve(p), wait(ms).then(() => fallback)]).catch(() => fallback);
 
+  // Every line also goes to the captions (the browser shows them; the headset has the bubbles).
+  const stand = mods.report.life === 'standin';
   const pipSay = async (text: string): Promise<void> => {
+    if (!stand) caption({ source: 'Pip', text });
     try {
       await within(Promise.resolve(life.pip.say(text)), 2500 + text.length * 70, undefined);
     } catch {
-      caption({ source: 'Pip', text });
+      // The caption already carries the line.
     }
+  };
+  const say = (id: string, name: string, text: string, opts: Record<string, unknown> = {}): Promise<void> => {
+    if (!stand) caption({ source: name || 'Traveler', text });
+    return within(life.say(id, text, { name, ...opts }), 3000 + text.length * 70, undefined);
   };
 
   /** Waits for an open palm; lands Pip on it. Gives up after `ms` (Pip then hovers by the person). */
@@ -113,16 +134,23 @@ export function createFlow(
 
   const residentName = (id: string): string => mind.state?.residents?.find((r) => r.id === id)?.name ?? mind.state?.pending?.name ?? '';
 
-  const talk = async (r: Resident, first?: string[]): Promise<boolean> => {
+  const talk = async (r: Resident, first?: string[], nudge = true): Promise<boolean> => {
     store.phase.value = 'talk';
     store.talkingTo.value = r.id;
     let choices: string[] = first?.length ? first.slice(0, 3) : [...LINES.welcomeChoices];
     let turns = 0;
+    let intents: string[] = [];
     voice.armed = true;
     try {
       while (turns < 5) {
         turns += 1;
-        if (turns >= 3 && !choices.some((c) => /stay/i.test(c))) choices = [LINES.stayNudge, ...choices.slice(0, 2)];
+        // From the second turn on, a way to ask them to stay is always on offer.
+        const hasStay = choices.some((c, i) => intents[i] === 'stay' || /stay/i.test(c));
+        if (nudge && turns >= 2 && !hasStay) {
+          choices = [LINES.stayNudge, ...choices.slice(0, 2)];
+          intents = ['stay', ...intents.slice(0, 2)];
+        }
+        stayIndex = choices.findIndex((c, i) => intents[i] === 'stay' || /stay/i.test(c));
         // Touch a bubble, or speak with Pip near the mouth.
         let clip: Blob | null = null;
         const spoken = new Promise<string>((resolve) => {
@@ -152,10 +180,11 @@ export function createFlow(
         const reply = await within(mind.talk(r.id, input), 12000, { ...fallback, prepared: true });
         if (reply.heard) caption({ source: 'You', text: reply.heard });
         store.prepared.value = Boolean(r.prepared || reply.prepared);
-        await within(life.say(r.id, reply.text, { name: r.name, voice: r.voice }), 2500 + reply.text.length * 70, undefined);
+        await say(r.id, r.name, reply.text, { voice: r.voice, mood: reply.mood });
         if (reply.intent === 'stay') return true;
         if (reply.intent === 'leave') return false;
         choices = reply.choices?.length ? reply.choices.slice(0, 3) : [LINES.stayNudge, 'Tell me more', 'Safe travels'];
+        intents = reply.choices?.length ? (reply.choiceIntents ?? []).slice(0, 3) : ['stay', 'chat', 'leave'];
         if (/safe travels|goodbye/i.test(input.text ?? '')) return false;
       }
       return false;
@@ -227,7 +256,7 @@ export function createFlow(
     } catch {
       // The intro of the card stays.
     }
-    await within(life.say(traveler.id, intro, { name: traveler.name, voice: traveler.voice }), 3000 + intro.length * 70, undefined);
+    await say(traveler.id, traveler.name, intro, { voice: traveler.voice });
     return { traveler, choices };
   };
 
@@ -316,6 +345,44 @@ export function createFlow(
 
   const flow: Flow = {
     pipSide: () => pipOn,
+    async pokePip() {
+      life.pip.emote?.('happy');
+      const phase = store.phase.peek();
+      if (phase === 'free') {
+        await flow.pipMenu();
+        return;
+      }
+      const line = LINES.pipBusy[phase];
+      if (line && !replies.open) await pipSay(line);
+    },
+    async meet(id) {
+      if (playing || replies.open || store.phase.peek() !== 'free') return;
+      const r = mind.state?.residents?.find((x) => x.id === id);
+      if (!r) return;
+      playing = true;
+      try {
+        life.face?.(id);
+        const pick = await replies.show([...LINES.meet]);
+        if (pick === LINES.meet[0]) {
+          let first: string[] | undefined;
+          try {
+            const g = mind.greet?.(id);
+            if (g?.text) await say(id, r.name, g.text);
+            first = g?.choices;
+          } catch {
+            first = undefined;
+          }
+          await talk(r, first, false);
+          store.phase.value = 'free';
+        } else if (pick === LINES.meet[1]) {
+          const answer = await within(Promise.resolve(mind.give(id, 'fruit')), 8000, { text: 'Thank you. That is kind.' });
+          life.emote(id, 'happy');
+          await say(id, r.name, answer.text);
+        }
+      } finally {
+        playing = false;
+      }
+    },
     async visit(state) {
       playing = true;
       try {
@@ -439,6 +506,6 @@ export function createFlow(
     void flow.pipMenu();
   });
 
-  registerDebug('flow', { phase: () => store.phase.peek(), pipSide: () => pipOn, name: residentName });
+  registerDebug('flow', { phase: () => store.phase.peek(), pipSide: () => pipOn, name: residentName, meet: (id: string) => flow.meet(id), pokePip: () => flow.pokePip(), stayIndex: () => (store.choices.peek().length ? stayIndex : -1) });
   return flow;
 }

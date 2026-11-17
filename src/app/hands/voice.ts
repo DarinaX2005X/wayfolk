@@ -67,6 +67,9 @@ export type Voice = {
   onClip(fn: (clip: Blob) => void): () => void;
   /** Whether a clip may be recorded now (a conversation or a live visit wants it). */
   armed: boolean;
+  /** Starts a clip by a button (the browser's mic button); `stop` ends and sends it. */
+  start(): Promise<void>;
+  stop(): void;
   readonly recording: boolean;
 };
 
@@ -80,11 +83,11 @@ export function createVoice(app: App, hands: Hands, replies: Replies, pipSide: (
   let recorder: MediaRecorder | null = null;
   let chunks: Blob[] = [];
   let startedAt = 0;
-  let by: 'mouth' | 'pinch' | null = null;
+  let by: 'mouth' | 'pinch' | 'button' | null = null;
   let pinchSince: Record<Side, number> = { left: -1, right: -1 };
   const mouth = new Vector3();
 
-  const begin = async (how: 'mouth' | 'pinch'): Promise<void> => {
+  const begin = async (how: 'mouth' | 'pinch' | 'button'): Promise<void> => {
     if (recorder || typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia) return;
     by = how;
     try {
@@ -156,6 +159,10 @@ export function createVoice(app: App, hands: Hands, replies: Replies, pipSide: (
       };
     },
     armed: false,
+    start: () => begin('button'),
+    stop: () => {
+      if (by === 'button' || recorder) end();
+    },
     get recording() {
       return recorder !== null;
     },

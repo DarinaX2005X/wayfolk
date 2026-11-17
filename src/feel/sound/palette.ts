@@ -1,5 +1,5 @@
 /**
- * The sound palette of Groundwork: sixteen synthesized sounds of one family (DESIGN
+ * The sound palette of Wayfolk: sixteen synthesized sounds of one family (DESIGN
  * "Движение и ограничения"). Ceramic, slate and paper in a calm field, with tones taken
  * only from the pentatonic on C (./scale.ts). All share one envelope: an attack of at
  * most 8 ms and an exponential fall. Noise stays inside 300–4000 Hz, `air` under 500 Hz.

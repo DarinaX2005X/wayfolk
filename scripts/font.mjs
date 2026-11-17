@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The one typeface of Groundwork, Atkinson Hyperlegible Next (OFL), for both surfaces:
+ * The one typeface of Wayfolk, Atkinson Hyperlegible Next (OFL), for both surfaces:
  *
  *   public/fonts/atkinson-hyperlegible-next-latin-{400,700}-normal.woff2   browser pages
  *   public/fonts/OFL.txt                                                  the licence
