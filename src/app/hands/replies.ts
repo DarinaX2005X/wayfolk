@@ -11,7 +11,7 @@
  * whoever is speaking and a click pokes one. The page keeps the same choices as a list for
  * screen readers and the keyboard (store.choices), hidden from sight.
  */
-import { Group, Mesh, Vector3, type Object3D } from '@iwsdk/core';
+import { Group, Mesh, Quaternion, Vector3, type Object3D } from '@iwsdk/core';
 import { sound } from '../../feel/sound';
 import { disposeBubble, makeBubble } from '../../kit/ui/bubble';
 import { registerTest } from '../debug';
@@ -39,8 +39,6 @@ export type Replies = {
 
 /** Width of a cloud by the hand, metres. */
 const HAND_W = 0.13;
-/** Width of a cloud in a page, metres, at PAGE_D from the eye (about 18 px text at 1280 × 720). */
-const PAGE_W = 0.48;
 const PAGE_D = 1.5;
 
 export function createReplies(app: App, hands: Hands): Replies {
@@ -65,6 +63,7 @@ export function createReplies(app: App, hands: Hands): Replies {
   const local = new Vector3();
   const want = new Vector3();
   const hit = new Vector3();
+  const camQ = new Quaternion();
   const desk = (): boolean => app.store.mode.peek() === 'desk';
   const pace = (): number => Math.max(0.05, app.store.pace.peek());
   const out = (): boolean => bubbles.length > 0 && app.clock.now() >= outAt;
@@ -138,7 +137,8 @@ export function createReplies(app: App, hands: Hands): Replies {
   group.add(note);
 
   app.everyFrame((dt, now) => {
-    note.visible = !desk() && out() && app.store.prepared.peek();
+    // The honest note is a luggage tag beside the traveler now (src/app/prepared-tag.ts).
+    note.visible = false;
     if (!bubbles.length) return;
     const cam = app.world.camera;
     cam.updateWorldMatrix(true, false);
@@ -152,12 +152,15 @@ export function createReplies(app: App, hands: Hands): Replies {
       const lens = cam as unknown as { fov?: number; aspect?: number };
       const tanV = Math.tan(((lens.fov ?? 60) * Math.PI) / 360);
       const tanH = tanV * (lens.aspect ?? 1.6);
-      right.set(1, 0, 0).applyQuaternion(cam.quaternion);
-      up.set(0, 1, 0).applyQuaternion(cam.quaternion);
+      // The camera's turn in the world (the person may stand anywhere, facing anywhere).
+      cam.getWorldQuaternion(camQ);
+      right.set(1, 0, 0).applyQuaternion(camQ);
+      up.set(0, 1, 0).applyQuaternion(camQ);
       cam.getWorldDirection(fwd);
       const narrow = (lens.aspect ?? 1.6) < 0.9;
       const visW = 2 * PAGE_D * tanH;
-      const wM = Math.min(PAGE_W, visW * (narrow ? 0.7 : 0.3));
+      // A steady share of the page, whatever the lens does (it narrows on far speakers).
+      const wM = visW * (narrow ? 0.62 : 0.16);
       const halfW = wM / 2 / (PAGE_D * tanH);
       const rowN = (wM * 0.5) / (PAGE_D * tanV);
       // Where the speaker is on the page.
@@ -191,7 +194,7 @@ export function createReplies(app: App, hands: Hands): Replies {
           b.position.copy(centre);
           b.userData.placed = true;
         }
-        b.quaternion.copy(cam.quaternion);
+        b.quaternion.copy(camQ);
         const k = shown ? Math.min(1, (now - outAt) / 260 - i * 0.18) : 0;
         b.visible = k > 0;
         b.scale.setScalar(Math.max(0.01, k) * (wM / HAND_W));

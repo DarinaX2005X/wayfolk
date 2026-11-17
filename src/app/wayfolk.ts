@@ -31,6 +31,7 @@ import { createVoice, type Voice } from './hands/voice';
 import { createModules, type Modules } from './modules';
 import { bubbleView } from '../life/bubble';
 import { inviteLink } from './name';
+import { createPreparedTag } from './prepared-tag';
 import { createMusic, songFor, type MusicRun } from '../feel/music';
 import type { IslandState } from '../mind/types';
 import { anchorPoint, type AppHandle } from './ports';
@@ -101,6 +102,7 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
   for (const h of [hands.left, hands.right]) app.roots.fx.add(h.anchor);
 
   const replies = createReplies(app, hands);
+  createPreparedTag(app, (id) => mods.life.objectOf?.(id));
   // Typing or speaking keeps the quick-reply clouds away.
   app.store.listening.subscribe((on) => {
     if (on) replies.hold();

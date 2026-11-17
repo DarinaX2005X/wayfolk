@@ -112,7 +112,8 @@ export interface Life {
   readonly pip: Pip;
   readonly ready: Promise<void>;
   build(steps: BuildStep[]): Promise<void>;
-  arrive(resident: Resident, vehicle?: Vehicle): Promise<void>;
+  /** `near`: land on the grass there instead of at the pier (the first minute). */
+  arrive(resident: Resident, vehicle?: Vehicle, opts?: { near?: PointLike }): Promise<void>;
   spawn(resident: Resident, home?: HouseSpec | P2): Object3D;
   despawn(id: string): void;
   /** Walks along the island's paths; `speed` (m/s) for this walk only. */

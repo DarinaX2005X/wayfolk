@@ -187,7 +187,10 @@ export function place(
 }
 
 /** Concatenates painted geometries (same layout) into one. */
-export function join(parts: BufferGeometry[]): BufferGeometry {
+export function join(partsIn: BufferGeometry[]): BufferGeometry {
+  // Indexed parts (smoothed ones) are spread out first: their vertices are not in triangle
+  // order, and copying them as they are draws long stray triangles across the scene.
+  const parts = partsIn.map((p) => (p.index ? p.toNonIndexed() : p));
   let count = 0;
   for (const p of parts) count += p.getAttribute('position').count;
   const pos = new Float32Array(count * 3);

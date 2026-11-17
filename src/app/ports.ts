@@ -79,7 +79,7 @@ export type PipPort = {
 export type LifePort = {
   pip: PipPort;
   build(steps: BuildStep[], opts?: unknown): Promise<void>;
-  arrive(resident: Resident, vehicle?: Vehicle | string): Promise<void>;
+  arrive(resident: Resident, vehicle?: Vehicle | string, opts?: { near?: unknown }): Promise<void>;
   spawn(resident: Resident, at?: unknown): unknown;
   walkTo(id: string, p: unknown, opts?: { speed?: number }): Promise<void> | void;
   say(id: string, text: string, opts?: unknown): Promise<void>;

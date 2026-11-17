@@ -928,6 +928,15 @@ export function createWorld(app: WorldHost = {}, opts: { kitUrl?: string; now?: 
       ];
       for (const rec of houses.values()) {
         const front = new Vector3(rec.plan.door[0], 0, rec.plan.door[2] + 1.6).applyMatrix4(rec.matrix);
+        // Never in the fire pit or on its benches: step aside from the fire.
+        const fx = front.x - FIRE.x;
+        const fz = front.z - FIRE.z;
+        const fd = Math.hypot(fx, fz);
+        if (fd < 2.2) {
+          const k = fd > 1e-3 ? 2.2 / fd : 0;
+          front.x = FIRE.x + (fd > 1e-3 ? fx * k : 2.2);
+          front.z = FIRE.z + (fd > 1e-3 ? fz * k : 0);
+        }
         front.y = land.height(front.x, front.z);
         out.push({ id: `house:${rec.spec.id}`, name: rec.spec.sign ?? 'a house', pos: front, rotY: rec.spec.rotY + Math.PI });
       }

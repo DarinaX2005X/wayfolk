@@ -24,8 +24,8 @@ export interface BuildSchedule {
   total: number;
 }
 
-export const MIN_TOTAL = 11;
-export const MAX_TOTAL = 15;
+export const MIN_TOTAL = 12;
+export const MAX_TOTAL = 16;
 const GATHER = 1.6;
 const FINISH = 3.2;
 const SETTLE = 0.55;

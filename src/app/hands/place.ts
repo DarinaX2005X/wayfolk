@@ -6,13 +6,11 @@
  */
 import {
   AdditiveBlending,
-  BoxGeometry,
+  BufferAttribute,
+  BufferGeometry,
   CanvasTexture,
-  ConeGeometry,
-  EdgesGeometry,
+  DoubleSide,
   Group,
-  LineBasicMaterial,
-  LineSegments,
   Mesh,
   MeshBasicMaterial,
   Object3D,
@@ -44,21 +42,76 @@ export type Placement = {
   suggest(): Spot | null;
 };
 
+/** A soft glowing footprint: a warm rounded patch of light with a brighter rim. */
 function footprintTexture(): CanvasTexture {
   const c = document.createElement('canvas');
   c.width = c.height = 256;
   const g = c.getContext('2d')!;
-  const grad = g.createRadialGradient(128, 128, 30, 128, 128, 128);
-  grad.addColorStop(0, 'rgba(255,230,170,0.55)');
-  grad.addColorStop(0.7, 'rgba(255,200,120,0.35)');
-  grad.addColorStop(0.86, 'rgba(255,240,200,0.95)');
-  grad.addColorStop(0.92, 'rgba(255,200,120,0.4)');
-  grad.addColorStop(1, 'rgba(255,200,120,0)');
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 256, 256);
+  const rr = (inset: number, r: number): void => {
+    g.beginPath();
+    g.roundRect(inset, inset, 256 - inset * 2, 256 - inset * 2, r);
+  };
+  g.filter = 'blur(10px)';
+  rr(26, 60);
+  g.fillStyle = 'rgba(255,214,150,0.4)';
+  g.fill();
+  g.filter = 'blur(5px)';
+  g.lineWidth = 9;
+  rr(40, 52);
+  g.strokeStyle = 'rgba(255,240,205,0.95)';
+  g.stroke();
+  g.filter = 'none';
+  // A few sparks of light along the rim, like dust caught in the sun.
+  for (let i = 0; i < 14; i += 1) {
+    const a = (i / 14) * Math.PI * 2;
+    const x = 128 + Math.cos(a) * 92;
+    const y = 128 + Math.sin(a) * 92;
+    const s = g.createRadialGradient(x, y, 0, x, y, 9);
+    s.addColorStop(0, 'rgba(255,250,225,0.9)');
+    s.addColorStop(1, 'rgba(255,230,170,0)');
+    g.fillStyle = s;
+    g.fillRect(x - 9, y - 9, 18, 18);
+  }
   const t = new CanvasTexture(c);
   t.colorSpace = SRGBColorSpace;
   return t;
+}
+
+/**
+ * The house to be, as a soft column of light: a body and a gabled roof, bright where it
+ * meets the grass and fading to nothing at the ridge. Vertex colours carry the fade.
+ */
+function silhouetteGeometry(w: number, h: number, d: number, rise: number): BufferGeometry {
+  const hw = w / 2;
+  const hd = d / 2;
+  const top = h + rise;
+  const pos: number[] = [];
+  const quad = (a: number[], b: number[], c: number[], e: number[]): void => {
+    pos.push(...a, ...b, ...c, ...a, ...c, ...e);
+  };
+  // Four walls.
+  quad([-hw, 0, hd], [hw, 0, hd], [hw, h, hd], [-hw, h, hd]);
+  quad([hw, 0, -hd], [-hw, 0, -hd], [-hw, h, -hd], [hw, h, -hd]);
+  quad([-hw, 0, -hd], [-hw, 0, hd], [-hw, h, hd], [-hw, h, -hd]);
+  quad([hw, 0, hd], [hw, 0, -hd], [hw, h, -hd], [hw, h, hd]);
+  // Gable ends and the two roof slopes.
+  pos.push(-hw, h, hd, hw, h, hd, 0, top, hd);
+  pos.push(hw, h, -hd, -hw, h, -hd, 0, top, -hd);
+  quad([-hw - 0.15, h - 0.05, hd + 0.15], [0, top, hd + 0.15], [0, top, -hd - 0.15], [-hw - 0.15, h - 0.05, -hd - 0.15]);
+  quad([hw + 0.15, h - 0.05, -hd - 0.15], [0, top, -hd - 0.15], [0, top, hd + 0.15], [hw + 0.15, h - 0.05, hd + 0.15]);
+  const g = new BufferGeometry();
+  g.setAttribute('position', new BufferAttribute(new Float32Array(pos), 3));
+  const col = new Float32Array((pos.length / 3) * 4);
+  for (let i = 0; i < pos.length / 3; i += 1) {
+    const y = pos[i * 3 + 1];
+    const k = Math.max(0, 1 - y / (top * 1.05));
+    col[i * 4] = 1;
+    col[i * 4 + 1] = 0.92;
+    col[i * 4 + 2] = 0.78;
+    col[i * 4 + 3] = 0.05 + 0.32 * k * k;
+  }
+  g.setAttribute('color', new BufferAttribute(col, 4));
+  return g;
 }
 
 export function createPlacement(app: App, hands: Hands, world: WorldPort, replies: Replies): Placement {
@@ -67,19 +120,21 @@ export function createPlacement(app: App, hands: Hands, world: WorldPort, replie
   ghost.visible = false;
   app.roots.fx.add(ghost);
   const padMat = new MeshBasicMaterial({ map: footprintTexture(), transparent: true, depthWrite: false, blending: AdditiveBlending, color: '#ffd28a' });
-  const pad = new Mesh(new PlaneGeometry(3.6, 3.6), padMat);
+  const pad = new Mesh(new PlaneGeometry(3.4, 3.1), padMat);
   pad.rotation.x = -Math.PI / 2;
-  pad.position.y = 0.04;
+  pad.position.y = 0.05;
   pad.renderOrder = 5;
-  const lineMat = new LineBasicMaterial({ color: '#ffe2a8', transparent: true, opacity: 0.85 });
-  const walls = new LineSegments(new EdgesGeometry(new BoxGeometry(2.6, 1.9, 2.2)), lineMat);
-  walls.position.y = 0.95;
-  const roof = new LineSegments(new EdgesGeometry(new ConeGeometry(2.0, 1.4, 4)), lineMat);
-  roof.rotation.y = Math.PI / 4;
-  roof.position.y = 2.6;
-  const door = new LineSegments(new EdgesGeometry(new BoxGeometry(0.6, 1.0, 0.02)), lineMat);
-  door.position.set(0, 0.5, 1.11);
-  ghost.add(pad, walls, roof, door);
+  const lineMat = new MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, color: '#ffe2a8', toneMapped: false });
+  const shape = new Mesh(silhouetteGeometry(2.5, 1.8, 2.1, 1.15), lineMat);
+  shape.renderOrder = 6;
+  ghost.add(pad, shape);
+  // It breathes a little while it waits for the pinch.
+  app.everyFrame((_dt, now) => {
+    if (!ghost.visible) return;
+    const k = 0.85 + Math.sin(now / 420) * 0.15;
+    lineMat.opacity = k;
+    padMat.opacity = 0.8 + Math.sin(now / 420 + 1) * 0.2;
+  });
 
   // A named point where a free spot is, so scenarios can aim the hand ray at it.
   const suggested = new Object3D();

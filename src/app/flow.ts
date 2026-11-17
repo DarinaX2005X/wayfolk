@@ -228,7 +228,7 @@ export function createFlow(
           talkHinted = true;
           void pipSay(LINES.talkHint);
         }
-        const picked = await Promise.race([replies.show(choices, { side: pipOn ?? undefined, delay: turns === 1 ? 2500 : 6500 }), spoken]);
+        const picked = await Promise.race([replies.show(choices, { side: pipOn ?? undefined, delay: turns === 1 ? 1500 : 6500 }), spoken]);
         if (clip) replies.hide();
         if (picked === null && !clip) return false;
         let audio: string | undefined;
@@ -273,6 +273,18 @@ export function createFlow(
     const suggested = guide.of(() => app.roots.fx.getObjectByName('spot:suggested'), 0.2);
     const choosing = placement.choose();
     const asking = pipSay(desk() ? LINES.placeDesk : LINES.place);
+    {
+      const s = placement.suggest();
+      const seatAt = world.root.localToWorld(((world.seat as { pos?: Vector3 }).pos ?? new Vector3()).clone());
+      if (s) {
+        const dir = new Vector3(s.x - seatAt.x, 0, s.z - seatAt.z);
+        if (dir.lengthSq() > 1) {
+          dir.normalize();
+          const aside = seatAt.clone().addScaledVector(dir, 3.0).add(new Vector3(-dir.z * 1.6, 0, dir.x * 1.6));
+          if (guide.walkable.ok(aside.x, aside.z)) void Promise.resolve(life.walkTo(r.id, { x: aside.x, z: aside.z }, { speed: 2 })).then(() => life.face?.(r.id)).catch(() => undefined);
+        }
+      }
+    }
     // Pip speaks, but the view goes to the free spot, with the one thing to do there.
     if (desk()) {
       guide.frame(suggested, { lift: -0.4 });
@@ -281,8 +293,25 @@ export function createFlow(
     await asking;
     const spot = await choosing;
     guide.cue(null);
+    life.quiet?.('pip');
     store.phase.value = 'build';
     const site = new Vector3(spot.x, world.groundY?.(spot.x, spot.z) ?? 0, spot.z);
+    {
+      // The traveler goes to watch their house go up, from part of the way there.
+      const seatAt = world.root.localToWorld(((world.seat as { pos?: Vector3 }).pos ?? new Vector3()).clone());
+      const dir = site.clone().sub(seatAt).setY(0);
+      const len = dir.length();
+      if (len > 2) {
+        dir.normalize();
+        const fire = (world as { fire?: Vector3 }).fire;
+        const firePos = fire?.isVector3 ? world.root.localToWorld(fire.clone()) : null;
+        const along = Math.min(len - 3.2, Math.max(2.6, len * 0.45));
+        // On the side away from the fire pit.
+        let watch = seatAt.clone().addScaledVector(dir, along).add(new Vector3(-dir.z * 1.4, 0, dir.x * 1.4));
+        if (firePos && watch.distanceTo(firePos.setY(watch.y)) < 2) watch = seatAt.clone().addScaledVector(dir, along).add(new Vector3(dir.z * 1.4, 0, -dir.x * 1.4));
+        if (guide.walkable.ok(watch.x, watch.z) && !(firePos && Math.hypot(watch.x - firePos.x, watch.z - firePos.z) < 2)) void Promise.resolve(life.walkTo(r.id, { x: watch.x, z: watch.z }, { speed: 2.2 })).then(() => life.face?.(r.id, site)).catch(() => undefined);
+      }
+    }
     if (desk()) guide.frame(() => site, { lift: 0.9 });
     const colors = r.house?.colors ?? HOUSE_COLORS[r.trade] ?? { ...HOUSE_COLORS.default, roof: r.colors.accent };
     const spec: HouseSpec = {
@@ -323,6 +352,34 @@ export function createFlow(
     life.emote(r.id, 'happy');
   };
 
+  /** A free patch of meadow in front of the seat, a little to the right, for a landing. */
+  const meadowLanding = (): { x: number; z: number } | null => {
+    const seat = (world.seat as { pos?: Vector3 }).pos;
+    if (!seat?.isVector3) return null;
+    const s = world.root.localToWorld(seat.clone());
+    const fire = (world as { fire?: Vector3 }).fire;
+    const f = fire?.isVector3 ? world.root.localToWorld(fire.clone()) : null;
+    const tries: [number, number][] = [
+      [2.8, -5.4],
+      [3.6, -4.6],
+      [1.6, -6.2],
+      [4.4, -6.0],
+      [-0.2, -6.8],
+    ];
+    for (const [dx, dz] of tries) {
+      const x = s.x + dx;
+      const z = s.z + dz;
+      if (f && Math.hypot(x - f.x, z - f.z) < 3.2) continue;
+      if (!guide.walkable.ok(x, z)) continue;
+      // Room for the vehicle beside it: no house within reach.
+      const houses = mind.state?.houses ?? [];
+      if (houses.some((h) => Math.hypot(h.pos.x - x, h.pos.z - z) < 5.5)) continue;
+      const v = world.validSpot({ x, z });
+      if (!v.ok || Math.hypot((v.snapped?.x ?? x) - x, (v.snapped?.z ?? z) - z) > 1.5) continue;
+      return { x, z };
+    }
+    return null;
+  };
   /** The traveler walking up from the pier, while they do (a pinch or a click brings them). */
   let walker: string | null = null;
   const arrival = async (): Promise<{ traveler: Resident; choices?: string[]; near?: Promise<void> } | null> => {
@@ -332,15 +389,19 @@ export function createFlow(
     store.prepared.value = Boolean(traveler.prepared);
     tell('traveler-arrived', { resident: traveler });
     if (desk()) guide.frame(residentObject(traveler.id), { lift: 0.3, zoom: true });
-    await life.arrive(traveler, traveler.vehicle);
-    // They come up the path to meet the person in front of the seat, talking on the way;
-    // the replies wait until they stand there.
+    // Travelers land on the meadow a few steps from the person when there is room (a short
+    // walk), and at the pier otherwise.
+    const landAt = meadowLanding();
+    const landing = Promise.resolve(life.arrive(traveler, traveler.vehicle, landAt ? { near: landAt } : undefined));
+    // On the meadow they speak as they step off; from the pier, once on the path.
+    await within(landing, landAt ? 6000 : 60000, undefined);
     const meet = (world.seat as { meet?: Vector3 }).meet;
     let near: Promise<void> = Promise.resolve();
     if (meet?.isVector3) {
       const to = world.root.localToWorld(meet.clone());
       walker = traveler.id;
-      near = Promise.resolve(life.walkTo(traveler.id, { x: to.x, z: to.z }, { speed: 4 }))
+      near = landing
+        .then(() => Promise.resolve(life.walkTo(traveler.id, { x: to.x, z: to.z }, { speed: 4 })))
         .then(() => life.face?.(traveler.id))
         .catch(() => undefined)
         .finally(() => {

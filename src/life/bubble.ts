@@ -363,7 +363,9 @@ export class Bubble {
       pageCam.getWorldQuaternion(camQ);
       camFwd.set(0, 0, -1).applyQuaternion(camQ);
       const depth = camPos.copy(anchor).sub(pageCam.getWorldPosition(camPos2)).dot(camFwd);
-      if (depth > 0.1) width = Math.min(width, 1.9 * depth * Math.tan((pageCam.fov * Math.PI) / 360) * pageCam.aspect);
+      // At most about 40 % of a wide page, and nearly all of a narrow one.
+      const share = pageCam.aspect < 0.9 ? 0.92 : 0.4;
+      if (depth > 0.1) width = Math.min(width, 2 * share * depth * Math.tan((pageCam.fov * Math.PI) / 360) * pageCam.aspect);
     }
     // Pop: overshoot then settle on the way in; shrink slightly on the way out.
     const a = Math.min(1, this.age / 0.38);

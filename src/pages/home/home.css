@@ -701,7 +701,14 @@
 }
 
 /* An honest note when the traveler or their line comes from the prepared set. */
+/* Shown in the world as a tag beside the traveler; kept here for screen readers. */
 .home-prepared {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
   padding: 4px 12px;
   border-radius: 10px;
   background: rgba(243, 230, 207, 0.9);

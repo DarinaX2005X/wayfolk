@@ -11,7 +11,7 @@
  * Everything here runs only while `store.mode` is 'desk'. In a headset nothing of it
  * moves the view, and there is no smooth locomotion.
  */
-import { AdditiveBlending, Box3, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, Group, Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Vector3, type Object3D } from '@iwsdk/core';
+import { AdditiveBlending, Box3, CanvasTexture, Quaternion, ConeGeometry, CylinderGeometry, DoubleSide, Group, Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Vector3, type Object3D } from '@iwsdk/core';
 import { Raycaster, type Ray } from '@iwsdk/core';
 import type { App } from '../boot/world';
 import { createWalkable, type Walkable } from '../walkable';
@@ -50,6 +50,7 @@ export type Guide = {
 const TMP = new Vector3();
 const LOCAL = new Vector3();
 const ARROW_AT = new Vector3();
+const HALO_Q = new Quaternion();
 
 /** A soft ring for the spot a click walks to. */
 function ringTexture(): CanvasTexture {
@@ -278,7 +279,7 @@ export function createGuide(app: App, rig: Rig, world: WorldPort, blocked: () =>
       arrow.scale.setScalar(s);
       arrow.rotation.y = less ? 0 : now / 900;
       arrow.updateMatrixWorld();
-      halo.quaternion.copy(arrow.quaternion).invert().multiply(cam.quaternion);
+      halo.quaternion.copy(arrow.quaternion).invert().multiply(cam.getWorldQuaternion(HALO_Q));
     }
   });
 

@@ -493,7 +493,9 @@ export function createIsland(root: Object3D, land: Land, batch: Batch, decorBatc
     const a = { x: PIER.base.x + PIER.dir.x * 1.5 + sideV.x * s * (PIER.width / 2 + 0.05), z: PIER.base.z + PIER.dir.z * 1.5 + sideV.z * s * (PIER.width / 2 + 0.05) };
     const b = { x: PIER.base.x + PIER.dir.x * PIER.length + sideV.x * s * (PIER.width / 2 + 0.05), z: PIER.base.z + PIER.dir.z * PIER.length + sideV.z * s * (PIER.width / 2 + 0.05) };
     const len = Math.hypot(b.x - a.x, b.z - a.z);
-    pierParts.push([place(cyl(0.03, 0.03, len, 5), [a.x, pierY + 0.5, a.z], [Math.PI / 2, pa, 0]), MAT.rope]);
+    // Along the pier: tipped over onto +z first, then turned to the pier's heading (an
+    // Euler of [π/2, pa, 0] turns in the other order and laid the rope across the island).
+    pierParts.push([cyl(0.03, 0.03, len, 5).rotateX(Math.PI / 2).rotateY(pa).translate(a.x, pierY + 0.5, a.z), MAT.rope]);
   }
   // mooring posts and a crate
   batch.add('pier', build(pierParts.map(([g, c]) => [g, c] as [BufferGeometry, string])));

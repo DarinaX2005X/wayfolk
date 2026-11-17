@@ -1,6 +1,8 @@
 // Two authored moments, each a pure function of its own clock so a pinch can jump to the
 // end: a traveler arriving out of the clouds, and the flock building a house.
-import { Box3, Matrix4, Object3D, Quaternion, Vector3 } from '@iwsdk/core';
+import { Box3, Matrix4, Mesh, Object3D, Quaternion, Vector3, type BufferGeometry } from '@iwsdk/core';
+import { MAT, build as buildParts, cbox, cyl, place } from '../world/geo';
+import { mainMaterial } from '../world/materials';
 import type { Resident, Vehicle } from '../mind/types';
 import type { LifeAudio } from './audio';
 import { planBuild, type BuildSchedule } from './build-plan';
@@ -47,6 +49,11 @@ export interface ArrivalEnv {
   greeters: BirdAgent[];
   /** Cloud-sea level, below the island. */
   cloudY: number;
+  /**
+   * Landing on the grass near the person instead of at the pier: the vehicle comes in high
+   * over the island and settles just above the meadow beyond `dock`, and leaves upward.
+   */
+  meadow?: boolean;
 }
 
 /** A traveler arriving: out of the clouds, along a soft curve, docking, stepping off, waving. */
@@ -82,9 +89,17 @@ export class Arrival implements Scene {
     const side = tA.set(-out.z, 0, out.x);
     const deckY = env.dock.y;
     const seatY = this.vehicle.seat.y;
-    if (env.hang) this.end.set(env.hang.x, 0, env.hang.z).addScaledVector(out, kind === 'cloud-whale' ? 0.8 : 0);
-    else this.end.copy(env.dock).addScaledVector(out, kind === 'cloud-whale' ? 1.6 : 0.9);
-    this.end.y = deckY - seatY + (this.vehicle.seatPose === 'sit' ? 0.05 : 0.02);
+    if (env.meadow) {
+      // Beside the landing spot on the far side, floating just clear of the grass.
+      this.vehicle.mesh.geometry.computeBoundingBox();
+      const low = this.vehicle.mesh.geometry.boundingBox?.min.y ?? 0;
+      this.end.copy(env.dock).addScaledVector(out, this.vehicle.size * 0.55 + 0.55);
+      this.end.y = deckY + 0.22 - Math.min(low, seatY - 0.05);
+    } else {
+      if (env.hang) this.end.set(env.hang.x, 0, env.hang.z).addScaledVector(out, kind === 'cloud-whale' ? 0.8 : 0);
+      else this.end.copy(env.dock).addScaledVector(out, kind === 'cloud-whale' ? 1.6 : 0.9);
+      this.end.y = deckY - seatY + (this.vehicle.seatPose === 'sit' ? 0.05 : 0.02);
+    }
     if (kind === 'umbrella') {
       this.start.copy(this.end).addScaledVector(out, 10).addScaledVector(side, -5);
       this.start.y = deckY + 14;
@@ -99,6 +114,11 @@ export class Arrival implements Scene {
       this.c1.y = env.cloudY + (kind === 'paper-boat' ? 0.6 : 3.5);
       this.c2.copy(this.end).addScaledVector(out, 5).addScaledVector(side, -2.5);
       this.c2.y = this.end.y + (kind === 'paper-boat' ? 0.2 : 1.2);
+      if (env.meadow) {
+        // Over the island, high above the trees, then down onto the meadow.
+        this.c1.y = Math.max(this.c1.y, this.end.y + 7);
+        this.c2.y = this.end.y + 3.2;
+      }
     }
     // The vehicle faces along its travel; docked it turns its side to the pier.
     this.yaw = Math.atan2(-out.x, -out.z);
@@ -132,7 +152,7 @@ export class Arrival implements Scene {
       // Leaving: drift back out and sink into the clouds.
       const k = smooth((t - (this.T_GONE - 4)) / 4);
       this.holder.position.addScaledVector(this.env.out, k * 9);
-      this.holder.position.y += this.vehicle.kind === 'umbrella' || this.vehicle.kind === 'balloon' || this.vehicle.kind === 'lantern' || this.vehicle.kind === 'kite' ? k * 6 : -k * 4;
+      this.holder.position.y += this.env.meadow || this.vehicle.kind === 'umbrella' || this.vehicle.kind === 'balloon' || this.vehicle.kind === 'lantern' || this.vehicle.kind === 'kite' ? k * 6 : -k * 4;
     }
   }
 
@@ -239,6 +259,78 @@ interface PieceState {
   source: Vector3;
   landed: boolean;
   appeared: boolean;
+  /** A wall: it rises up out of the foundation inside the frame instead of flying in. */
+  rises: boolean;
+}
+
+/**
+ * The order a house goes up in: stone foundation, the timber frame, the walls rising inside
+ * it, door and windows, the roof, then the details and the yard.
+ */
+function buildRank(step: BuildStep): number {
+  const s = step as BuildStep & { name?: string; stage?: string };
+  const name = (s.name ?? s.object3d.name ?? '').toLowerCase();
+  const stage = s.stage ?? '';
+  if (stage === 'foundation') return 0;
+  if (stage === 'walls' && /beam|frame|post|stilt/.test(name)) return 1;
+  // Gable ends go up with the roof; bands, ovens and trim boards with the details.
+  if (stage === 'walls' && /gable/.test(name)) return 4;
+  if (stage === 'walls' && /band|oven/.test(name)) return 5;
+  if (stage === 'walls' && /plank/.test(name)) return 3;
+  if (stage === 'walls') return 2;
+  if (/door|window|porthole|shutter/.test(name)) return 3;
+  if (stage === 'roof') return 4;
+  if (stage === 'props') return 6;
+  return 5;
+}
+
+/** A wall body (not its frame): these rise in place. */
+function isWallBody(step: BuildStep): boolean {
+  const s = step as BuildStep & { name?: string; stage?: string };
+  return s.stage === 'walls' && buildRank(step) === 2;
+}
+
+/**
+ * A light timber scaffold round a footprint (house frame, metres), one mesh. With `frame`
+ * (the wall body's box) it also holds a timber frame: corner posts, sill and top plates
+ * just inside the walls, so a house without beams of its own still goes up on a frame.
+ */
+function scaffoldGeometry(w: number, d: number, h: number, frame?: { x0: number; x1: number; z0: number; z1: number; y0: number; y1: number }): BufferGeometry {
+  const parts: [BufferGeometry, string][] = [];
+  if (frame) {
+    const t = 0.1;
+    const fx0 = frame.x0 + t / 2 + 0.03;
+    const fx1 = frame.x1 - t / 2 - 0.03;
+    const fz0 = frame.z0 + t / 2 + 0.03;
+    const fz1 = frame.z1 - t / 2 - 0.03;
+    const fh = frame.y1 - frame.y0;
+    const cx = (fx0 + fx1) / 2;
+    const cz = (fz0 + fz1) / 2;
+    for (const x of [fx0, fx1]) for (const z of [fz0, fz1]) parts.push([place(cbox(t, fh, t, 0.015), [x, frame.y0, z]), MAT.woodDark]);
+    for (const y of [frame.y0, frame.y1 - t]) {
+      for (const z of [fz0, fz1]) parts.push([place(cbox(fx1 - fx0 + t, t, t, 0.015), [cx, y, z]), MAT.woodDark]);
+      for (const x of [fx0, fx1]) parts.push([place(cbox(t, t, fz1 - fz0 + t, 0.015), [x, y, cz]), MAT.woodDark]);
+    }
+    // A middle post on the long sides.
+    for (const z of [fz0, fz1]) parts.push([place(cbox(t * 0.8, fh, t * 0.8, 0.015), [cx, frame.y0, z]), MAT.woodDark]);
+  }
+  const pole = MAT.woodLight;
+  const plank = MAT.plank;
+  const hw = w / 2;
+  const hd = d / 2;
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) parts.push([place(cyl(0.035, 0.04, h, 6), [sx * hw, 0, sz * hd]), pole]);
+  // Walkways along the front and one side, two levels, with ledgers under them.
+  for (const y of [h * 0.42, h * 0.8]) {
+    parts.push([place(cbox(w + 0.2, 0.05, 0.32, 0.01), [0, y, hd + 0.02]), plank]);
+    parts.push([place(cbox(0.32, 0.05, d + 0.2, 0.01), [hw + 0.02, y, 0]), plank]);
+    parts.push([place(cbox(w + 0.25, 0.04, 0.05, 0.01), [0, y - 0.05, hd - 0.14]), pole]);
+    parts.push([place(cbox(0.05, 0.04, d + 0.25, 0.01), [hw - 0.14, y - 0.05, 0]), pole]);
+  }
+  // Two cross braces on the open sides.
+  const brace = Math.hypot(w, h * 0.42);
+  parts.push([place(cyl(0.022, 0.022, brace, 5), [-hw, 0.05, -hd], [0, 0, -Math.atan2(w, h * 0.42)]), pole]);
+  parts.push([place(cyl(0.022, 0.022, Math.hypot(d, h * 0.42), 5), [-hw, 0.05, hd], [Math.atan2(d, h * 0.42), 0, 0]), pole]);
+  return buildParts(parts);
 }
 
 export interface BuildEnv {
@@ -264,8 +356,15 @@ export class Build implements Scene {
   private finished = false;
   private smokeFrom: Object3D[] = [];
   private windows: Object3D[] = [];
+  /** Yard props: they appear at the finish instead of being carried. */
+  private extras: PieceState[] = [];
+  /** The timber scaffold round the site, up while the house goes up. */
+  private scaffold: Mesh | null = null;
+  private scaffoldH = 3;
 
-  constructor(private env: BuildEnv, steps: BuildStep[]) {
+  constructor(private env: BuildEnv, stepsIn: BuildStep[]) {
+    // Assembly order, keeping each kind's own order.
+    const steps = stepsIn.map((s, i) => ({ s, i })).sort((a, b) => buildRank(a.s) - buildRank(b.s) || a.i - b.i).map((x) => x.s);
     const box = new Box3();
     const m = new Matrix4();
     let n = 0;
@@ -296,7 +395,7 @@ export class Build implements Scene {
       const radius = Number.isFinite(size.x) ? Math.max(0.15, size.length() / 2) : 0.4;
       this.site.add(world);
       n++;
-      this.pieces.push({ step, parent, pos, quat, scale, world, topOffset, bottom: Number.isFinite(bottom) ? bottom : 0, radius, source: new Vector3(), landed: false, appeared: false });
+      this.pieces.push({ step, parent, pos, quat, scale, world, topOffset, bottom: Number.isFinite(bottom) ? bottom : 0, radius, source: new Vector3(), landed: false, appeared: false, rises: isWallBody(step) });
       o.visible = false;
     }
     if (n) this.site.divideScalar(n);
@@ -313,6 +412,11 @@ export class Build implements Scene {
       p.source.copy(edge).addScaledVector(side, ((i * 0.618) % 1 - 0.5) * 3.2);
       p.source.y = env.center.y + 0.4;
     });
+    // The yard's small things are not carried: they pop up round the house at the finish,
+    // so the flock's time goes to the house itself.
+    this.extras = this.pieces.filter((p) => buildRank(p.step) === 6);
+    this.pieces = this.pieces.filter((p) => buildRank(p.step) !== 6);
+    for (const p of this.extras) p.step.object3d.visible = false;
     const sizes = this.pieces.map((p) => p.radius);
     this.schedule = planBuild(sizes, env.birds.length);
     this.done = new Promise((r) => (this.resolveFn = r));
@@ -323,6 +427,7 @@ export class Build implements Scene {
         if (/window|glass|lamp|light/i.test(c.name)) this.windows.push(c);
       });
     }
+    this.raiseScaffold();
     for (const b of env.birds) {
       b.mode = 'circle';
       b.circleCenter.copy(this.site).setY(this.site.y + 4);
@@ -331,8 +436,102 @@ export class Build implements Scene {
     }
   }
 
+  /** The scaffold: sized from the house in its own frame, standing round it from the start. */
+  private raiseScaffold(): void {
+    const first = this.pieces[0];
+    if (!first) return;
+    const q = first.quat;
+    const inv = q.clone().invert();
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+    let top = 0;
+    const g = new Vector3();
+    const wallBox = { x0: Infinity, x1: -Infinity, z0: Infinity, z1: -Infinity, y0: Infinity, y1: -Infinity };
+    const hasFrame = this.pieces.some((p) => buildRank(p.step) === 1);
+    for (const p of this.pieces) {
+      if (buildRank(p.step) > 2) continue;
+      if (p.rises) {
+        const geo = (p.step.object3d as Mesh).geometry as BufferGeometry | undefined;
+        if (geo) {
+          geo.computeBoundingBox();
+          const bb = geo.boundingBox!;
+          const c = p.world.clone().sub(this.site).applyQuaternion(inv);
+          wallBox.x0 = Math.min(wallBox.x0, c.x + bb.min.x);
+          wallBox.x1 = Math.max(wallBox.x1, c.x + bb.max.x);
+          wallBox.z0 = Math.min(wallBox.z0, c.z + bb.min.z);
+          wallBox.z1 = Math.max(wallBox.z1, c.z + bb.max.z);
+          wallBox.y0 = Math.min(wallBox.y0, c.y + bb.min.y);
+          wallBox.y1 = Math.max(wallBox.y1, c.y + bb.max.y);
+        }
+      }
+      const geo = (p.step.object3d as Mesh).geometry as BufferGeometry | undefined;
+      if (!geo) continue;
+      geo.computeBoundingBox();
+      const bb = geo.boundingBox!;
+      g.copy(p.world).sub(this.site).applyQuaternion(inv);
+      minX = Math.min(minX, g.x + bb.min.x);
+      maxX = Math.max(maxX, g.x + bb.max.x);
+      minZ = Math.min(minZ, g.z + bb.min.z);
+      maxZ = Math.max(maxZ, g.z + bb.max.z);
+      top = Math.max(top, p.world.y + bb.max.y - this.site.y);
+    }
+    if (!Number.isFinite(minX)) return;
+    const w = Math.min(6, maxX - minX + 0.7);
+    const d = Math.min(6, maxZ - minZ + 0.7);
+    const h = Math.max(1.8, Math.min(5, top + 0.35));
+    this.scaffoldH = h;
+    const mx = (minX + maxX) / 2;
+    const mz = (minZ + maxZ) / 2;
+    let ground = Infinity;
+    for (const p of this.pieces) if (buildRank(p.step) === 0) ground = Math.min(ground, p.world.y + p.bottom);
+    const gy = Number.isFinite(ground) ? ground : this.site.y;
+    // The frame, in the scaffold's own frame (centred on the footprint, from the ground).
+    const frame =
+      !hasFrame && Number.isFinite(wallBox.x0) && wallBox.x1 - wallBox.x0 > 0.8
+        ? { x0: wallBox.x0 - mx, x1: wallBox.x1 - mx, z0: wallBox.z0 - mz, z1: wallBox.z1 - mz, y0: wallBox.y0 + this.site.y - gy, y1: wallBox.y1 + this.site.y - gy }
+        : undefined;
+    const mesh = new Mesh(scaffoldGeometry(w, d, h, frame), mainMaterial());
+    mesh.name = 'build:scaffold';
+    const c = new Vector3(mx, 0, mz).applyQuaternion(q).add(this.site);
+    c.y = gy;
+    mesh.position.copy(c);
+    mesh.quaternion.copy(q);
+    mesh.scale.set(1, 0.001, 1);
+    this.env.root.add(mesh);
+    this.scaffold = mesh;
+  }
+
+  /** The scaffold pops up at the start and folds down into dust at the finish. */
+  private scaffoldStep(prev: number, t: number): void {
+    const s = this.scaffold;
+    if (!s) return;
+    const sch = this.schedule;
+    const up = Math.min(1, t / 0.9);
+    const down = t > sch.finish ? Math.min(1, (t - sch.finish) / 0.8) : 0;
+    const k = smooth(up) * (1 - smooth(down));
+    s.scale.set(1, Math.max(0.001, k), 1);
+    s.visible = k > 0.01;
+    if (prev < 0.05 && t >= 0.05) this.env.fx.dust(s.position.clone(), 1.2, '#e9d6b8');
+    if (prev < sch.finish && t >= sch.finish) {
+      for (const sx of [-1, 1]) this.env.fx.dust(s.position.clone().add(new Vector3(sx * 0.9, 0.1, 0)), 1.1, '#e9d6b8');
+    }
+    if (down >= 1) {
+      s.removeFromParent();
+      s.geometry.dispose();
+      this.scaffold = null;
+    }
+  }
+
   /** World position of piece i's origin at time t (and whether it is visible). */
   private piecePos(p: PieceState, it: { pick: number; land: number; settle: number }, t: number, out: Vector3): number {
+    if (p.rises) {
+      // A wall rises out of the foundation between the frame's posts.
+      if (t < it.pick - 1.0) return -1;
+      out.copy(p.world);
+      return 1;
+    }
     const rise0 = it.pick - 0.9;
     if (t < rise0) return -1;
     if (t < it.pick) {
@@ -375,6 +574,25 @@ export class Build implements Scene {
   private apply(prev: number, t: number): void {
     const env = this.env;
     const sch = this.schedule;
+    this.scaffoldStep(prev, t);
+    this.extras.forEach((p, i) => {
+      const t0 = sch.finish + 0.4 + i * 0.18;
+      const o = p.step.object3d;
+      if (t < t0) {
+        o.visible = false;
+        return;
+      }
+      const k = Math.min(1, (t - t0) / 0.45);
+      const pop = k < 1 ? 1 + Math.sin(k * Math.PI) * 0.18 : 1;
+      o.visible = true;
+      o.position.copy(p.pos);
+      o.quaternion.copy(p.quat);
+      o.scale.copy(p.scale).multiplyScalar(Math.max(0.01, smooth(k) * pop));
+      if (!p.landed) {
+        p.landed = true;
+        env.fx.dust(p.world.clone().setY(p.world.y + p.bottom + 0.03), Math.min(0.7, p.radius * 0.8));
+      }
+    });
     const busy = new Set<number>();
     for (const it of sch.items) {
       const p = this.pieces[it.index];
@@ -385,7 +603,8 @@ export class Build implements Scene {
       } else {
         if (!p.appeared) {
           p.appeared = true;
-          env.fx.cloud(p.source.clone().setY(env.cloudY + 0.4), Math.min(1.6, p.radius * 1.4));
+          if (p.rises) env.fx.dust(p.world.clone().setY(p.world.y + p.bottom + 0.05), Math.min(1.6, p.radius * 0.9));
+          else env.fx.cloud(p.source.clone().setY(env.cloudY + 0.4), Math.min(1.6, p.radius * 1.4));
         }
         o.visible = true;
         // Into parent space.
@@ -395,7 +614,14 @@ export class Build implements Scene {
         o.position.copy(tL);
         o.quaternion.copy(p.quat);
         o.scale.copy(p.scale).multiplyScalar(vis);
-        if (t < it.land) {
+        if (p.rises) {
+          // Grows from its bottom edge up to full height, a little wobble as it settles.
+          const k = smooth((t - it.pick + 1.0) / Math.max(1.2, it.land - it.pick + 1.0));
+          const settle = t > it.land ? Math.exp(-(t - it.land) * 6) * Math.sin((t - it.land) * 18) * 0.04 : 0;
+          const sy = Math.max(0.02, k + settle);
+          o.scale.set(p.scale.x, p.scale.y * sy, p.scale.z);
+          o.position.y += p.bottom * (1 - sy);
+        } else if (t < it.land) {
           // Gentle swing while carried.
           const sw = Math.sin(t * 3.1 + it.index) * 0.06 * (t > it.pick ? 1 : 0);
           tQ.setFromAxisAngle(AXIS_Z, sw);
@@ -422,8 +648,13 @@ export class Build implements Scene {
           b.mode = 'carry';
           b.carrying = t >= it.pick;
           const ang = (k / it.birds.length) * Math.PI * 2 + 0.6;
-          const rr = it.birds.length > 1 ? Math.min(0.5, p.radius * 0.45) : 0;
-          if (t < it.pick) {
+          const rr = p.rises ? Math.min(1.2, p.radius * 0.7) : it.birds.length > 1 ? Math.min(0.5, p.radius * 0.45) : 0;
+          if (p.rises) {
+            const k = smooth((t - it.pick + 1.0) / Math.max(1.2, it.land - it.pick + 1.0));
+            b.goal.copy(p.world).add(p.topOffset);
+            b.goal.y = p.world.y + p.bottom + (p.topOffset.y - p.bottom) * Math.max(0.1, k) + 0.25;
+            b.carrying = t >= it.pick;
+          } else if (t < it.pick) {
             b.goal.copy(p.source).add(p.topOffset).setY(p.source.y + p.topOffset.y + 0.15);
           } else {
             b.goal.copy(tW).add(p.topOffset);
@@ -468,12 +699,17 @@ export class Build implements Scene {
         b.mode = 'flock';
         b.carrying = false;
       }
-      for (const p of this.pieces) {
+      for (const p of [...this.pieces, ...this.extras]) {
         const o = p.step.object3d;
         o.visible = true;
         o.position.copy(p.pos);
         o.quaternion.copy(p.quat);
         o.scale.copy(p.scale);
+      }
+      if (this.scaffold) {
+        this.scaffold.removeFromParent();
+        this.scaffold.geometry.dispose();
+        this.scaffold = null;
       }
       this.resolveFn?.();
       this.resolveFn = null;
@@ -485,7 +721,7 @@ export class Build implements Scene {
     const prev = this.t;
     this.t = this.schedule.total + 0.01;
     // Land everything without a storm of effects.
-    for (const p of this.pieces) p.landed = true;
+    for (const p of [...this.pieces, ...this.extras]) p.landed = true;
     for (const p of this.pieces) p.appeared = true;
     this.apply(Math.max(prev, this.schedule.finish - 0.001), this.t);
   }

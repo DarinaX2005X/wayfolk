@@ -384,14 +384,26 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
       scenes.push(b);
       return b.done;
     },
-    arrive(resident: Resident, vehicle?: Vehicle): Promise<void> {
+    arrive(resident: Resident, vehicle?: Vehicle, opts?: { near?: PointLike }): Promise<void> {
       const a = ensureAgent(resident);
       manual(resident.id, 40);
       const out = pierOut(new Vector3());
       let dock: Vector3;
       let landing: Vector3;
       let hang: Vector3 | undefined;
-      if (W.pier?.step && W.pier.dock) {
+      const near = opts?.near ? readPoint(opts.near, new Vector3(), ground) : null;
+      let meadow = false;
+      if (near) {
+        // Landing on the grass near the person: it comes in from beyond, over the island.
+        meadow = true;
+        dock = near.clone();
+        dock.y = ground(dock.x, dock.z, dock.y);
+        out.copy(dock).sub(head).setY(0);
+        if (out.lengthSq() < 1e-4) out.set(0, 0, -1);
+        out.normalize();
+        landing = dock.clone().addScaledVector(out, -0.7);
+        landing.y = ground(landing.x, landing.z, dock.y);
+      } else if (W.pier?.step && W.pier.dock) {
         // The real pier: the traveler steps onto `step`; the vehicle hangs beside it at `dock`.
         dock = toWorld(W.pier.step.clone());
         hang = toWorld(W.pier.dock.clone());
@@ -404,7 +416,7 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
         landing.y = ground(landing.x, landing.z, dock.y);
       }
       const arrival = new Arrival(
-        { root, audio, fx, dock, out, landing, hang, head: () => head, greeters: flock.slice(0, 3), cloudY: cloudY() },
+        { root, audio, fx, dock, out, landing, hang, head: () => head, greeters: flock.slice(0, 3), cloudY: cloudY(), meadow },
         a,
         vehicle ?? resident.vehicle ?? 'balloon',
       );

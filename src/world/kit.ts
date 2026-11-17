@@ -129,7 +129,7 @@ function lampPost(scale: number): BufferGeometry {
     [place(cyl(0.07 * scale, 0.095 * scale, h - lh - 0.06 * scale, 10), [0, 0.1 * scale, 0]), MAT.woodDark],
     [place(cbox(0.3 * scale, 0.07 * scale, 0.3 * scale, 0.02 * scale), [0, h - lh - 0.07 * scale, 0]), MAT.wood],
   ]);
-  return join([post.index ? post.toNonIndexed() : post, lantern.index ? lantern.toNonIndexed() : lantern]);
+  return join([post, lantern]);
 }
 
 /**
