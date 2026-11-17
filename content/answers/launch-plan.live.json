@@ -13,109 +13,139 @@
    "index": 1,
    "attempt": 1,
    "reqHash": "d60b6b5d",
-   "ms": 26480,
+   "ms": 12622,
    "ok": true,
    "json": {
-    "understood": "You want a dated launch plan for the Fernway habit tracker, with tasks, owners and dates, built from the launch brief.",
-    "title": "Fernway launch plan",
     "deliverable": "plan",
     "fit": "yes",
-    "notDoable": "",
     "instead": "",
-    "question": "",
-    "options": [],
+    "notDoable": "",
     "object": "chart",
-    "objectWhy": "This is a launch schedule with dates, owners and a budget, so it is a chart.",
-    "windowFrom": "2027-01-04",
-    "windowTo": "2027-02-19",
+    "objectWhy": "This is a launch: a dated schedule of tasks with owners.",
+    "options": [],
+    "question": "",
+    "steps": [
+     {
+      "columns": [],
+      "criteria": [],
+      "does": "Read launch-brief and pull out the facts the plan must obey: the launch date (Tuesday 9 February 2027), the work window (4 January 2027 to 19 February 2027, one week of follow-up), the four team members and what each owns, the $3,000 budget with its four line items, and the six must-happen items.",
+      "done": [
+       "launch date, work window and follow-up week with quotes from page 1",
+       "the four owners with their stated responsibilities",
+       "the budget total and each of the four line items with amounts",
+       "the six must-happen items with quotes"
+      ],
+      "files": [],
+      "focus": "",
+      "id": "facts",
+      "kind": "research",
+      "options": [],
+      "required": [],
+      "sections": [],
+      "title": "Find facts",
+      "uses": [
+       "materials"
+      ]
+     },
+     {
+      "columns": [
+       {
+        "name": "task",
+        "type": "text"
+       },
+       {
+        "name": "owner",
+        "type": "text"
+       },
+       {
+        "name": "startDate",
+        "type": "date"
+       },
+       {
+        "name": "endDate",
+        "type": "date"
+       },
+       {
+        "name": "dependsOn",
+        "type": "text"
+       },
+       {
+        "name": "costUsd",
+        "type": "number"
+       }
+      ],
+      "criteria": [],
+      "does": "Write 8\u00136 plans items covering recruitment and running of the 30-tester closed beta, bug fixes before release, landing page with sign-up form live one week before launch, waiting-list newsletter on launch day, launch post, follow-up post one week later, the numbers review one week after launch, and Maya's go/no-go call. Every item has an owner from the four named people, dates inside 4 January 2027 to 19 February 2027, and dependencies on the items it waits for. Put the budget line as cost: $600 landing page, $1,500 paid posts, $400 tester gifts, $500 launch day event.",
+      "done": [
+       "8\u001316 items, each with task, owner, start date, end date and dependencies",
+       "owners only from Maya Lindqvist, Sam Okoro, Priya Raman, Leo Martins",
+       "all dates inside the 4 January 2027 to 19 February 2027 window, launch day 9 February 2027 kept free for the newsletter and the launch post",
+       "cost amounts only from the brief's four line items, adding up to $3,000",
+       "beta bug fixes finish before the release; the landing page is live by 2 February 2027"
+      ],
+      "files": [],
+      "focus": "",
+      "id": "plan",
+      "kind": "make-plan",
+      "options": [],
+      "required": [],
+      "sections": [],
+      "title": "Write the plan",
+      "uses": [
+       "facts"
+      ]
+     },
+     {
+      "columns": [],
+      "criteria": [],
+      "does": "Read the plan as a critical colleague. Look for must-happen items from the brief that have no item, dates that leave no room for the two-week beta before 9 February 2027, owners given work outside their stated area, missing follow-up, and budget lines that go past $3,000.",
+      "done": [
+       "a list of weak or missing points, each pointing at the item it concerns",
+       "uncovered brief items named explicitly"
+      ],
+      "files": [],
+      "focus": "Is every must-happen item in the brief covered with dates and an owner, and do the dates leave room for the two-week beta?",
+      "id": "second-read",
+      "kind": "review",
+      "options": [],
+      "required": [],
+      "sections": [],
+      "title": "Second read",
+      "uses": [
+       "plan"
+      ]
+     },
+     {
+      "columns": [],
+      "criteria": [],
+      "does": "Check the plan by code: item count between 8 and 16, every item has an owner in the team, every date falls inside the window, dependencies point at items that exist and form no loop, the cost column sums to no more than $3,000, and no item is dated after 19 February 2027.",
+      "done": [
+       "pass or a list of exact failures with the item they belong to"
+      ],
+      "files": [],
+      "focus": "Owners, window, dependencies, budget total",
+      "id": "check",
+      "kind": "check",
+      "options": [],
+      "required": [],
+      "sections": [],
+      "title": "Check plan",
+      "uses": [
+       "plan",
+       "second-read"
+      ]
+     }
+    ],
     "team": [
      "Maya Lindqvist",
      "Sam Okoro",
      "Priya Raman",
      "Leo Martins"
     ],
-    "steps": [
-     {
-      "id": "facts",
-      "kind": "research",
-      "title": "Find facts",
-      "does": "Read launch-brief and pull out the launch date, the work window, the team and what each person owns, the four budget lines, and the list of things that must happen. Every point gets a word-for-word quote and its page.",
-      "uses": [
-       "materials"
-      ],
-      "focus": "launch date 9 February 2027; work window 4 January to 19 February 2027; four owners; $3,000 total budget in four named lines; the six must-happen items",
-      "files": [],
-      "sections": [],
-      "columns": [],
-      "options": [],
-      "criteria": [],
-      "required": [],
-      "done": []
-     },
-     {
-      "id": "plan",
-      "kind": "make-plan",
-      "title": "Write plan",
-      "does": "Turn the checked facts into 16 launch items. Each item has a task, an owner from the team, a start and end date inside 4 January to 19 February 2027, and the items it depends on. The four budget lines become the money column.",
-      "uses": [
-       "facts"
-      ],
-      "focus": "",
-      "files": [],
-      "sections": [],
-      "columns": [
-       {
-        "name": "budget",
-        "type": "money"
-       }
-      ],
-      "options": [],
-      "criteria": [],
-      "required": [],
-      "done": [
-       "16 items",
-       "every owner is one of the four named people",
-       "every date is inside 4 January to 19 February 2027",
-       "budget column adds up to $3,000"
-      ]
-     },
-     {
-      "id": "review",
-      "kind": "review",
-      "title": "Second read",
-      "does": "Read the plan as a critical colleague: look for missing must-happen items, dates that clash with the 9 February launch, owners with too much on one day, and anything in the brief that no item covers.",
-      "uses": [
-       "plan"
-      ],
-      "focus": "",
-      "files": [],
-      "sections": [],
-      "columns": [],
-      "options": [],
-      "criteria": [],
-      "required": [],
-      "done": []
-     },
-     {
-      "id": "check",
-      "kind": "check",
-      "title": "Check plan",
-      "does": "Code-check the plan: all 16 items have task, owner, start, end and dependencies; owners are in the team; dates sit inside the window; dependencies point at earlier items; the budget column sums to $3,000; the six must-happen points from the brief are each covered by at least one item.",
-      "uses": [
-       "facts",
-       "plan",
-       "review"
-      ],
-      "focus": "",
-      "files": [],
-      "sections": [],
-      "columns": [],
-      "options": [],
-      "criteria": [],
-      "required": [],
-      "done": []
-     }
-    ]
+    "title": "Fernway launch plan",
+    "understood": "A dated plan for the Fernway launch: who does what, from 4 January 2027 to 19 February 2027, built from the launch brief.",
+    "windowFrom": "2027-01-04",
+    "windowTo": "2027-02-19"
    },
    "provider": "openrouter",
    "model": "deepseek/deepseek-v4.1-flash"
@@ -125,13 +155,13 @@
    "task": "step",
    "index": 201,
    "attempt": 1,
-   "reqHash": "c1cd1006",
-   "ms": 32827,
+   "reqHash": "d4c7a63a",
+   "ms": 27075,
    "ok": true,
    "json": {
     "facts": [
      {
-      "claim": "Fernway's public launch is on Tuesday 9 February 2027.",
+      "claim": "Public launch is on Tuesday 9 February 2027.",
       "quote": "Public launch on Tuesday 9 February 2027.",
       "page": 1
      },
@@ -141,7 +171,12 @@
       "page": 1
      },
      {
-      "claim": "Maya Lindqvist is the product lead and owns the launch and the go/no-go call.",
+      "claim": "The work window includes one week of follow-up after launch.",
+      "quote": "All launch work happens between 4 January 2027 and 19 February 2027, including one week of follow-up after launch.",
+      "page": 1
+     },
+     {
+      "claim": "Maya Lindqvist is product lead and owns the launch and the go/no-go call.",
       "quote": "Maya Lindqvist: product lead, owns the launch and the go/no-go call",
       "page": 1
      },
@@ -162,26 +197,26 @@
      },
      {
       "claim": "The total launch budget is $3,000.",
-      "quote": "Total launch budget: $3,000. - Landing page design and copy: $600 - Paid posts in the first two weeks: $1,500 - Beta tester thank-you gifts: $400 - Launch day event (online): $500",
+      "quote": "Total launch budget: $3,000.",
       "page": 1
      },
      {
-      "claim": "The landing page design and copy budget line is $600.",
+      "claim": "The landing page design and copy line item is $600.",
       "quote": "Landing page design and copy: $600",
       "page": 1
      },
      {
-      "claim": "The paid posts in the first two weeks budget line is $1,500.",
+      "claim": "Paid posts in the first two weeks cost $1,500.",
       "quote": "Paid posts in the first two weeks: $1,500",
       "page": 1
      },
      {
-      "claim": "The beta tester thank-you gifts budget line is $400.",
+      "claim": "Beta tester thank-you gifts cost $400.",
       "quote": "Beta tester thank-you gifts: $400",
       "page": 1
      },
      {
-      "claim": "The launch day event (online) budget line is $500.",
+      "claim": "The launch day event (online) costs $500.",
       "quote": "Launch day event (online): $500",
       "page": 1
      },
@@ -201,18 +236,28 @@
       "page": 1
      },
      {
-      "claim": "A newsletter goes to the waiting list on launch day.",
+      "claim": "A newsletter to the waiting list must go out on launch day.",
       "quote": "A newsletter to the waiting list on launch day.",
       "page": 1
      },
      {
-      "claim": "A short launch post and a follow-up post one week later are required.",
+      "claim": "There must be a short launch post and a follow-up post one week later.",
       "quote": "A short launch post and a follow-up post one week later.",
       "page": 1
      },
      {
-      "claim": "A review of the numbers happens one week after launch.",
+      "claim": "The numbers must be reviewed one week after launch.",
       "quote": "A review of the numbers one week after launch.",
+      "page": 1
+     },
+     {
+      "claim": "Fernway is a small habit tracker web app.",
+      "quote": "Fernway is a small habit tracker web app: you add habits, tick them off each day and watch your streaks grow.",
+      "page": 1
+     },
+     {
+      "claim": "Everything stays in the browser, with no account needed.",
+      "quote": "Everything stays in the browser, no account needed.",
       "page": 1
      }
     ]
@@ -225,267 +270,227 @@
    "task": "step",
    "index": 301,
    "attempt": 1,
-   "reqHash": "d36c1a83",
-   "ms": 35756,
+   "reqHash": "aec5a9d9",
+   "ms": 48556,
    "ok": true,
    "json": {
     "items": [
      {
-      "id": "1",
-      "task": "App build and feature complete",
-      "owner": "Sam Okoro",
+      "id": "i1",
+      "task": "Recruit 30 testers for the closed beta",
+      "owner": "Leo Martins",
       "start": "2027-01-04",
-      "end": "2027-01-22",
+      "end": "2027-01-08",
       "depends": [],
-      "cells": [
-       {
-        "column": "budget",
-        "value": "0"
-       }
-      ]
+      "cells": [],
+      "done": "30 testers have confirmed by email that they will take part in the closed beta."
      },
      {
-      "id": "2",
-      "task": "Landing page design and copy",
-      "owner": "Priya Raman",
-      "start": "2027-01-18",
-      "end": "2027-01-04",
+      "id": "i2",
+      "task": "Run the two-week closed beta with the 30 testers",
+      "owner": "Maya Lindqvist",
+      "start": "2027-01-25",
+      "end": "2027-01-11",
+      "depends": [
+       "i1"
+      ],
+      "cells": [],
+      "done": "The 30 testers have used Fernway for two weeks and their feedback notes are collected in one file."
+     },
+     {
+      "id": "i3",
+      "task": "Fix the bugs the beta found",
+      "owner": "Sam Okoro",
+      "start": "2027-01-25",
+      "end": "2027-02-03",
+      "depends": [
+       "i2"
+      ],
+      "cells": [],
+      "done": "Every bug on the beta bug list is fixed and the list shows none open."
+     },
+     {
+      "id": "i4",
+      "task": "Design the landing page and write its copy",
+      "owner": "Jordan Blake",
+      "start": "2027-01-04",
+      "end": "2027-01-15",
       "depends": [],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "600"
        }
-      ]
+      ],
+      "done": "The finished landing page design and its copy sit in one shared file ready for build."
      },
      {
-      "id": "3",
-      "task": "Landing page build and sign-up form live",
+      "id": "i5",
+      "task": "Publish the landing page with the sign-up form",
       "owner": "Priya Raman",
-      "start": "2027-01-16",
+      "start": "2027-01-18",
       "end": "2027-02-02",
       "depends": [
-       "2"
+       "i4"
       ],
-      "cells": [
-       {
-        "column": "budget",
-        "value": "0"
-       }
-      ]
+      "cells": [],
+      "done": "The landing page with the sign-up form is live at its public address and a test sign-up appears in the waiting list."
      },
      {
-      "id": "4",
-      "task": "Beta tester recruitment and onboarding",
-      "owner": "Jordan Blake",
-      "start": "2027-01-11",
-      "end": "2027-01-25",
-      "depends": [],
-      "cells": [
-       {
-        "column": "budget",
-        "value": "0"
-       }
-      ]
-     },
-     {
-      "id": "5",
-      "task": "Closed beta run with about 30 testers for two weeks",
-      "owner": "Sam Okoro",
-      "start": "2027-01-26",
-      "end": "2027-02-08",
-      "depends": [
-       "1",
-       "4"
-      ],
-      "cells": [
-       {
-        "column": "budget",
-        "value": "0"
-       }
-      ]
-     },
-     {
-      "id": "6",
-      "task": "Beta feedback triage",
-      "owner": "Maya Lindqvist",
-      "start": "2027-01-26",
+      "id": "i6",
+      "task": "Write the waiting-list newsletter for launch day",
+      "owner": "Leo Martins",
+      "start": "2027-02-03",
       "end": "2027-03-12",
       "depends": [
-       "1",
-       "4"
+       "i5"
       ],
-      "cells": [
-       {
-        "column": "budget",
-        "value": "0"
-       }
-      ]
+      "cells": [],
+      "done": "The newsletter text is written and saved as a draft ready to send on 9 February 2027."
      },
      {
-      "id": "7",
-      "task": "Fix bugs from beta before release",
-      "owner": "Sam Okoro",
-      "start": "2027-02-07",
-      "end": "2027-02-07",
+      "id": "i7",
+      "task": "Write the short launch post",
+      "owner": "Leo Martins",
+      "start": "2027-02-03",
+      "end": "2027-02-04",
       "depends": [
-       "6"
+       "i5"
       ],
-      "cells": [
-       {
-        "column": "budget",
-        "value": "0"
-       }
-      ]
+      "cells": [],
+      "done": "The launch post text is written and saved as a draft ready to publish on 9 February 2027."
      },
      {
-      "id": "8",
-      "task": "Go/no-go call",
+      "id": "i8",
+      "task": "Make the go/no-go call on the launch",
       "owner": "Maya Lindqvist",
+      "start": "2027-02-05",
+      "end": "2027-02-05",
+      "depends": [
+       "i3",
+       "i5",
+       "i6",
+       "i7"
+      ],
+      "cells": [],
+      "done": "Maya has recorded a go or no-go decision for the 9 February 2027 launch in the launch notes."
+     },
+     {
+      "id": "i9",
+      "task": "Ship the release to the live site",
+      "owner": "Sam Okoro",
       "start": "2027-02-08",
       "end": "2027-02-08",
       "depends": [
-       "7"
+       "i8"
       ],
-      "cells": [
-       {
-        "column": "budget",
-        "value": "0"
-       }
-      ]
+      "cells": [],
+      "done": "The released version is live on the site and a new user can add a habit and tick it off."
      },
      {
-      "id": "9",
-      "task": "Release app on launch day",
-      "owner": "Sam Okoro",
-      "start": "2027-02-09",
-      "end": "2027-02-09",
-      "depends": [
-       "8"
-      ],
-      "cells": [
-       {
-        "column": "budget",
-        "value": "0"
-       }
-      ]
-     },
-     {
-      "id": "10",
-      "task": "Launch day event (online)",
+      "id": "i10",
+      "task": "Send the launch newsletter to the waiting list",
       "owner": "Leo Martins",
       "start": "2027-02-09",
       "end": "2027-02-09",
       "depends": [
-       "8"
+       "i9"
+      ],
+      "cells": [],
+      "done": "The newsletter has been sent to the waiting list and appears in the sent folder."
+     },
+     {
+      "id": "i11",
+      "task": "Publish the launch post",
+      "owner": "Leo Martins",
+      "start": "2027-02-09",
+      "end": "2027-02-09",
+      "depends": [
+       "i9"
+      ],
+      "cells": [],
+      "done": "The launch post is published and visible at its public link."
+     },
+     {
+      "id": "i12",
+      "task": "Run the online launch day event",
+      "owner": "Leo Martins",
+      "start": "2027-02-09",
+      "end": "2027-02-09",
+      "depends": [
+       "i8"
       ],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "500"
        }
-      ]
-     },
-     {
-      "id": "11",
-      "task": "Newsletter to waiting list",
-      "owner": "Leo Martins",
-      "start": "2027-02-09",
-      "end": "2027-02-09",
-      "depends": [
-       "8"
       ],
-      "cells": [
-       {
-        "column": "budget",
-        "value": "0"
-       }
-      ]
+      "done": "The online launch day event has ended and its notes or recording are shared with the team."
      },
      {
-      "id": "12",
-      "task": "Short launch post",
-      "owner": "Leo Martins",
-      "start": "2027-02-09",
-      "end": "2027-02-09",
-      "depends": [
-       "8"
-      ],
-      "cells": [
-       {
-        "column": "budget",
-        "value": "0"
-       }
-      ]
-     },
-     {
-      "id": "13",
-      "task": "Paid posts in the first two weeks",
+      "id": "i13",
+      "task": "Run the paid posts in the first two weeks",
       "owner": "Leo Martins",
       "start": "2027-02-10",
       "end": "2027-02-16",
       "depends": [
-       "9"
+       "i9"
       ],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "1500"
        }
-      ]
+      ],
+      "done": "The paid posts have run and the full $1,500 spend is recorded in the budget sheet."
      },
      {
-      "id": "14",
-      "task": "Beta tester thank-you gifts",
-      "owner": "Leo Martins",
-      "start": "2027-02-09",
-      "end": "2027-02-09",
+      "id": "i14",
+      "task": "Send thank-you gifts to the beta testers",
+      "owner": "Maya Lindqvist",
+      "start": "2027-02-10",
+      "end": "2027-02-12",
       "depends": [
-       "5"
+       "i2"
       ],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "400"
        }
-      ]
+      ],
+      "done": "Thank-you gifts have been sent to all 30 testers and the $400 spend is recorded in the budget sheet."
      },
      {
-      "id": "15",
-      "task": "Follow-up post one week later",
+      "id": "i15",
+      "task": "Publish the follow-up post one week after launch",
       "owner": "Leo Martins",
       "start": "2027-02-16",
       "end": "2027-02-16",
       "depends": [
-       "12"
+       "i11"
       ],
-      "cells": [
-       {
-        "column": "budget",
-        "value": "0"
-       }
-      ]
+      "cells": [],
+      "done": "The follow-up post is published one week after launch and visible at its public link."
      },
      {
-      "id": "16",
-      "task": "Review of the numbers one week after launch",
+      "id": "i16",
+      "task": "Review the launch numbers",
       "owner": "Maya Lindqvist",
       "start": "2027-02-16",
-      "end": "2027-02-16",
+      "end": "2027-02-17",
       "depends": [
-       "12"
+       "i10",
+       "i11"
       ],
-      "cells": [
-       {
-        "column": "budget",
-        "value": "0"
-       }
-      ]
+      "cells": [],
+      "done": "The numbers review is written up with sign-ups, waiting-list conversions and spend, and shared with the team."
      }
     ],
     "totals": [
      {
-      "column": "budget",
+      "column": "costUsd",
       "value": "3,150"
      }
     ]
@@ -499,10 +504,10 @@
     1000
    ],
    "plantedNotes": [
-    "\"Landing page design and copy\" was made to end before it starts (date-order)",
-    "\"Beta tester recruitment and onboarding\" was given an owner who isn't on the team (owner-unknown)",
-    "\"Beta feedback triage\" was moved to end three weeks after the plan's window (date-out-of-range)",
-    "The budget total was raised by 150 (sum-mismatch)"
+    "\"Run the two-week closed beta with the 30 testers\" was made to end before it starts (date-order)",
+    "\"Design the landing page and write its copy\" was given an owner who isn't on the team (owner-unknown)",
+    "\"Write the waiting-list newsletter for launch day\" was moved to end three weeks after the plan's window (date-out-of-range)",
+    "The costUsd total was raised by 150 (sum-mismatch)"
    ]
   },
   {
@@ -510,86 +515,79 @@
    "task": "recheck",
    "index": 301,
    "attempt": 1,
-   "reqHash": "52ee1be7",
-   "ms": 135222,
+   "reqHash": "550883bb",
+   "ms": 74312,
    "ok": true,
    "json": {
     "fixes": [
      {
-      "id": "2",
+      "id": "i2",
       "action": "fix",
       "unit": {
-       "id": "2",
-       "task": "Landing page design and copy",
-       "owner": "Priya Raman",
-       "start": "2027-01-06",
-       "end": "2027-01-18",
-       "depends": [],
-       "cells": [
-        {
-         "column": "budget",
-         "value": "600"
-        }
-       ]
-      }
-     },
-     {
-      "id": "4",
-      "action": "fix",
-      "unit": {
-       "id": "4",
-       "task": "Beta tester recruitment and onboarding",
+       "id": "i2",
+       "task": "Run the two-week closed beta with the 30 testers",
        "owner": "Maya Lindqvist",
        "start": "2027-01-11",
-       "end": "2027-01-25",
+       "end": "2027-01-24",
+       "depends": [
+        "i1"
+       ],
+       "cells": [],
+       "done": "The 30 testers have used Fernway for two weeks and their feedback notes are collected in one file."
+      }
+     },
+     {
+      "id": "i4",
+      "action": "fix",
+      "unit": {
+       "id": "i4",
+       "task": "Design the landing page and write its copy",
+       "owner": "Priya Raman",
+       "start": "2027-01-04",
+       "end": "2027-01-15",
        "depends": [],
        "cells": [
         {
-         "column": "budget",
-         "value": "0"
+         "column": "costUsd",
+         "value": "600"
         }
-       ]
+       ],
+       "done": "The finished landing page design and its copy sit in one shared file ready for build."
       }
      },
      {
-      "id": "6",
+      "id": "i6",
       "action": "fix",
       "unit": {
-       "id": "6",
-       "task": "Beta feedback triage",
+       "id": "i6",
+       "task": "Write the waiting-list newsletter for launch day",
+       "owner": "Leo Martins",
+       "start": "2027-02-03",
+       "end": "2027-02-04",
+       "depends": [
+        "i5"
+       ],
+       "cells": [],
+       "done": "The newsletter text is written and saved as a draft ready to send on 9 February 2027."
+      }
+     },
+     {
+      "id": "i8",
+      "action": "fix",
+      "unit": {
+       "id": "i8",
+       "task": "Make the go/no-go call on the launch",
        "owner": "Maya Lindqvist",
-       "start": "2027-01-26",
-       "end": "2027-02-06",
+       "start": "2027-02-05",
+       "end": "2027-02-05",
        "depends": [
-        "1",
-        "4"
+        "i3",
+        "i5",
+        "i6",
+        "i7"
        ],
-       "cells": [
-        {
-         "column": "budget",
-         "value": "0"
-        }
-       ]
-      }
-     },
-     {
-      "id": "7",
-      "action": "fix",
-      "unit": {
-       "id": "7",
-       "task": "Fix bugs from beta before release",
-       "owner": "Sam Okoro",
-       "start": "2027-02-07",
-       "end": "2027-02-07",
-       "depends": [
-        "6"
-       ],
-       "cells": [
-        {
-         "column": "budget",
-         "value": "0"
-        }
-       ]
+       "cells": [],
+       "done": "Maya has recorded a go or no-go decision for the 9 February 2027 launch in the launch notes."
       }
      }
     ]
@@ -602,53 +600,53 @@
    "task": "step",
    "index": 401,
    "attempt": 1,
-   "reqHash": "1e38d012",
-   "ms": 9620,
+   "reqHash": "3f5409a4",
+   "ms": 28120,
    "ok": true,
    "json": {
     "issues": [
      {
-      "about": "s3.1–s3.9 (whole build-to-release chain)",
+      "about": "s3.i9, s3.i10, s3.i11, s3.i12",
       "severity": "major",
-      "text": "There is no item for getting the app through app store review or any store submission step. If the habit tracker ships through an app store, review can take days and can be rejected, and nothing in the plan leaves room for that between the 7 February bug fixes and the 9 February release. This is the single most likely reason launch day slips."
+      "text": "\"Ship the release to the live site\" lands on 8 Feb and everything the launch is made of — the newsletter (s3.i10), the launch post (s3.i11) and the launch-day event (s3.i12) — is the next day, 9 Feb. There is no item for watching the release after it ships, no rollback or hotfix path, and no spare day anywhere. One bad deploy on 8 Feb and there is nothing to launch on 9 Feb."
      },
      {
-      "about": "s3.5, s3.6, s3.7, s3.8",
+      "about": "s3.i5",
       "severity": "major",
-      "text": "The beta and the fix window contradict each other. The beta runs to 8 February (s3.5), but feedback triage stops on 6 February (s3.6) and bug fixing is a single day, 7 February (s3.7). Bugs and feedback arriving on the last two days of the beta have no route to a fix, and go/no-go on 8 February (s3.8) happens the same day the beta ends, before anyone can look at the final day's feedback. One day of fixing for a two-week beta with 30 testers is not a credible fix window."
+      "text": "\"Publish the landing page with the sign-up form\" is owned by Priya Raman (design and copy). Nobody owns building, testing and wiring the sign-up form to the waiting list. The list that s3.i10 emails on 9 Feb is the whole launch audience — if the form is not connected, the newsletter goes to nobody."
      },
      {
-      "about": "s3.9, s3.10, s3.11, s3.12, s3.14",
+      "about": "s3.i16",
       "severity": "major",
-      "text": "9 February is overloaded and Leo Martins owns four of the five items that day: the online launch event, the newsletter to the waiting list, the launch post and the beta thank-you gifts (plus Sam Okoro's release). Running a live event while also sending a newsletter and a post, and getting thank-you gifts out, is more than one person can do well on launch day. Nothing says who covers Leo if part of it goes wrong."
+      "text": "\"Review the launch numbers\" runs 16–17 Feb with no matching item that sets up tracking before launch. Nothing measures sign-ups, installs or activation, so there are no numbers to review. Its dependencies are also wrong: it follows s3.i10 and s3.i11 only, not the paid posts (s3.i13, ending 16 Feb) or the follow-up post (s3.i15), so the review happens before the biggest paid channel has reported."
      },
      {
-      "about": "s3.12, s3.16 (dependencies)",
+      "about": "brief coverage — unnamed items",
       "severity": "major",
-      "text": "Two dependencies point at the wrong thing. The review of the numbers (s3.16) is set to follow the short launch post (s3.12) instead of the release itself (s3.9) — the numbers that matter come from the app going live, not from a social post. The launch post (s3.12) also follows the go/no-go call (s3.8) rather than the release (s3.9), so the plan as written would let the post go out before the app is actually live."
+      "text": "Reading the plan alone, these brief items have no item at all: pricing and payment setup (how anyone pays for the tracker), and, if the tracker ships as a phone app, store submission and review time — that alone takes days and no item covers it. If the brief marks either one as must-happen, it is uncovered and the 9 Feb launch date is not reachable. Everything in the plan assumes the product is free and web-only."
      },
      {
-      "about": "Nothing in the plan; brief coverage",
+      "about": "s3.i1, s3.i10, s3.i11, s3.i12",
       "severity": "major",
-      "text": "Several things a launch of this kind normally must cover have no item at all: analytics or instrumentation to measure sign-ups and retention (yet s3.16 reviews numbers), support and help/FAQ for new users, legal basics (privacy policy and terms, and data protection, which matters for an app holding personal habit data), payment or pricing setup if the app is paid, a plan for what to do if launch day goes wrong, and any press or media outreach. Either add items or state explicitly that these are out of scope."
+      "text": "Leo Martins owns three things on launch day itself — send the newsletter, publish the launch post, run the online event — and six items in total (s3.i1, s3.i6, s3.i7, s3.i12, s3.i13, s3.i15). The same person also recruits the 30 beta testers (s3.i1), which is product/community work, not marketing; if Leo's stated area is marketing, that item sits outside it. Recruiting and confirming 30 testers in five days (4–8 Jan, over the New Year week) is also the tightest window in the plan."
      },
      {
-      "about": "s3.2, s3.3, s3.10, s3.11",
+      "about": "brief coverage — missing follow-up and launch-day cover",
       "severity": "major",
-      "text": "The audience-building is too late to be useful. The landing page and sign-up form only go live on 2 February (s3.3), a week before launch, so the waiting list the 9 February newsletter (s3.11) depends on has almost no time to grow. There is also no item for promoting or taking registrations for the launch day event (s3.10), so the event has no way to get an audience."
+      "text": "There is no item for launch-day support: who answers user questions, who watches for crashes or payment failures, and what they do. The only follow-up in the plan is a post (s3.i15) and a numbers review (s3.i16) — nothing for acting on what the review finds, and no plan for what happens if the go/no-go (s3.i8) says no: the paid posts, the event and the newsletter all simply vanish with no fallback."
      },
      {
-      "about": "s3.4, s3.5",
+      "about": "s3.i12",
       "severity": "minor",
-      "text": "Recruiting about 30 beta testers (s3.4) is a hard dependency for the beta starting 26 January (s3.5), with no buffer, no minimum number, and no fallback if recruitment falls short. Whoever owns this has no room to recover."
+      "text": "\"Run the online launch day event\" depends on the go/no-go call (s3.i8) but not on the release shipping (s3.i9). As written, the event runs on 9 Feb even if the release never goes live."
      },
      {
-      "about": "Dates, totals, and budget lines",
+      "about": "s3.i14, budget total",
       "severity": "minor",
-      "text": "Two things need confirming against the brief. First, every date is in 2027 — check the brief actually says 2027, because if not, the entire plan is one year out. Second, the total of 3,000 has no stated link to the brief's budget, and the landing page build (s3.3) carries a budget of 0 with no note on why. There is also no contingency line anywhere in the budget for a launch that has zero slack in the schedule."
+      "text": "Thank-you gifts (s3.i14) are dated 10–12 Feb, more than two weeks after the beta ended on 24 Jan — the testers are thanked well after launch, and the $400 has no detail of what the gift is or how it reaches them. On the totals: the four costed lines are 600 + 500 + 1500 + 400 = exactly $3,000. No single line goes past $3,000, but the plan spends the whole cap with no contingency, and nothing is costed for the things a launch normally pays for (email tool, form tool, and any overrun on the $1,500 paid posts)."
      }
     ],
-    "verdict": "Not ready to take to the person as-is. The launch day itself and the go/no-go are scheduled, but the plan has no slack, no app store step, no way to fix bugs found late in the beta, and no items for analytics, support or legal. Fix the seven major points before presenting."
+    "verdict": "Not ready to run. The two-week beta does fit the calendar (s3.i2, 11–24 Jan, ends 16 days before 9 Feb), so that check passes, but the plan has no launch-day cover, no sign-up-form owner, no measurement before the numbers review, and at least one brief item — payment/pricing, or app-store submission if the tracker is a phone app — with no item at all."
    },
    "provider": "openrouter",
    "model": "deepseek/deepseek-v4.1-flash"
@@ -658,185 +656,200 @@
    "task": "step",
    "index": 301,
    "attempt": 1,
-   "reqHash": "39345bf7",
-   "ms": 46092,
+   "reqHash": "c4561594",
+   "ms": 26858,
    "ok": true,
    "json": {
     "items": [
      {
       "id": "i1",
-      "task": "App build and feature complete",
-      "owner": "Sam Okoro",
+      "task": "Recruit 30 testers for the closed beta",
+      "owner": "Leo Martins",
       "start": "2027-01-04",
-      "end": "2027-01-15",
+      "end": "2027-01-08",
       "depends": [],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "0"
        }
-      ]
+      ],
+      "done": "Done when 30 testers have confirmed in writing that they will join the closed beta."
      },
      {
       "id": "i2",
-      "task": "Landing page design and copy",
-      "owner": "Priya Raman",
-      "start": "2027-01-04",
-      "end": "2027-01-15",
-      "depends": [],
+      "task": "Run the three-week closed beta with the 30 testers",
+      "owner": "Maya Lindqvist",
+      "start": "2027-01-11",
+      "end": "2027-01-31",
+      "depends": [
+       "i1"
+      ],
       "cells": [
        {
-        "column": "budget",
-        "value": "600"
+        "column": "costUsd",
+        "value": "0"
        }
-      ]
+      ],
+      "done": "Done when the 30 testers have had access for three weeks and their bug reports and feedback sit in one shared list."
      },
      {
       "id": "i3",
-      "task": "Beta tester recruitment and onboarding",
-      "owner": "Maya Lindqvist",
-      "start": "2027-01-04",
-      "end": "2027-01-15",
-      "depends": [],
-      "cells": [
-       {
-        "column": "budget",
-        "value": "0"
-       }
-      ]
-     },
-     {
-      "id": "i4",
-      "task": "Landing page build and sign-up form live (live one week before launch)",
-      "owner": "Priya Raman",
-      "start": "2027-01-16",
-      "end": "2027-02-02",
+      "task": "Fix the bugs the beta found",
+      "owner": "Sam Okoro",
+      "start": "2027-02-01",
+      "end": "2027-02-05",
       "depends": [
        "i2"
       ],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "0"
        }
-      ]
+      ],
+      "done": "Done when every bug on the beta list is fixed and marked closed."
+     },
+     {
+      "id": "i4",
+      "task": "Design the landing page and write its copy",
+      "owner": "Priya Raman",
+      "start": "2027-01-04",
+      "end": "2027-01-15",
+      "depends": [],
+      "cells": [
+       {
+        "column": "costUsd",
+        "value": "600"
+       }
+      ],
+      "done": "Done when the landing page design and copy are finished and signed off by Maya in the shared folder."
      },
      {
       "id": "i5",
-      "task": "Closed beta run with about 30 testers (three weeks)",
-      "owner": "Sam Okoro",
-      "start": "2027-01-16",
-      "end": "2027-02-05",
+      "task": "Publish the landing page with the sign-up form",
+      "owner": "Priya Raman",
+      "start": "2027-01-18",
+      "end": "2027-02-02",
       "depends": [
-       "i1",
-       "i3"
+       "i4"
       ],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "0"
        }
-      ]
+      ],
+      "done": "Done when the page is reachable at its public address and a test sign-up from the form lands on the waiting list."
      },
      {
       "id": "i6",
-      "task": "Beta feedback triage",
-      "owner": "Maya Lindqvist",
-      "start": "2027-02-06",
-      "end": "2027-02-06",
+      "task": "Write the waiting-list newsletter for launch day",
+      "owner": "Leo Martins",
+      "start": "2027-02-03",
+      "end": "2027-02-04",
       "depends": [
        "i5"
       ],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "0"
        }
-      ]
+      ],
+      "done": "Done when the newsletter draft is written, checked and queued to send on 9 February 2027."
      },
      {
       "id": "i7",
-      "task": "Fix bugs the beta found before release",
-      "owner": "Sam Okoro",
-      "start": "2027-02-07",
-      "end": "2027-02-07",
+      "task": "Write the short launch post",
+      "owner": "Leo Martins",
+      "start": "2027-02-03",
+      "end": "2027-02-04",
       "depends": [
-       "i6"
+       "i5"
       ],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "0"
        }
-      ]
+      ],
+      "done": "Done when the launch post draft is written, checked and queued to publish on 9 February 2027."
      },
      {
       "id": "i8",
-      "task": "Go/no-go call",
+      "task": "Make the go/no-go call on the launch",
       "owner": "Maya Lindqvist",
-      "start": "2027-02-08",
-      "end": "2027-02-08",
+      "start": "2027-02-06",
+      "end": "2027-02-06",
       "depends": [
+       "i3",
+       "i5",
+       "i6",
        "i7"
       ],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "0"
        }
-      ]
+      ],
+      "done": "Done when Maya has written down a go or no-go decision with its date."
      },
      {
       "id": "i9",
-      "task": "Release the app on launch day",
+      "task": "Ship the release to the live site",
       "owner": "Sam Okoro",
-      "start": "2027-02-09",
-      "end": "2027-02-09",
+      "start": "2027-02-08",
+      "end": "2027-02-08",
       "depends": [
        "i8"
       ],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "0"
        }
-      ]
+      ],
+      "done": "Done when the new version is live on the public site and Sam has confirmed the release."
      },
      {
       "id": "i10",
-      "task": "Launch day event (online)",
+      "task": "Send the launch newsletter to the waiting list",
       "owner": "Leo Martins",
       "start": "2027-02-09",
       "end": "2027-02-09",
       "depends": [
-       "i8"
+       "i9"
       ],
       "cells": [
        {
-        "column": "budget",
-        "value": "500"
+        "column": "costUsd",
+        "value": "0"
        }
-      ]
+      ],
+      "done": "Done when the newsletter has gone to the whole waiting list and the send report shows no failures."
      },
      {
       "id": "i11",
-      "task": "Newsletter to the waiting list on launch day",
+      "task": "Publish the launch post",
       "owner": "Leo Martins",
       "start": "2027-02-09",
       "end": "2027-02-09",
       "depends": [
-       "i8"
+       "i9"
       ],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "0"
        }
-      ]
+      ],
+      "done": "Done when the launch post is public and opens at its link."
      },
      {
       "id": "i12",
-      "task": "Short launch post",
+      "task": "Run the online launch day event",
       "owner": "Leo Martins",
       "start": "2027-02-09",
       "end": "2027-02-09",
@@ -845,14 +858,15 @@
       ],
       "cells": [
        {
-        "column": "budget",
-        "value": "0"
+        "column": "costUsd",
+        "value": "500"
        }
-      ]
+      ],
+      "done": "Done when the online launch day event has ended and its notes are shared with the team."
      },
      {
       "id": "i13",
-      "task": "Paid posts in the first two weeks",
+      "task": "Run the paid posts in the first two weeks",
       "owner": "Leo Martins",
       "start": "2027-02-10",
       "end": "2027-02-16",
@@ -861,63 +875,68 @@
       ],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "1500"
        }
-      ]
+      ],
+      "done": "Done when the paid posts have run for the full two weeks and the spend report matches $1,500."
      },
      {
       "id": "i14",
-      "task": "Beta tester thank-you gifts",
-      "owner": "Leo Martins",
-      "start": "2027-02-09",
-      "end": "2027-02-09",
+      "task": "Send thank-you gifts to the beta testers",
+      "owner": "Maya Lindqvist",
+      "start": "2027-02-10",
+      "end": "2027-02-12",
       "depends": [
-       "i5"
+       "i2"
       ],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "400"
        }
-      ]
+      ],
+      "done": "Done when all 30 testers have their gift on the way and the gift list is marked complete."
      },
      {
       "id": "i15",
-      "task": "Follow-up post one week later",
+      "task": "Publish the follow-up post one week after launch",
       "owner": "Leo Martins",
       "start": "2027-02-16",
       "end": "2027-02-16",
       "depends": [
-       "i12"
+       "i11"
       ],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "0"
        }
-      ]
+      ],
+      "done": "Done when the follow-up post is public and opens at its link."
      },
      {
       "id": "i16",
-      "task": "Review of the numbers one week after launch",
+      "task": "Review the launch numbers",
       "owner": "Maya Lindqvist",
       "start": "2027-02-16",
-      "end": "2027-02-16",
+      "end": "2027-02-17",
       "depends": [
-       "i12"
+       "i10",
+       "i11"
       ],
       "cells": [
        {
-        "column": "budget",
+        "column": "costUsd",
         "value": "0"
        }
-      ]
+      ],
+      "done": "Done when Maya has shared the numbers review covering the first week after launch."
      }
     ],
     "totals": [
      {
-      "column": "budget",
+      "column": "costUsd",
       "value": "3000"
      }
     ]
@@ -931,53 +950,53 @@
    "task": "step",
    "index": 401,
    "attempt": 1,
-   "reqHash": "160e0a2e",
-   "ms": 47759,
+   "reqHash": "b03b5d55",
+   "ms": 19409,
    "ok": true,
    "json": {
-    "verdict": "Not ready to take to the person as-is. The launch day itself and the go/no-go are scheduled, and the beta now ends before triage starts, but the plan still has no slack, no app store step, no credible window to fix the bugs a three-week beta finds, and no items for analytics, support or legal. Fix the major points before presenting.",
     "issues": [
      {
+      "about": "s3.i2, s3.i3, s3.i8, s3.i9, s3.i10, s3.i11, s3.i12",
       "severity": "major",
-      "about": "s3.i1–s3.i9 (whole build-to-release chain)",
-      "text": "There is no item for getting the app through app store review or any store submission step. If the habit tracker ships through an app store, review can take days and can be rejected, and nothing in the plan leaves room for that between the 7 February bug fixes and the 9 February release. This is the single most likely reason launch day slips."
+      "text": "The extra week added to the beta (s3.i2) moved everything that hangs off it — the bug fix (s3.i3), the go/no-go call (s3.i8) and shipping the release (s3.i9) — a week later. The beta now runs 11 January to 7 February, four weeks rather than the brief's two, which leaves one working day, 8 February, before the fixed 9 February launch for a five-day bug fix, a go/no-go call and a deploy. The check that passed in the earlier read — 'the two-week beta does fit the calendar' — now fails. And the day itself still has no cover: the newsletter (s3.i10), the launch post (s3.i11) and the launch-day event (s3.i12) all land the day after the release ships, with no item for watching the release, no rollback and no hotfix path, and no spare day anywhere. One bad deploy and there is nothing to launch."
      },
      {
+      "about": "s3.i5",
       "severity": "major",
-      "about": "s3.i5, s3.i6, s3.i7, s3.i8",
-      "text": "The redo fixed the sequencing — the beta ends on 5 February and triage starts the next day — but the fix window is still one day. Three weeks of beta with about 30 testers are triaged in a single day (s3.i6) and every bug the beta found has to be fixed in a single day (s3.i7), with go/no-go the next morning (s3.i8) and no re-test or regression pass before release. Anything that arrives at the end of the beta, or any fix that breaks something else, has no route back into the plan before 9 February."
+      "text": "'Publish the landing page with the sign-up form' is owned by Priya Raman (design and copy). Nobody owns building, testing and wiring the sign-up form to the waiting list. The list that s3.i10 emails on 9 February is the whole launch audience — if the form is not connected, the newsletter goes to nobody. The beta week added above does not change this: the page still publishes by 2 February."
      },
      {
+      "about": "s3.i16",
       "severity": "major",
-      "about": "s3.i9, s3.i10, s3.i11, s3.i12, s3.i14",
-      "text": "9 February is overloaded and Leo Martins owns four of the five items that day: the online launch event, the newsletter to the waiting list, the launch post and the beta thank-you gifts (plus Sam Okoro's release). Running a live event while also sending a newsletter and a post, and getting thank-you gifts out, is more than one person can do well on launch day. Nothing says who covers Leo if part of it goes wrong."
+      "text": "'Review the launch numbers' runs 16-17 February with no matching item that sets up tracking before launch. Nothing measures sign-ups, installs or activation, so there are no numbers to review. Its dependencies are also wrong: it follows s3.i10 and s3.i11 only, not the paid posts (s3.i13, ending 16 February) or the follow-up post (s3.i15), so the review happens before the biggest paid channel has reported — and since the review depends on the launch, the beta week added above moved its dates too, pushing it further into or past the paid-post window."
      },
      {
+      "about": "brief coverage — unnamed items",
       "severity": "major",
-      "about": "s3.i12, s3.i16 (dependencies)",
-      "text": "Two dependencies point at the wrong thing. The review of the numbers (s3.i16) is set to follow the short launch post (s3.i12) instead of the release itself (s3.i9) — the numbers that matter come from the app going live, not from a social post. The launch post (s3.i12) also follows the go/no-go call (s3.i8) rather than the release (s3.i9), so the plan as written would let the post go out before the app is actually live."
+      "text": "Reading the plan alone, these brief items have no item at all: pricing and payment setup (how anyone pays for the tracker), and, if the tracker ships as a phone app, store submission and review time — that alone takes days and no item covers it. If the brief marks either one as must-happen, it is uncovered, and the 9 February launch date is not reachable — the more so now that the beta extension has eaten the spare week. Everything in the plan assumes the product is free and web-only."
      },
      {
+      "about": "s3.i1, s3.i10, s3.i11, s3.i12",
       "severity": "major",
-      "about": "Nothing in the plan; brief coverage",
-      "text": "Several things a launch of this kind normally must cover have no item at all: analytics or instrumentation to measure sign-ups and retention (yet s3.i16 reviews numbers), support and help/FAQ for new users, legal basics (privacy policy and terms, and data protection, which matters for an app holding personal habit data), payment or pricing setup if the app is paid, a plan for what to do if launch day goes wrong, and any press or media outreach. Either add items or state explicitly that these are out of scope."
+      "text": "Leo Martins owns three things on launch day itself — send the newsletter, publish the launch post, run the online event — and six items in total (s3.i1, s3.i6, s3.i7, s3.i12, s3.i13, s3.i15). The same person also recruits the 30 beta testers (s3.i1), which is product/community work, not marketing; if Leo's stated area is marketing, that item sits outside it. Recruiting and confirming 30 testers in five days (4-8 January, over the New Year week) is still the tightest window in the plan, and with the longer beta the thank-you gifts (s3.i14) slip further past launch."
      },
      {
+      "about": "brief coverage — launch-day support and fallback",
       "severity": "major",
-      "about": "s3.i2, s3.i4, s3.i10, s3.i11",
-      "text": "The audience-building is too late to be useful. The landing page and sign-up form only go live on 2 February (s3.i4), a week before launch, so the waiting list the 9 February newsletter (s3.i11) depends on has almost no time to grow. There is also no item for promoting or taking registrations for the launch day event (s3.i10), so the event has no way to get an audience."
+      "text": "There is no item for launch-day support: who answers user questions, who watches for crashes or payment failures, and what they do. The only follow-up in the plan is a post (s3.i15) and a numbers review (s3.i16) — nothing for acting on what the review finds, and no plan for what happens if the go/no-go (s3.i8) says no: the paid posts, the event and the newsletter all simply vanish, with no fallback. A four-week beta ending two days before launch makes a no-go more likely, not less, so this gap matters more than before."
      },
      {
+      "about": "s3.i12",
       "severity": "minor",
-      "about": "s3.i3, s3.i5",
-      "text": "Recruiting about 30 beta testers (s3.i3) is a hard dependency for the beta starting 16 January (s3.i5), with no buffer, no minimum number, and no fallback if recruitment falls short. Recruitment now ends on 15 January, the day before the beta starts, so whoever owns this has no room to recover."
+      "text": "'Run the online launch day event' depends on the go/no-go call (s3.i8) but not on the release shipping (s3.i9). As written, the event runs on 9 February even if the release never goes live."
      },
      {
+      "about": "s3.i14, budget total",
       "severity": "minor",
-      "about": "Dates, totals, and budget lines",
-      "text": "Two things need confirming against the brief. First, every date is in 2027 — check the brief actually says 2027, because if not, the entire plan is one year out. Second, the total of 3,000 has no stated link to the brief's budget, and the landing page build (s3.i4) carries a budget of 0 with no note on why. There is also no contingency line anywhere in the budget for a launch that has zero slack in the schedule."
+      "text": "Thank-you gifts (s3.i14) depend on the beta (s3.i2), so the added week moved them later still — the testers are thanked well after launch — and the $400 has no detail of what the gift is or how it reaches them. On the totals: the four costed lines are 600 + 500 + 1500 + 400 = exactly $3,000. The extra beta week adds no cost line, so nothing goes past the cap, but the plan spends the whole $3,000 with no contingency, and nothing is costed for the things a launch normally pays for (email tool, form tool, and any overrun on the $1,500 paid posts)."
      }
-    ]
+    ],
+    "verdict": "Not ready to run. The two-week beta does fit the calendar no longer: the extra week you asked for (s3.i2) now runs 11 January to 7 February, and the items that depend on it — bug fixes (s3.i3), the go/no-go (s3.i8) and shipping (s3.i9) — were moved with it, leaving no room before the 9 February launch date. The plan also has no launch-day cover, no sign-up-form owner, no measurement before the numbers review, and at least one brief item — payment and pricing, or app-store submission if the tracker is a phone app — with no item at all."
    },
    "provider": "openrouter",
    "model": "deepseek/deepseek-v4.1-flash",
