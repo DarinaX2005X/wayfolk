@@ -5,6 +5,7 @@
  * always runs. `import.meta.glob` finds the modules when the app is built, so a missing
  * folder is not a build error.
  */
+import { personName } from './name';
 import { registerDebug } from './debug';
 import { shareOrigin } from './origin';
 import type { AppHandle, LifePort, LivePort, MindPort, ModuleReport, WorldPort } from './ports';
@@ -81,6 +82,7 @@ export async function createModules(app: AppHandle): Promise<Modules> {
   // Live presence is shared in the island's frame; avatars go into the island root.
   const liveApp = { world: app.world, space: world.root, everyFrame: app.everyFrame };
   const liveOpts = {
+    name: personName(),
     linkBase: `${shareOrigin()}/island`,
     snapshot: () => mind.state ?? null,
     ground: (x: number, z: number) => world.groundY?.(x, z) ?? world.groundAt?.(x, z) ?? null,

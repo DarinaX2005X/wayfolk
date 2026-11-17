@@ -327,7 +327,21 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
     for (const b of allBirds) b.update(dt, flockEnv, flock);
     for (const s of [...scenes]) if (!s.update(dt)) scenes.splice(scenes.indexOf(s), 1);
     daily.update(dt);
-    for (const a of agents.values()) a.update(dt, clock, head, walkGround, windAt);
+    for (const a of agents.values()) {
+      a.update(dt, clock, head, walkGround, windAt);
+      // A little room round the person: nobody walks right up into their face.
+      if (!a.hidden && !a.riding) {
+        const dx = a.pos.x - head.x;
+        const dz = a.pos.z - head.z;
+        const d = Math.hypot(dx, dz);
+        if (d < 1.35 && d > 1e-3) {
+          a.pos.x = head.x + (dx / d) * 1.35;
+          a.pos.z = head.z + (dz / d) * 1.35;
+          a.group.position.x = a.pos.x;
+          a.group.position.z = a.pos.z;
+        }
+      }
+    }
     speech.update(dt, head, (id) => (id === 'pip' ? pipSpeaker : speakers.get(id)));
     fx.update(dt);
   };
@@ -532,6 +546,9 @@ export function createLife(app: LifeApp, world: LifeWorld): Life {
     skip(): void {
       speech.skip();
       for (const s of scenes) s.skip();
+    },
+    quiet(id: string): void {
+      speech.silence(id);
     },
     hurry(id: string): void {
       // A walker told to hurry steps out of a puff of dust where they were going.

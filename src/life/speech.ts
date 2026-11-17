@@ -64,7 +64,7 @@ export class Speech {
         this.root.add(b.mesh);
       }
       // The words come with the babble: they appear over the time the voice takes.
-      b.show(text, { name: opts.name ?? speaker.name, accent: speaker.accent }, babble ? Math.max(0.5, plan.duration * 0.9) : Math.min(2.5, readTime * 0.5));
+      b.show(text, { name: opts.name ?? speaker.name, accent: speaker.accent }, babble ? Math.min(1.6, Math.max(0.4, plan.duration * 0.6)) : Math.min(1.2, readTime * 0.4));
     }
     speaker.setTalking(true);
     return new Promise<void>((resolve) => {

@@ -29,6 +29,8 @@ import { createPlacement } from './hands/place';
 import { createReplies, type Replies } from './hands/replies';
 import { createVoice, type Voice } from './hands/voice';
 import { createModules, type Modules } from './modules';
+import { bubbleView } from '../life/bubble';
+import { inviteLink } from './name';
 import { createMusic, songFor, type MusicRun } from '../feel/music';
 import type { IslandState } from '../mind/types';
 import { anchorPoint, type AppHandle } from './ports';
@@ -208,8 +210,10 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
       objects: () => (mods.life.pip.object ? [mods.life.pip.object] : []),
       pick: () => {
         app.store.pipUsed.value = true;
+        guide.cue(null);
         void flow?.pokePip();
       },
+      radius: 70,
     },
     {
       objects: () => residents().map((r) => r.object),
@@ -242,6 +246,22 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     const ahead = 1.55;
     setHover.call(mods.life.pip, { ahead, side: ahead * Math.tan(Math.min(0.46, halfH * 0.62)), drop: ahead * Math.tan(halfV) * 0.42 });
   });
+
+  // Speech clouds in a page: larger, and kept inside the view.
+  app.everyFrame(() => {
+    bubbleView.page = app.store.mode.peek() === 'desk';
+    bubbleView.camera = world.camera;
+  });
+  // While the page suggests Pip, a glowing arrow hangs over him.
+  {
+    let arrowed = false;
+    app.everyFrame(() => {
+      const want = app.store.mode.peek() === 'desk' && app.store.phase.peek() === 'free' && !app.store.pipUsed.peek() && !app.store.show.peek() && app.store.choices.peek().length === 0 && !(flow?.busy() ?? true);
+      if (want === arrowed) return;
+      arrowed = want;
+      guide.cue(want ? guide.of(() => mods.life.pip.object, 0.16) : null);
+    });
+  }
 
   // In a page a story moves on with a click anywhere, and Esc ends a story or a song.
   {
@@ -511,8 +531,9 @@ export async function startWayfolk(app: App): Promise<Wayfolk> {
     async invite() {
       try {
         const out = await Promise.resolve(mods.live.host(mods.mind.state.id));
-        if (app.store.mode.peek() !== 'desk') postcard.showCard('Come sit on my island', out.link);
-        app.store.invite.value = out.link;
+        const link = inviteLink(out.link, mods.mind.state?.name);
+        if (app.store.mode.peek() !== 'desk') postcard.showCard('Come sit on my island', link);
+        app.store.invite.value = link;
         return out;
       } catch (error) {
         console.warn('[wf] no invite link', error);

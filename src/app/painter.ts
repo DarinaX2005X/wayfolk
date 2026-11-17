@@ -31,6 +31,15 @@ export const PAINT_LINES = {
 
 const W = 640;
 const H = 400;
+/** Linear 0..255 to sRGB 0..255. */
+const SRGB = (() => {
+  const t = new Uint8ClampedArray(256);
+  for (let i = 0; i < 256; i += 1) {
+    const v = i / 255;
+    t[i] = Math.round(255 * (v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055));
+  }
+  return t;
+})();
 
 /** Turns a render into brush strokes on warm paper. */
 export function paintify(src: Uint8ClampedArray, w: number, h: number, seed = 7): HTMLCanvasElement {
@@ -110,6 +119,12 @@ export function createPainter(app: App, mods: Modules, guide: Guide): { paint():
     r.xr.enabled = xrOn;
     const flipped = new Uint8ClampedArray(W * H * 4);
     for (let y = 0; y < H; y += 1) flipped.set(px.subarray((H - 1 - y) * W * 4, (H - y) * W * 4), y * W * 4);
+    // A render target keeps linear light: brought to the screen's colours, as the eye sees it.
+    for (let i = 0; i < flipped.length; i += 4) {
+      flipped[i] = SRGB[flipped[i]];
+      flipped[i + 1] = SRGB[flipped[i + 1]];
+      flipped[i + 2] = SRGB[flipped[i + 2]];
+    }
     return paintify(flipped, W, H, Math.floor(Math.random() * 1e6));
   };
 

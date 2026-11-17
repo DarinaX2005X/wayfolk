@@ -51,8 +51,10 @@ export const VISIT_LINES = {
   menuAway: ['Say hello', 'Leave a note', 'Go home'],
 } as const;
 
+/** Night as the person sees it: the hour of the island's sky, not the clock on the wall. */
+let skyHour: () => number = () => new Date().getHours();
 const isNight = (): boolean => {
-  const h = new Date().getHours();
+  const h = skyHour();
   return h >= 19 || h < 6;
 };
 
@@ -61,6 +63,7 @@ export function createVisits(
   mods: Modules,
   parts: { replies: Replies; guide: Guide; glide: Glide; rig: Rig; say(id: string, name: string, text: string): Promise<void>; pipSay(text: string): Promise<void> },
 ): Visits {
+  skyHour = () => (mods.world as { sky?: { hour?: number } }).sky?.hour ?? new Date().getHours();
   const { world, life, mind } = mods;
   const { replies, guide, glide, rig } = parts;
   const desk = (): boolean => app.store.mode.peek() === 'desk';

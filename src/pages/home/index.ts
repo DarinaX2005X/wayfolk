@@ -85,6 +85,14 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
   const mark = el('h1', 'home-wordmark');
   mark.innerHTML = WORDMARK;
   const line = el('p', 'home-line', TEXT.line);
+  {
+    const q = new URLSearchParams(location.search);
+    if (q.get('live')) {
+      const from = q.get('from')?.slice(0, 24) || 'A friend';
+      const isle = q.get('isle')?.slice(0, 40);
+      line.textContent = isle ? `${from} invited you to ${isle}. Come and sit with them.` : `${from} invited you to their island. Come and sit with them.`;
+    }
+  }
   hero.append(mark, line);
 
   // The way in: paper tags tied under a balloon that drifts over the island.
@@ -224,7 +232,10 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
     });
     const close = el('button', 'tag tag-small', TEXT.close);
     close.type = 'button';
-    close.addEventListener('click', () => (card.hidden = true));
+    close.addEventListener('click', () => {
+      card.hidden = true;
+      wf?.postcard.hide();
+    });
     row.append(copy, close);
     card.append(img, h, qr, link, row);
     card.hidden = false;
@@ -251,7 +262,7 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
     const mod: WF = await import('../../app/wayfolk');
     const started = await mod.startWayfolk(app);
     // Fonts and shaders are ready before the clouds part, so nothing pops in.
-    await Promise.race([started.warm(), new Promise((r) => setTimeout(r, 8000))]);
+    await Promise.race([started.warm(), new Promise((r) => setTimeout(r, 2500))]);
     wf = started;
     if (page.dataset.state === 'before') started.showcase(true);
     return { app, wf: started };

@@ -2,12 +2,14 @@
 // plane above them, turned toward the person and sized by distance so the text stays
 // readable. The words appear one by one with the babble; the cloud bobs a little.
 import {
+  type Camera,
   CanvasTexture,
   DoubleSide,
   LinearMipmapLinearFilter,
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
+  Quaternion,
   SRGBColorSpace,
   Vector3,
   type Object3D,
@@ -44,6 +46,12 @@ export function loadBubbleFonts(): Promise<void> {
   ).then(() => undefined);
   return fontsReady;
 }
+
+/**
+ * How a page shows speech clouds (the app sets it): larger than in a headset, and kept
+ * inside the view; `camera` is the page's camera.
+ */
+export const bubbleView: { page: boolean; camera: Camera | null } = { page: false, camera: null };
 
 type Layout = {
   family: string;
@@ -140,6 +148,8 @@ export class Bubble {
       map: this.texture,
       transparent: true,
       depthWrite: false,
+      // A caption: never hidden behind a branch or a post.
+      depthTest: false,
       side: DoubleSide,
       toneMapped: false,
       fog: false,
@@ -149,7 +159,7 @@ export class Bubble {
     geo.translate(0, H / W / 2, 0); // anchor at the bottom centre (tail tip)
     this.mesh = new Mesh(geo, this.material);
     this.mesh.name = 'life-bubble';
-    this.mesh.renderOrder = 20;
+    this.mesh.renderOrder = 60;
     this.mesh.visible = false;
     this.mesh.frustumCulled = false;
   }
@@ -192,8 +202,8 @@ export class Bubble {
     const family = `${FONT}, "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, sans-serif`;
     let size = 50;
     let lines: string[] = [];
-    const maxText = 780;
-    for (; size >= 34; size -= 4) {
+    const maxText = 860;
+    for (; size >= 26; size -= 4) {
       g.font = `400 ${size}px ${family}`;
       lines = wrapLines((s) => g.measureText(s).width, this.text, maxText);
       const nameH = this.style.name ? size * 0.78 : 0;
@@ -346,7 +356,15 @@ export class Bubble {
       return false;
     }
     const d = anchor.distanceTo(head);
-    const width = Math.min(2.3, Math.max(0.17, d * 0.4));
+    let width = Math.min(2.3, Math.max(0.17, d * 0.4)) * (bubbleView.page ? 1.45 : 1);
+    // In a narrow page the cloud never gets wider than the view at its depth.
+    const pageCam = bubbleView.page ? (bubbleView.camera as (Camera & { fov?: number; aspect?: number }) | null) : null;
+    if (pageCam?.fov && pageCam.aspect) {
+      pageCam.getWorldQuaternion(camQ);
+      camFwd.set(0, 0, -1).applyQuaternion(camQ);
+      const depth = camPos.copy(anchor).sub(pageCam.getWorldPosition(camPos2)).dot(camFwd);
+      if (depth > 0.1) width = Math.min(width, 1.9 * depth * Math.tan((pageCam.fov * Math.PI) / 360) * pageCam.aspect);
+    }
     // Pop: overshoot then settle on the way in; shrink slightly on the way out.
     const a = Math.min(1, this.age / 0.38);
     const pop = fadingOut ? 0.94 + 0.06 * this.fade : 1 + 0.12 * Math.sin(a * Math.PI) * (1 - a) - 0.25 * Math.pow(1 - a, 3);
@@ -360,8 +378,41 @@ export class Bubble {
     look.copy(head);
     look.y = Math.max(look.y, anchor.y - 0.2);
     this.mesh.lookAt(look);
+    if (bubbleView.page && bubbleView.camera) {
+      // Flat to the page, so it reads straight on and its edges are where they seem.
+      this.mesh.quaternion.copy(bubbleView.camera.getWorldQuaternion(camQ));
+      this.keepInView(bubbleView.camera, width);
+    }
     this.material.opacity = easeOut(this.fade);
     return true;
+  }
+
+  /** In a page: slides the cloud back inside the view when it would cross an edge. */
+  private keepInView(cam: Camera, width: number): void {
+    const lens = cam as Camera & { fov?: number; aspect?: number };
+    if (!lens.fov || !lens.aspect) return;
+    cam.updateMatrixWorld();
+    camRight.set(1, 0, 0).applyQuaternion(cam.getWorldQuaternion(camQ));
+    camUp.set(0, 1, 0).applyQuaternion(camQ);
+    const h = (H / W) * width;
+    centre.copy(this.mesh.position).addScaledVector(camUp, h * 0.55);
+    camFwd.set(0, 0, -1).applyQuaternion(camQ);
+    // Depth along the view, not the straight distance: off to a side the cloud looks wider.
+    const dist = camPos.copy(centre).sub(cam.getWorldPosition(camPos2)).dot(camFwd);
+    ndc.copy(centre).project(cam);
+    if (ndc.z > 1 || dist < 0.05) return;
+    const tanV = Math.tan((lens.fov * Math.PI) / 360);
+    const tanH = tanV * lens.aspect;
+    const halfW = (width * 0.46) / (dist * tanH);
+    const halfH = (h * 0.42) / (dist * tanV);
+    let sx = 0;
+    if (ndc.x + halfW > 0.95) sx = 0.95 - (ndc.x + halfW);
+    else if (ndc.x - halfW < -0.95) sx = -0.95 - (ndc.x - halfW);
+    let sy = 0;
+    if (ndc.y + halfH > 0.95) sy = 0.95 - (ndc.y + halfH);
+    else if (ndc.y - halfH < -0.95) sy = -0.95 - (ndc.y - halfH);
+    if (sx) this.mesh.position.addScaledVector(camRight, sx * dist * tanH);
+    if (sy) this.mesh.position.addScaledVector(camUp, sy * dist * tanV);
   }
 
   dispose(): void {
@@ -373,6 +424,14 @@ export class Bubble {
 
 const tmp = new Vector3();
 const look = new Vector3();
+const camRight = new Vector3();
+const camUp = new Vector3();
+const camPos = new Vector3();
+const camPos2 = new Vector3();
+const camFwd = new Vector3();
+const centre = new Vector3();
+const ndc = new Vector3();
+const camQ = new Quaternion();
 const easeOut = (x: number): number => 1 - Math.pow(1 - x, 3);
 
 export type { Object3D };

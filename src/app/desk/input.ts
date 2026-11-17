@@ -16,7 +16,8 @@ import type { Voice } from '../hands/voice';
 import type { Rig } from '../rig';
 import type { Guide } from './guide';
 
-export type DeskPick = { objects(): Object3D[]; pick(object: Object3D): void };
+/** `radius`: a click this many pixels from the object's middle counts (a small, moving target). */
+export type DeskPick = { objects(): Object3D[]; pick(object: Object3D): void; radius?: number };
 
 const typing = (): boolean => {
   const el = document.activeElement as HTMLElement | null;
@@ -89,6 +90,24 @@ export function bindDesk(
       placement.aim(ray.ray);
       placement.confirm();
       return;
+    }
+    // Small moving targets (Pip): a click near enough counts, and a near miss does nothing.
+    const r = canvas.getBoundingClientRect();
+    for (const p of picks) {
+      if (!p.radius) continue;
+      for (const object of p.objects()) {
+        if (!object) continue;
+        const s = object.getWorldPosition(new Vector3()).add(new Vector3(0, 0.06, 0)).project(app.world.camera);
+        if (s.z > 1) continue;
+        const px = ((s.x + 1) / 2) * r.width + r.left;
+        const py = ((1 - s.y) / 2) * r.height + r.top;
+        const d = Math.hypot(px - e.clientX, py - e.clientY);
+        if (d < p.radius) {
+          p.pick(object);
+          return;
+        }
+        if (d < p.radius * 1.8) return;
+      }
     }
     // Pip and the residents: the nearest hit among their whole models.
     let best: { d: number; pick: DeskPick; object: Object3D } | null = null;

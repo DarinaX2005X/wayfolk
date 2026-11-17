@@ -28,6 +28,7 @@ import type { Replies } from './hands/replies';
 import { clipToWav16k, type Voice } from './hands/voice';
 import type { Modules } from './modules';
 import type { Postcard } from './postcard';
+import { inviteLink } from './name';
 
 export type Flow = {
   run(): Promise<void>;
@@ -58,6 +59,7 @@ export type Together = { available(): boolean; label: string; open(): Promise<vo
 export const LINES = {
   hello: "Oh, you're here. I'm Pip. Hold out your hand, palm up, and I'll come down.",
   helloDesk: "Oh, you're here. I'm Pip. This is your island.",
+  helloArrive: "Oh, you're here. I'm Pip. Look, someone is drifting this way.",
   landed: 'There. Warm hands. Look, someone is drifting this way.',
   landedDesk: 'Look over there. Someone is drifting this way.',
   welcomeChoices: ['Hello there', 'Where are you headed?', 'Would you like to stay?'],
@@ -158,6 +160,8 @@ export function createFlow(
   };
   const say = (id: string, name: string, text: string, opts: Record<string, unknown> = {}): Promise<void> => {
     if (!stand) caption({ source: name || 'Traveler', text });
+    // In a conversation the last line stays up while the person answers.
+    if (store.talkingTo.peek() === id) opts = { hold: 90, ...opts };
     store.speaker.value = id;
     if (desk()) guide.frame(residentObject(id), { lift: -0.15, zoom: true });
     return within(life.say(id, text, { name, ...opts }), 3000 + text.length * 70, undefined);
@@ -187,7 +191,7 @@ export function createFlow(
   const talk = async (r: Resident, first?: string[], nudge = true, near?: Promise<void>): Promise<boolean> => {
     if (near) {
       // Still walking up the path: wait until they stand in front of the person.
-      await within(near, 9000, undefined);
+      await within(near, desk() ? 5000 : 9000, undefined);
       // Still on the way: they step out of a puff right in front, so the talk is face to face.
       if (walker === r.id) life.hurry?.(r.id);
     }
@@ -224,7 +228,7 @@ export function createFlow(
           talkHinted = true;
           void pipSay(LINES.talkHint);
         }
-        const picked = await Promise.race([replies.show(choices, { side: pipOn ?? undefined, delay: 6500 }), spoken]);
+        const picked = await Promise.race([replies.show(choices, { side: pipOn ?? undefined, delay: turns === 1 ? 2500 : 6500 }), spoken]);
         if (clip) replies.hide();
         if (picked === null && !clip) return false;
         let audio: string | undefined;
@@ -258,6 +262,8 @@ export function createFlow(
       voice.armed = false;
       store.talkingTo.value = null;
       store.heard.value = null;
+      // The line that stayed up for the answer goes now.
+      app.clock.timers.set(() => life.quiet?.(r.id), 2500);
       void within(mind.endTalk?.(r.id), 5000, undefined);
     }
   };
@@ -334,7 +340,7 @@ export function createFlow(
     if (meet?.isVector3) {
       const to = world.root.localToWorld(meet.clone());
       walker = traveler.id;
-      near = Promise.resolve(life.walkTo(traveler.id, { x: to.x, z: to.z }, { speed: 3.1 }))
+      near = Promise.resolve(life.walkTo(traveler.id, { x: to.x, z: to.z }, { speed: 4 }))
         .then(() => life.face?.(traveler.id))
         .catch(() => undefined)
         .finally(() => {
@@ -353,7 +359,8 @@ export function createFlow(
     }
     // They introduce themselves on the way up; the replies come once they stand in front of
     // the person and the first sentences are said (the rest of the line may run on).
-    const introduced = say(traveler.id, traveler.name, intro, { voice: traveler.voice });
+    // The intro stays up while the person answers it.
+    const introduced = say(traveler.id, traveler.name, intro, { voice: traveler.voice, hold: 90 });
     return { traveler, choices, near: Promise.all([near, within(introduced, 6000, undefined)]).then(() => undefined) };
   };
 
@@ -577,9 +584,7 @@ export function createFlow(
           await talk(r, first, false);
           store.phase.value = 'free';
         } else if (pick === LINES.meet[1]) {
-          const answer = await within(Promise.resolve(mind.give(id, 'fruit')), 8000, { text: 'Thank you. That is kind.' });
-          life.emote(id, 'happy');
-          await say(id, r.name, answer.text);
+          await within(gifts.give(id, 'fruit'), 14000, undefined);
         } else if (pick === LINES.meet[2]) await parts.visits?.trip(id);
         else if (pick === LINES.meet[3]) await parts.visits?.peek(id);
       } finally {
@@ -652,10 +657,17 @@ export function createFlow(
           goFree({ built: builtNow });
           return;
         }
-        await pipSay(desk() ? LINES.helloDesk : LINES.hello);
-        store.phase.value = 'palm';
-        await palm(9000);
-        await pipSay(desk() ? LINES.landedDesk : LINES.landed);
+        if (desk()) {
+          // In a page, one line from Pip and the traveler is already on the way.
+          store.phase.value = 'palm';
+          void pipSay(LINES.helloArrive);
+          await wait(1600);
+        } else {
+          await pipSay(LINES.hello);
+          store.phase.value = 'palm';
+          await palm(9000);
+          await pipSay(LINES.landed);
+        }
         const builtNow = await welcome();
         goFree({ built: builtNow });
       } finally {
@@ -671,8 +683,9 @@ export function createFlow(
           try {
             const out = await Promise.resolve(mods.live.host(mind.state.id));
             // The page shows its own card with the link; the headset gets the card in the air.
-            if (!desk()) postcard.showCard('Come sit on my island', out.link);
-            app.store.invite.value = out.link;
+            const link = inviteLink(out.link, mind.state?.name);
+            if (!desk()) postcard.showCard('Come sit on my island', link);
+            app.store.invite.value = link;
             await pipSay(LINES.invited);
           } catch (error) {
             console.warn('[wf] no invite link', error);
@@ -695,6 +708,8 @@ export function createFlow(
         else if (pick === LINES.more[3]) await lastPage();
       };
       playing = true;
+      // The menu clouds gather by Pip.
+      store.speaker.value = 'pip';
       try {
         // With a friend here, doing something together comes first.
         const both = together?.available() ? together : null;

@@ -95,20 +95,24 @@ export async function mount(root: HTMLElement, params: RouteParams): Promise<voi
     line.textContent = TEXT.missing;
   }
 
-  // Orbit around the island's middle (the sky and the cloud sea do not count).
+  // Orbit around the island itself: its ground (the clouds, the sky and the far islands
+  // do not count), so it fills the view.
   const box = new Box3();
   mods.world.root.updateMatrixWorld(true);
-  mods.world.root.traverse((o) => {
-    const m = o as Mesh;
-    if (!m.isMesh) return;
-    m.geometry.computeBoundingSphere?.();
-    if ((m.geometry.boundingSphere?.radius ?? 0) < 40) box.expandByObject(m);
-  });
+  const ground = (mods.world as { ground?: Mesh }).ground;
+  if (ground?.isMesh) box.setFromObject(ground);
+  if (box.isEmpty())
+    mods.world.root.traverse((o) => {
+      const m = o as Mesh;
+      if (!m.isMesh) return;
+      m.geometry.computeBoundingSphere?.();
+      if ((m.geometry.boundingSphere?.radius ?? 0) < 12) box.expandByObject(m);
+    });
   const centre = box.isEmpty() ? new Vector3() : box.getCenter(new Vector3());
   const span = box.isEmpty() ? 30 : Math.max(10, box.getSize(new Vector3()).length());
   let yaw = 0.6;
   let pitch = 0.42;
-  let dist = span * 0.9;
+  let dist = span * 0.72;
   let auto = true;
   const cam = world.camera;
   cam.fov = 50;

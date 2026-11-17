@@ -166,6 +166,8 @@ export function createPostcard(app: App, hands: Hands, mind: MindPort): Postcard
       }
     },
     showCard(title, url, image) {
+      // A page has its own card with the link and the picture; the card in the air is for a headset.
+      if (app.store.mode.peek() === 'desk') return;
       void drawCard(title, url, image).then((canvas) => {
         postcard.hide();
         const tex = new CanvasTexture(canvas);
@@ -177,6 +179,11 @@ export function createPostcard(app: App, hands: Hands, mind: MindPort): Postcard
         app.roots.fx.add(mesh);
         card = mesh;
         sound.play('paper');
+        // It does not stay forever, and never comes along to another place.
+        const shown = mesh;
+        app.clock.timers.set(() => {
+          if (card === shown) postcard.hide();
+        }, 25000);
       });
     },
     hide() {

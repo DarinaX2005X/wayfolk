@@ -174,7 +174,7 @@ export function giftMessages(resident: Resident, item: GiftKind, loved: boolean,
   return [
     {
       role: 'system',
-      content: `${WORLD}\n\n${STYLE}\n\nYou are ${resident.name}, a ${resident.species} and ${TRADE_WORDS[resident.trade].person}. ${resident.personality} The person hands you a gift. React in your own voice, at most two short sentences.${loved ? ' You love it: say what you will do with it in your house.' : ' It is not your favorite thing, but you are grateful and kind about it.'} Answer only with JSON in the given schema.`,
+      content: `${WORLD}\n\n${STYLE}\n\nYou are ${resident.name}, a ${resident.species} and ${TRADE_WORDS[resident.trade].person}. ${resident.personality} The person hands you a gift. Thank them for it in your own voice and say what it is, at most two short sentences.${loved ? ' You love it: say what you will do with it in your house.' : ' It is not your favorite thing, but you are grateful and kind about it.'} Answer only with JSON in the given schema.`,
     },
     { role: 'user', content: `The gift: ${GIFT_WORDS[item]}. Time: ${clock(now)}.` },
   ];

@@ -99,7 +99,7 @@ export function createGuide(app: App, rig: Rig, world: WorldPort, blocked: () =>
   const shaft = new Mesh(new CylinderGeometry(0.17, 0.17, 0.7, 14).translate(0, 1.05, 0), gold);
   const halo = new Mesh(new PlaneGeometry(2.6, 2.6), new MeshBasicMaterial({ map: glowTexture(), transparent: true, depthWrite: false, depthTest: false, blending: AdditiveBlending, toneMapped: false, fog: false, side: DoubleSide }));
   halo.position.y = 0.7;
-  for (const m of [head, shaft, halo]) m.renderOrder = 40;
+  for (const m of [head, shaft, halo]) m.renderOrder = 66;
   arrow.add(halo, head, shaft);
   app.roots.fx.add(arrow);
   let manualUntil = 0;
@@ -272,7 +272,7 @@ export function createGuide(app: App, rig: Rig, world: WorldPort, blocked: () =>
     arrow.visible = Boolean(cp);
     if (cp) {
       const d = cam.getWorldPosition(ARROW_AT).distanceTo(cp);
-      const s = Math.max(0.12, Math.min(1.2, d * 0.045));
+      const s = Math.max(0.24, Math.min(1.2, d * 0.05));
       const less = app.store.settings.peek().lessMotion;
       arrow.position.copy(cp).add(TMP.set(0, s * 0.6 + (less ? 0 : Math.abs(Math.sin(now / 380)) * s * 0.5), 0));
       arrow.scale.setScalar(s);

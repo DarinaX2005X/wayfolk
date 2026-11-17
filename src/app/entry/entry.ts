@@ -110,14 +110,14 @@ export function createEntry(app: App, world: WorldPort, rig: Rig, extras: () => 
         fx.veil = 1;
         fx.fill = 1;
         fx.rise = 0;
-        await tween(900, () => undefined);
+        await tween(350, () => undefined);
       }
       // Seated on the island, still inside the cloud.
       seatPerson();
       showIsland(true);
-      await tween(500, () => undefined);
+      await tween(room ? 500 : 250, () => undefined);
       // The clouds part outward and down; the sky of the island is there.
-      await tween(3400, (k) => {
+      await tween(room ? 3400 : 2300, (k) => {
         fx.veil = 1 - ease(Math.min(1, k * 1.4));
         fx.rise = ease(k);
         fx.fill = 1 - ease(Math.max(0, k - 0.45) / 0.55);

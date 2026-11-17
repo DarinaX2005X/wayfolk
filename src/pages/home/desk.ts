@@ -326,9 +326,10 @@ export function createDeskUi(store: Store, hooks: Hooks): HTMLElement[] {
       let x: number;
       let y: number;
       if (narrow || !sp.on) {
-        // Under the speaker on a phone, or low in the middle when they are out of view.
+        // At the foot of a phone's page (the word clouds float above it), or low in the
+        // middle when the speaker is out of view.
         x = (W - box.width) / 2;
-        y = sp.on && narrow ? Math.min(H - box.height - 16, sp.y + Math.max(40, sp.size * 0.55)) : H - box.height - 90;
+        y = narrow ? H - box.height - 46 : H - box.height - 90;
       } else {
         const gap = Math.max(36, sp.size * 0.32);
         x = sp.x + gap;

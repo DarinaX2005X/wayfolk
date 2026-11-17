@@ -28,6 +28,7 @@ import {
   Vector3,
   type BufferGeometry,
 } from '@iwsdk/core';
+import { say as caption } from '../../feel/captions';
 import { sound } from '../../feel/sound';
 import type { App } from '../boot/world';
 import { registerTest } from '../debug';
@@ -232,6 +233,7 @@ export function createGifts(
     try {
       const answer = await mind.give(to.id, gift.kind);
       life.emote(to.id, 'happy');
+      caption({ source: to.name, text: answer.text });
       await life.say(to.id, answer.text, { name: to.name });
     } catch (error) {
       console.error('[wf] the gift was not taken', error);

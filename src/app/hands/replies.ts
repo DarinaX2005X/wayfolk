@@ -39,8 +39,8 @@ export type Replies = {
 
 /** Width of a cloud by the hand, metres. */
 const HAND_W = 0.13;
-/** Width of a cloud in a page, metres, at PAGE_D from the eye. */
-const PAGE_W = 0.3;
+/** Width of a cloud in a page, metres, at PAGE_D from the eye (about 18 px text at 1280 × 720). */
+const PAGE_W = 0.48;
 const PAGE_D = 1.5;
 
 export function createReplies(app: App, hands: Hands): Replies {
@@ -147,24 +147,45 @@ export function createReplies(app: App, hands: Hands): Replies {
     const n = bubbles.length;
     const shown = now >= outAt;
     if (desk()) {
-      // Beside the speaker, a step in front of them, in a gentle column that bobs.
+      // Beside whoever speaks, laid out on the page and kept inside it, in front of
+      // everything (never behind a branch). On a narrow page, a column under the speaker.
+      const lens = cam as unknown as { fov?: number; aspect?: number };
+      const tanV = Math.tan(((lens.fov ?? 60) * Math.PI) / 360);
+      const tanH = tanV * (lens.aspect ?? 1.6);
       right.set(1, 0, 0).applyQuaternion(cam.quaternion);
       up.set(0, 1, 0).applyQuaternion(cam.quaternion);
       cam.getWorldDirection(fwd);
+      const narrow = (lens.aspect ?? 1.6) < 0.9;
+      const visW = 2 * PAGE_D * tanH;
+      const wM = Math.min(PAGE_W, visW * (narrow ? 0.7 : 0.3));
+      const halfW = wM / 2 / (PAGE_D * tanH);
+      const rowN = (wM * 0.5) / (PAGE_D * tanV);
+      // Where the speaker is on the page.
+      let sx = 0.25;
+      let sy = 0.1;
       const at = anchor();
       if (at) {
-        want.copy(at).sub(head);
-        if (want.dot(fwd) < 0.2) want.copy(fwd);
-        want.normalize();
-      } else want.copy(fwd).addScaledVector(up, -0.15).normalize();
-      want.multiplyScalar(PAGE_D).add(head);
-      // On the other side of the speaker from the page's answer box (which sits to their
-      // right unless they stand at the right of the view).
-      local.copy(want).project(cam);
-      const sideK = local.x > 0.3 ? 1 : -1;
+        local.copy(at).project(cam);
+        if (local.z < 1) {
+          sx = Math.max(-1, Math.min(1, local.x));
+          sy = Math.max(-1, Math.min(1, local.y));
+        }
+      }
+      // Pip has no answer box beside him: the clouds take the side with more room. Someone
+      // else has the page's answer box on their right, so the clouds go left (or right when
+      // they stand at the right of the page).
+      const who = app.store.speaker.peek();
+      const sideK = who === 'pip' || !who ? (sx > 0 ? -1 : 1) : sx > 0.3 ? 1 : -1;
+      let colX = narrow ? 0 : sx + sideK * (halfW + 0.16);
+      colX = Math.max(-0.97 + halfW, Math.min(0.97 - halfW, colX));
+      let top = narrow ? Math.min(sy - 0.18, 0.2) : sy + rowN * 0.6;
+      // On a phone the answer box sits at the foot of the page: the column stays above it.
+      top = Math.max((narrow ? -0.5 : -0.95) + rowN * (n + 0.2), Math.min(0.92, top));
       for (let i = 0; i < n; i += 1) {
         const b = bubbles[i];
-        centre.copy(want).addScaledVector(right, sideK * (0.36 + (i % 2) * 0.05)).addScaledVector(up, 0.1 - i * 0.135 + Math.sin(now / 700 + i * 1.3) * 0.006);
+        const y = top - (i + 1) * rowN + Math.sin(now / 700 + i * 1.3) * 0.004;
+        const x = colX + (narrow ? 0 : (i % 2) * sideK * 0.02);
+        centre.copy(head).addScaledVector(fwd, PAGE_D).addScaledVector(right, x * PAGE_D * tanH).addScaledVector(up, y * PAGE_D * tanV);
         if (b.userData.placed) b.position.lerp(centre, a);
         else {
           b.position.copy(centre);
@@ -173,7 +194,7 @@ export function createReplies(app: App, hands: Hands): Replies {
         b.quaternion.copy(cam.quaternion);
         const k = shown ? Math.min(1, (now - outAt) / 260 - i * 0.18) : 0;
         b.visible = k > 0;
-        b.scale.setScalar(Math.max(0.01, k) * (PAGE_W / HAND_W));
+        b.scale.setScalar(Math.max(0.01, k) * (wM / HAND_W));
       }
       return;
     }
@@ -235,6 +256,9 @@ export function createReplies(app: App, hands: Hands): Replies {
       bubbles = current.map((text, i) => {
         const b = makeBubble(text, { width: HAND_W, size: 46, cloud: true, paper: '#fbf7f2', rim: '#e9dbe6', ink: '#3a2c22' });
         b.name = `bubble:${i}`;
+        // Never hidden behind a branch or a post.
+        (b.material as { depthTest: boolean }).depthTest = false;
+        b.renderOrder = 70;
         b.scale.setScalar(0.01);
         b.visible = false;
         group.add(b);

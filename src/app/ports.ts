@@ -92,6 +92,8 @@ export type LifePort = {
   face?(id: string, p?: unknown): void;
   /** Skips what is playing now (a long build, a line). */
   skip?(): void;
+  /** Takes a speaker's cloud down now, when offered. */
+  quiet?(id: string): void;
   /** Ends a resident's walk at once where it was going, when offered. */
   hurry?(id: string): void;
   /** A few birds land round a point and peck at crumbs, when offered. */

@@ -135,6 +135,8 @@ export interface Life {
   soundAt(pos: PointLike, kind: SoundKind, volume?: number): SoundHandle;
   /** Hurry the current line, arrival or build to its end (a pinch). */
   skip(): void;
+  /** Takes a speaker's cloud down now (a conversation is over). */
+  quiet?(id: string): void;
   /** Ends a resident's walk at once where it was going (a pinch or a click hurries them). */
   hurry?(id: string): void;
   /** Night makes the island quieter and sends residents home. */

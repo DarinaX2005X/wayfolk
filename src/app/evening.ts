@@ -46,7 +46,7 @@ export const EVENING_LINES = {
   gather: (name: string) => `Gather round. ${name} has a story tonight.`,
   nobody: 'Nobody lives here yet to tell a story. Ask a traveler to stay first.',
   thanks: (name: string) => `Thank you, ${name}. Sleep well, everyone.`,
-  concert: (name: string) => `${name} wants to play something for the sunset.`,
+  concert: (name: string, night = false) => (night ? `${name} wants to play something for the night.` : `${name} wants to play something for the sunset.`),
   applause: (name: string) => `That was lovely, ${name}. The lanterns liked it too.`,
   tellerDone: 'That is all for tonight.',
 } as const;
@@ -138,10 +138,11 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
   // forward into the evening, so a real night stays night.
   let skyOff: (() => void) | null = null;
   const skyHour = (): number => (world as { sky?: { hour?: number } }).sky?.hour ?? app.clock.wall().getHours();
-  const skyTo = (hour: number, seconds = 4): void => {
+  /** `back`: slide to the hour even if it is earlier (the light coming back after a show). */
+  const skyTo = (hour: number, seconds = 4, back = false): void => {
     const from = skyHour();
     const evening = from >= hour - 0.05 || from < 4.5;
-    if (evening) return;
+    if (evening && !(back && Math.abs(from - hour) > 0.05)) return;
     skyOff?.();
     const t0 = app.clock.now();
     const date = new Date(app.clock.wall());
@@ -245,6 +246,7 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
       playing = 'story';
       app.store.show.value = 'story';
       guide.cue(null);
+      const lightBefore = skyHour();
       skyTo(20.4, 5);
       const ids = residents().map((r) => r.id);
       const ctx = audio();
@@ -280,6 +282,8 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
         run?.stop();
         stopNow = null;
         playing = null;
+        // The evening light comes back after the story.
+        skyTo(lightBefore, 6, true);
         app.store.show.value = null;
         if (desk()) guide.frame(null);
         release(ids);
@@ -302,6 +306,7 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
       playing = 'concert';
       app.store.show.value = 'concert';
       guide.cue(null);
+      const lightBefore = skyHour();
       skyTo(19.2, 4);
       const ids = list.map((r) => r.id);
       let notes: Points | null = null;
@@ -309,8 +314,9 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
       let rings: { mesh: Mesh<PlaneGeometry, MeshBasicMaterial>; born: number }[] = [];
       let off: (() => void) | null = null;
       try {
-        caption({ source: 'Pip', text: EVENING_LINES.concert(player.name) });
-        void within(Promise.resolve(life.pip.say(EVENING_LINES.concert(player.name))), 6000, undefined);
+        const nightNow = skyHour() >= 20 || skyHour() < 5;
+        caption({ source: 'Pip', text: EVENING_LINES.concert(player.name, nightNow) });
+        void within(Promise.resolve(life.pip.say(EVENING_LINES.concert(player.name, nightNow))), 6000, undefined);
         // The player stands beside the fire on the side of the seat, where everyone can see;
         // the others gather round.
         const fire = firePoint();
@@ -468,6 +474,7 @@ export function createEvening(app: App, mods: Modules, guide: Guide, hands: Hand
         music?.stop();
         music = null;
         stopNow = null;
+        skyTo(lightBefore, 6, true);
         W.setPulse?.(0);
         L.flockCircle?.(null);
         for (const pts of [notes, motes]) {
